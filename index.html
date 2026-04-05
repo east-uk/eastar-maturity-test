@@ -548,7 +548,7 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="inputYear" class="apple-input">
+            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
@@ -561,6 +561,7 @@ select.apple-input {
         </div>
         <button onclick="inputSearch()" class="pill-btn pill-btn-primary">조회</button>
       </div>
+      <div id="inputPendingStations" class="mt-6"></div>
     </div>
 
     <!-- Phase 2: Audit Info -->
@@ -652,7 +653,7 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="viewYear" class="apple-input">
+            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
             </select>
@@ -698,6 +699,7 @@ select.apple-input {
         </div>
         <button onclick="viewSearch()" class="pill-btn pill-btn-primary">조회</button>
       </div>
+      <div id="viewRecentStations" class="mt-6"></div>
     </div>
 
     <!-- Phase 2: Results -->
@@ -1767,7 +1769,7 @@ function switchTab(idx) {
   document.getElementById('inputBottomBar').classList.toggle('hidden', idx !== 1 || !currentChecklist);
   // Render tab-specific content
   if (idx === 0) renderHome();
-  if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); }
+  if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
   if (idx === 3) renderStatsDashboard();
   if (idx === 4) renderAnalysis();
   if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); }
@@ -2119,6 +2121,7 @@ function saveAssessment() {
   showToast('저장되었습니다.', 'success');
   // 저장 후 점검표 유형 선택 화면으로 돌아감 (다른 유형 작성 가능)
   inputShowTypes();
+  renderInputPendingStations();
 }
 
 // ============================================================================
@@ -5599,6 +5602,121 @@ function renderHome() {
   document.getElementById('homeTrainingAlerts').innerHTML = alertHtml;
 }
 
+// ============================================================================
+// STATION LIST TABLES (Input Tab & View Tab)
+// ============================================================================
+function renderInputPendingStations() {
+  const container = document.getElementById('inputPendingStations');
+  if (!container) return;
+  const year = parseInt(document.getElementById('inputYear').value);
+
+  // Get schedule data sorted by date, filter to stations without all 3 checklists
+  const pendingStations = [];
+  scheduleData.filter(s => s.year === year).forEach(s => {
+    const completedTypes = ['branch', 'pax', 'ramp'].filter(type => {
+      return allData.some(d => d.year == year && d.station === s.station && d.type === type);
+    });
+    if (completedTypes.length < 3) {
+      pendingStations.push({
+        station: s.station,
+        displayName: s.displayName || s.station,
+        month: s.month,
+        dateStart: s.dateStart,
+        auditors: s.auditors,
+        completed: completedTypes.length,
+        status: calcScheduleStatus(s)
+      });
+    }
+  });
+
+  // Sort by month/date (earliest first = most urgent)
+  pendingStations.sort((a, b) => {
+    if (a.month !== b.month) return a.month - b.month;
+    return (a.dateStart || '').localeCompare(b.dateStart || '');
+  });
+
+  if (pendingStations.length === 0) {
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">모든 지점의 점검표가 입력 완료되었습니다.</div></div>';
+    return;
+  }
+
+  let html = '<div class="apple-card" style="padding:14px;">';
+  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">점검표 미입력 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + pendingStations.length + '건)</span></h3>';
+  html += '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:left;">지점</th>';
+  html += '<th style="text-align:center;">심사월</th>';
+  html += '<th style="text-align:center;">진행</th>';
+  html += '<th style="text-align:center;">상태</th>';
+  html += '</tr></thead><tbody>';
+
+  pendingStations.forEach(s => {
+    html += `<tr style="cursor:pointer;" onclick="document.getElementById('inputStation').value='${s.station}';inputSearch()">`;
+    html += `<td data-label="지점" style="font-weight:600;">${s.displayName}</td>`;
+    html += `<td data-label="심사월" style="text-align:center;font-size:12px;">${s.month}월</td>`;
+    html += `<td data-label="진행" style="text-align:center;"><span class="badge-pill" style="background:${s.completed > 0 ? 'rgba(245,158,11,0.15);color:#F59E0B' : 'rgba(158,162,161,0.15);color:#9EA2A1'}">${s.completed}/3</span></td>`;
+    html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(s.status.status)};font-size:10px;">${s.status.label}</span></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function renderViewRecentStations() {
+  const container = document.getElementById('viewRecentStations');
+  if (!container) return;
+  const year = parseInt(document.getElementById('viewYear').value);
+
+  // Get all stations with data for this year, grouped by station
+  const stationMap = {};
+  allData.filter(d => d.year == year).forEach(d => {
+    if (!stationMap[d.station]) {
+      stationMap[d.station] = {
+        station: d.station,
+        region: d.region,
+        types: {},
+        latestDate: ''
+      };
+    }
+    stationMap[d.station].types[d.type] = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+    // Track latest audit date
+    const date = d.auditDateStart || d.auditDate || '';
+    if (date > stationMap[d.station].latestDate) stationMap[d.station].latestDate = date;
+  });
+
+  // Sort by latest date descending (most recent first)
+  const stations = Object.values(stationMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
+
+  if (stations.length === 0) {
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">' + year + '년 입력된 점검표가 없습니다.</div></div>';
+    return;
+  }
+
+  let html = '<div class="apple-card" style="padding:14px;">';
+  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + stations.length + '개 지점)</span></h3>';
+  html += '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:left;">지점</th>';
+  html += '<th style="text-align:center;">지점</th>';
+  html += '<th style="text-align:center;">여객</th>';
+  html += '<th style="text-align:center;">램프</th>';
+  html += '<th style="text-align:center;">심사일</th>';
+  html += '</tr></thead><tbody>';
+
+  stations.forEach(s => {
+    const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+    html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
+    html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
+    html += `<td data-label="지점 점수" style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="여객 점수" style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="램프 점수" style="text-align:center;">${s.types.ramp ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.ramp) + '">' + s.types.ramp.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="심사일" style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
 function init() {
   loadCustomStations();
   loadAllData();
@@ -5607,6 +5725,7 @@ function init() {
   populateStationDropdown();
   switchTab(0);
   initFirebase();
+  renderInputPendingStations();
 
   // FAB scroll to top
   window.addEventListener('scroll', () => {
