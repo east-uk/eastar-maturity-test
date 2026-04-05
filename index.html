@@ -4263,20 +4263,23 @@ function renderSchedule() {
   </div>`;
   html += '</div>';
 
-  // Timeline layout
-  html += '<div class="apple-card p-6 mb-6"><div style="position:relative;padding-left:24px;">';
+  // === HORIZONTAL TIMELINE ===
+  html += '<div class="apple-card p-6 mb-6">';
+  html += '<div id="timelineContainer" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:10px 0;">';
+  html += '<div style="display:flex;align-items:flex-start;min-width:max-content;padding:0 20px;">';
+
   for (let m = 1; m <= 12; m++) {
     const items = monthMap[m] || [];
     const isCurrentMonth = m === currentMonth;
     const isPast = m < currentMonth;
 
-    // Determine month status
+    // Month status
     let monthStatus = 'upcoming';
     if (items.length > 0) {
       const hasOverdue = items.some(i => i.status === 'overdue');
       const hasIncomplete = items.some(i => i.status === 'incomplete');
-      const hasInProgress = items.some(i => i.status === 'in_progress');
       const allCompleted = items.every(i => i.status === 'completed');
+      const hasInProgress = items.some(i => i.status === 'in_progress');
       if (hasOverdue) monthStatus = 'overdue';
       else if (hasIncomplete) monthStatus = 'incomplete';
       else if (allCompleted && items.length > 0) monthStatus = 'completed';
@@ -4286,41 +4289,61 @@ function renderSchedule() {
     const dotColor = monthStatus === 'completed' ? '#22C55E' : monthStatus === 'in_progress' ? '#F59E0B' : monthStatus === 'overdue' ? '#D20015' : '#C0CED1';
     const lineColor = isPast || monthStatus === 'completed' ? '#22C55E' : '#E5E7EB';
 
-    // Timeline dot + line
-    html += `<div style="position:relative;padding-bottom:${items.length > 0 ? '16' : '8'}px;">`;
-    // Vertical line
-    if (m < 12) html += `<div style="position:absolute;left:-16px;top:10px;bottom:0;width:2px;background:${lineColor};"></div>`;
+    // Each month column
+    html += `<div id="timelineMonth${m}" style="display:flex;flex-direction:column;align-items:center;min-width:${isCurrentMonth ? '90' : '70'}px;cursor:pointer;" onclick="scrollToMonthDetail(${m})">`;
     // Dot
-    html += `<div style="position:absolute;left:-21px;top:4px;width:${isCurrentMonth ? '12' : '10'}px;height:${isCurrentMonth ? '12' : '10'}px;border-radius:50%;background:${isCurrentMonth ? '#D20015' : dotColor};${isCurrentMonth ? 'box-shadow:0 0 0 3px rgba(210,0,21,0.2);' : ''}"></div>`;
+    html += `<div style="width:${isCurrentMonth ? '16' : '10'}px;height:${isCurrentMonth ? '16' : '10'}px;border-radius:50%;background:${isCurrentMonth ? '#D20015' : dotColor};${isCurrentMonth ? 'box-shadow:0 0 0 4px rgba(210,0,21,0.15);' : ''}flex-shrink:0;"></div>`;
     // Month label
-    html += `<div class="flex items-center gap-2" style="margin-bottom:4px;">`;
-    html += `<span style="font-size:${isCurrentMonth ? '16' : '14'}px;font-weight:${isCurrentMonth ? '700' : '600'};color:${isCurrentMonth ? '#D20015' : '#303A3C'};">${m}월</span>`;
+    html += `<div style="font-size:${isCurrentMonth ? '14' : '12'}px;font-weight:${isCurrentMonth ? '700' : '400'};color:${isCurrentMonth ? '#D20015' : '#303A3C'};margin-top:6px;">${m}월</div>`;
+    // Station count or names
     if (items.length > 0) {
-      const mLabel = getScheduleStatusLabels()[monthStatus] || monthStatus;
-      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)};font-size:10px;">${mLabel}</span>`;
+      const stationNames = items.map(i => (i.displayName || i.station).substring(0, 4)).join('\u00b7');
+      html += `<div style="font-size:9px;color:#9EA2A1;margin-top:2px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${stationNames}</div>`;
+      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)};font-size:8px;padding:0 4px;margin-top:2px;">${items.length}건</span>`;
+    } else {
+      html += `<div style="font-size:9px;color:#C0CED1;margin-top:2px;">-</div>`;
     }
     html += `</div>`;
-    // Stations
-    if (items.length === 0) {
-      html += `<div style="font-size:12px;color:#C0CED1;">예정 없음</div>`;
-    } else {
-      items.forEach(item => {
-        const itemCycle = item.auditCycle || (STATION_AUDIT_CYCLES[item.station] ? STATION_AUDIT_CYCLES[item.station].cycle : null);
-        const cycleBadge = itemCycle && CYCLE_LABELS[itemCycle] ? `<span class="badge-pill" style="${CYCLE_LABELS[itemCycle].style};font-size:8px;padding:0px 4px;">${CYCLE_LABELS[itemCycle].label}</span>` : '';
-        const statusDotColor = item.status === 'completed' ? '#22C55E' : item.status === 'in_progress' ? '#F59E0B' : item.status === 'overdue' ? '#D20015' : '#C0CED1';
 
-        html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;" onclick="showScheduleStation('${item.id}')">`;
-        html += `<span style="width:6px;height:6px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>`;
-        html += `<span style="font-size:13px;color:#303A3C;">${item.displayName || item.station}</span>`;
-        html += cycleBadge;
-        if (item.auditors) html += `<span style="font-size:10px;color:#9EA2A1;">${item.auditors.split(',')[0].trim()}</span>`;
-        html += `<svg style="width:12px;height:12px;color:#C0CED1;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
-        html += `</div>`;
+    // Horizontal connecting line
+    if (m < 12) {
+      html += `<div style="flex-shrink:0;width:20px;height:2px;background:${lineColor};margin-top:${isCurrentMonth ? '7' : '4'}px;align-self:flex-start;"></div>`;
+    }
+  }
+
+  html += '</div></div></div>';
+
+  // === SCHEDULE LIST TABLE ===
+  html += '<div class="apple-card p-6 mb-6">';
+  html += '<h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사 일정 목록</h3>';
+  html += '<div class="overflow-x-auto"><table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:center;">월</th>';
+  html += '<th style="text-align:left;">대상</th>';
+  html += '<th style="text-align:left;">심사원</th>';
+  html += '<th style="text-align:center;">심사 기간</th>';
+  html += '<th style="text-align:center;">상태</th>';
+  html += '</tr></thead><tbody>';
+
+  for (let m = 1; m <= 12; m++) {
+    const items = monthMap[m] || [];
+    if (items.length === 0) {
+      html += `<tr><td data-label="월" style="text-align:center;font-weight:600;">${m}월</td><td data-label="대상" style="color:#9EA2A1;">예정 없음</td><td data-label="심사원">-</td><td data-label="심사 기간" style="text-align:center;">-</td><td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
+    } else {
+      items.forEach((item, i) => {
+        const statusResult = calcScheduleStatus(item);
+        const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? item.dateStart.substring(5) + ' ~ ' + item.dateEnd.substring(5) : item.dateStart.substring(5)) : '-';
+        html += '<tr style="cursor:pointer;" onclick="showScheduleStation(\'' + item.id + '\')">';
+        if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
+        html += `<td data-label="대상" style="font-weight:500;">${item.displayName || item.station}</td>`;
+        html += `<td data-label="심사원" style="font-size:12px;color:#565A5B;">${item.auditors || '-'}</td>`;
+        html += `<td data-label="심사 기간" style="text-align:center;font-size:12px;">${dateStr}</td>`;
+        html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(statusResult.status)}">${statusResult.label}</span></td>`;
+        html += '</tr>';
       });
     }
-    html += `</div>`;
   }
-  html += '</div></div>';
+
+  html += '</tbody></table></div></div>';
 
   // "올해 심사 없음" section
   const scheduledStations = new Set(scheduleData.filter(s => s.year === 2026).map(s => s.station));
@@ -4366,6 +4389,30 @@ function renderSchedule() {
   }
 
   document.getElementById('scheduleContainer').innerHTML = html;
+
+  // Auto-scroll timeline to current month
+  setTimeout(() => {
+    const timelineEl = document.getElementById('timelineMonth' + (new Date().getMonth() + 1));
+    const timelineContainer = document.getElementById('timelineContainer');
+    if (timelineEl && timelineContainer) {
+      timelineContainer.scrollLeft = timelineEl.offsetLeft - timelineContainer.offsetWidth / 2 + timelineEl.offsetWidth / 2;
+    }
+  }, 100);
+}
+
+function scrollToMonthDetail(month) {
+  // Scroll the list table to show the month's row
+  const rows = document.querySelectorAll('.apple-table tbody tr');
+  for (const row of rows) {
+    const monthCell = row.querySelector('td[data-label="\uc6d4"]');
+    if (monthCell && monthCell.textContent.trim() === month + '\uc6d4') {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Brief highlight
+      row.style.background = 'rgba(210,0,21,0.08)';
+      setTimeout(() => { row.style.background = ''; }, 1500);
+      break;
+    }
+  }
 }
 
 function showScheduleStation(scheduleId) {
