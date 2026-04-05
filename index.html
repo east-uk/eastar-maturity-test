@@ -416,6 +416,36 @@ select.apple-input {
 .schedule-completed { border-left: 3px solid #22C55E; }
 .schedule-in-progress { border-left: 3px solid #F59E0B; }
 .schedule-upcoming { border-left: 3px solid #9EA2A1; }
+
+/* Analysis Modal */
+.analysis-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9990;
+  overflow-y: auto;
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+.analysis-modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+.analysis-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto 80px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.analysis-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(192,206,209,0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.analysis-modal-body { padding: 20px; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col" style="background:#f5f5f7;">
@@ -2278,21 +2308,38 @@ function renderScoreViewTable() {
           : (anyRecord.auditDate || '-');
       }
 
-      mhtml += `<div class="apple-card" style="padding:12px;margin-bottom:8px;cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
-      // Row 1: Station name + status
-      mhtml += `<div class="flex justify-between items-center" style="margin-bottom:6px;">`;
-      mhtml += `<div><span style="font-weight:600;font-size:15px;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${group.region}</span></div>`;
-      mhtml += `<span class="badge-pill" style="${statusResult.style}">${statusResult.label}</span>`;
+      mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1'};" onclick="toggleViewDetail('${rowId}')">`;
+      // Header: station + badge
+      mhtml += `<div class="flex justify-between items-center" style="margin-bottom:8px;">`;
+      mhtml += `<div><span style="font-weight:600;font-size:15px;color:#303A3C;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${group.region}</span></div>`;
+      mhtml += `<span class="badge-pill" style="${statusResult.style};font-size:11px;">${statusResult.label}</span>`;
       mhtml += `</div>`;
-      // Row 2: Scores inline
-      mhtml += `<div class="flex justify-between items-center" style="font-size:12px;color:#565A5B;">`;
-      mhtml += `<span>지점 ${typeBadge('branch')}</span>`;
-      mhtml += `<span>여객 ${typeBadge('pax')}</span>`;
-      mhtml += `<span>램프 ${typeBadge('ramp')}</span>`;
+      // Scores with mini progress bars
+      mhtml += `<div class="flex justify-between" style="gap:8px;">`;
+      ['branch', 'pax', 'ramp'].forEach(type => {
+        const entry = group.types[type];
+        const label = type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프';
+        if (entry && entry.record) {
+          const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
+          const barW = (avg / 4 * 100).toFixed(0);
+          const barColor = avg < 2.5 ? '#D20015' : avg < 3.0 ? '#F59E0B' : '#22C55E';
+          mhtml += `<div style="flex:1;text-align:center;">`;
+          mhtml += `<div style="font-size:16px;font-weight:600;color:#303A3C;">${avg.toFixed(2)}</div>`;
+          mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"><div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;"></div></div>`;
+          mhtml += `<div style="font-size:10px;color:#9EA2A1;">${label}</div>`;
+          mhtml += `</div>`;
+        } else {
+          mhtml += `<div style="flex:1;text-align:center;">`;
+          mhtml += `<div style="font-size:16px;color:#C0CED1;">-</div>`;
+          mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"></div>`;
+          mhtml += `<div style="font-size:10px;color:#C0CED1;">${label}</div>`;
+          mhtml += `</div>`;
+        }
+      });
       mhtml += `</div>`;
-      // Row 3: Date + auditor (compact)
+      // Footer: date + auditor
       if (anyRecord) {
-        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${dateDisplay} · ${(anyRecord.auditor || '-').substring(0, 15)}</div>`;
+        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${(anyRecord.auditor || '-')}</div>`;
       }
       mhtml += `</div>`;
 
@@ -3154,16 +3201,12 @@ function renderStatsDashboard() {
   auditorsSorted.forEach(a => {
     const count = getAuditorActivityCount(a.name, year);
     const ts = getTrainingStatus(a.trainingExpiry);
-    const barWidth = Math.min(count * 20, 100);
     audHtml += '<tr>';
     audHtml += `<td style="font-weight:600;">${a.name}</td>`;
     audHtml += `<td style="font-size:13px;color:#565A5B;">${a.team}</td>`;
     audHtml += `<td style="font-size:13px;">${a.role}</td>`;
     audHtml += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    audHtml += `<td style="text-align:center;"><div style="display:flex;align-items:center;gap:8px;justify-content:center;">`;
-    audHtml += `<div style="width:60px;background:#f5f5f7;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barWidth}%;background:${count > 0 ? '#D20015' : '#C0CED1'};"></div></div>`;
-    audHtml += `<span style="font-size:14px;font-weight:600;">${count}건</span>`;
-    audHtml += `</div></td></tr>`;
+    audHtml += `<td style="text-align:center;font-weight:600;font-size:15px;color:${count > 0 ? '#D20015' : '#9EA2A1'};">${count}건</td></tr>`;
   });
 
   if (auditorList.length === 0) {
@@ -3907,35 +3950,39 @@ function renderAnalysis() {
 }
 
 function toggleAnalysisDetail(id) {
-  const el = document.getElementById(id);
-  const wasHidden = el.classList.contains('hidden');
-
-  // 다른 상세 섹션 모두 닫기
+  // Close all other details
   ['analysisDetail1','analysisDetail2','analysisDetail3','analysisDetail4','analysisDetail5','analysisDetail6','analysisDetail7','analysisDetail8','analysisDetail9'].forEach(detailId => {
     if (detailId !== id) document.getElementById(detailId)?.classList.add('hidden');
   });
 
-  // 선택한 섹션 토글
+  const el = document.getElementById(id);
+  const wasHidden = el.classList.contains('hidden');
   el.classList.toggle('hidden');
 
   if (wasHidden) {
+    // Add a close button at the top if not already there
+    if (!el.querySelector('.detail-close-btn')) {
+      const closeBtn = document.createElement('div');
+      closeBtn.className = 'detail-close-btn';
+      closeBtn.innerHTML = `<button onclick="document.getElementById('${id}').classList.add('hidden');window.scrollTo({top:document.getElementById('analysisContainer').offsetTop-60,behavior:'smooth'})" class="pill-btn pill-btn-outline" style="font-size:12px;padding:4px 14px;margin-bottom:12px;">&#10005; 닫기</button>`;
+      el.insertBefore(closeBtn, el.firstChild);
+    }
+
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Render charts on first open
+
     const data = window._analysisData;
     if (!data) return;
-
-    if (id === 'analysisDetail1' && data.comparisons.length > 0) {
-      renderTrendChart(data);
-    } else if (id === 'analysisDetail2') {
-      renderRiskChart(data);
-    } else if (id === 'analysisDetail3') {
-      renderTypeCompChart(data);
-    } else if (id === 'analysisDetail8') {
-      renderPriorityChart(data);
-    } else if (id === 'analysisDetail9') {
-      renderRegionalRadarChart(data);
-    }
+    if (id === 'analysisDetail1' && data.comparisons.length > 0) renderTrendChart(data);
+    else if (id === 'analysisDetail2') renderRiskChart(data);
+    else if (id === 'analysisDetail3') renderTypeCompChart(data);
+    else if (id === 'analysisDetail8') renderPriorityChart(data);
+    else if (id === 'analysisDetail9') renderRegionalRadarChart(data);
   }
+}
+
+function closeAnalysisModal() {
+  document.getElementById('analysisModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 function renderTrendChart(data) {
@@ -4216,14 +4263,14 @@ function renderSchedule() {
   </div>`;
   html += '</div>';
 
-  // Monthly calendar grid
-  html += '<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">';
+  // Timeline layout
+  html += '<div class="apple-card p-6 mb-6"><div style="position:relative;padding-left:24px;">';
   for (let m = 1; m <= 12; m++) {
-    const items = monthMap[m];
+    const items = monthMap[m] || [];
     const isCurrentMonth = m === currentMonth;
-    const ringStyle = isCurrentMonth ? 'box-shadow:0 0 0 2px #D20015;' : '';
+    const isPast = m < currentMonth;
 
-    // Determine month status based on contained items (priority: overdue > incomplete > in_progress > completed > upcoming)
+    // Determine month status
     let monthStatus = 'upcoming';
     if (items.length > 0) {
       const hasOverdue = items.some(i => i.status === 'overdue');
@@ -4232,68 +4279,47 @@ function renderSchedule() {
       const allCompleted = items.every(i => i.status === 'completed');
       if (hasOverdue) monthStatus = 'overdue';
       else if (hasIncomplete) monthStatus = 'incomplete';
-      else if (allCompleted) monthStatus = 'completed';
+      else if (allCompleted && items.length > 0) monthStatus = 'completed';
       else if (hasInProgress) monthStatus = 'in_progress';
     }
 
-    const scheduleClass = { completed: 'schedule-completed', in_progress: 'schedule-in-progress', upcoming: 'schedule-upcoming', incomplete: 'schedule-in-progress', overdue: 'schedule-completed' };
+    const dotColor = monthStatus === 'completed' ? '#22C55E' : monthStatus === 'in_progress' ? '#F59E0B' : monthStatus === 'overdue' ? '#D20015' : '#C0CED1';
+    const lineColor = isPast || monthStatus === 'completed' ? '#22C55E' : '#E5E7EB';
 
-    html += `<div class="apple-card ${scheduleClass[monthStatus]}" style="padding:16px;${ringStyle}">`;
-    html += `<div class="flex items-center justify-between" style="margin-bottom:10px;">`;
-    html += `<span style="font-size:20px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${m}월</span>`;
+    // Timeline dot + line
+    html += `<div style="position:relative;padding-bottom:${items.length > 0 ? '16' : '8'}px;">`;
+    // Vertical line
+    if (m < 12) html += `<div style="position:absolute;left:-16px;top:10px;bottom:0;width:2px;background:${lineColor};"></div>`;
+    // Dot
+    html += `<div style="position:absolute;left:-21px;top:4px;width:${isCurrentMonth ? '12' : '10'}px;height:${isCurrentMonth ? '12' : '10'}px;border-radius:50%;background:${isCurrentMonth ? '#D20015' : dotColor};${isCurrentMonth ? 'box-shadow:0 0 0 3px rgba(210,0,21,0.2);' : ''}"></div>`;
+    // Month label
+    html += `<div class="flex items-center gap-2" style="margin-bottom:4px;">`;
+    html += `<span style="font-size:${isCurrentMonth ? '16' : '14'}px;font-weight:${isCurrentMonth ? '700' : '600'};color:${isCurrentMonth ? '#D20015' : '#303A3C'};">${m}월</span>`;
     if (items.length > 0) {
       const mLabel = getScheduleStatusLabels()[monthStatus] || monthStatus;
-      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)}">${mLabel}</span>`;
+      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)};font-size:10px;">${mLabel}</span>`;
     }
     html += `</div>`;
-
+    // Stations
     if (items.length === 0) {
-      html += '<p style="font-size:13px;color:#9EA2A1;">예정 없음</p>';
+      html += `<div style="font-size:12px;color:#C0CED1;">예정 없음</div>`;
     } else {
       items.forEach(item => {
-        const itemStatusDot = item.status === 'completed' ? '#22C55E' : (item.status === 'in_progress' ? '#F59E0B' : '#9EA2A1');
-        html += `<div onclick="showScheduleStation('${item.id}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px -8px;border-radius:8px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background='rgba(210,0,21,0.04)'" onmouseout="this.style.background='transparent'">`;
-        html += `<span style="width:6px;height:6px;border-radius:50%;background:${itemStatusDot};flex-shrink:0;"></span>`;
         const itemCycle = item.auditCycle || (STATION_AUDIT_CYCLES[item.station] ? STATION_AUDIT_CYCLES[item.station].cycle : null);
-        const itemCycleBadge = itemCycle && CYCLE_LABELS[itemCycle] ? `<span class="badge-pill" style="${CYCLE_LABELS[itemCycle].style};font-size:9px;padding:1px 6px;margin-left:4px;">${CYCLE_LABELS[itemCycle].label}</span>` : '';
-        html += `<div style="flex:1;min-width:0;">`;
-        html += `<div style="font-size:14px;color:#303A3C;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.displayName || item.station}${itemCycleBadge}</div>`;
-        if (item.auditors) {
-          html += `<div style="font-size:11px;color:#9EA2A1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.auditors}</div>`;
-        }
-        html += `</div>`;
-        html += `<svg style="width:14px;height:14px;color:#C0CED1;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
+        const cycleBadge = itemCycle && CYCLE_LABELS[itemCycle] ? `<span class="badge-pill" style="${CYCLE_LABELS[itemCycle].style};font-size:8px;padding:0px 4px;">${CYCLE_LABELS[itemCycle].label}</span>` : '';
+        const statusDotColor = item.status === 'completed' ? '#22C55E' : item.status === 'in_progress' ? '#F59E0B' : item.status === 'overdue' ? '#D20015' : '#C0CED1';
+
+        html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;" onclick="showScheduleStation('${item.id}')">`;
+        html += `<span style="width:6px;height:6px;border-radius:50%;background:${statusDotColor};flex-shrink:0;"></span>`;
+        html += `<span style="font-size:13px;color:#303A3C;">${item.displayName || item.station}</span>`;
+        html += cycleBadge;
+        if (item.auditors) html += `<span style="font-size:10px;color:#9EA2A1;">${item.auditors.split(',')[0].trim()}</span>`;
+        html += `<svg style="width:12px;height:12px;color:#C0CED1;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
         html += `</div>`;
       });
     }
     html += `</div>`;
   }
-  html += '</div>';
-
-  // List view table
-  html += '<div class="apple-card p-6">';
-  html += '<h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사 일정 목록</h3>';
-  html += '<div class="overflow-x-auto">';
-  html += '<table class="apple-table compact-mobile"><thead><tr><th style="text-align:center;">월</th><th style="text-align:left;">대상</th><th style="text-align:left;">심사원</th><th style="text-align:center;">심사 기간</th><th style="text-align:center;">상태</th></tr></thead><tbody>';
-
-  for (let m = 1; m <= 12; m++) {
-    const items = monthMap[m];
-    if (items.length === 0) {
-      html += `<tr><td style="text-align:center;font-weight:600;">${m}월</td><td style="color:#9EA2A1;" colspan="3">예정 없음</td><td style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
-    } else {
-      items.forEach((item, i) => {
-        html += '<tr>';
-        if (i === 0) html += `<td style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
-        html += `<td><a href="javascript:void(0)" onclick="showScheduleStation('${item.id}')" style="color:#303A3C;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#D20015'" onmouseout="this.style.color='#303A3C'">${item.displayName || item.station}</a></td>`;
-        html += `<td style="font-size:13px;color:#565A5B;">${item.auditors || '-'}</td>`;
-        const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? `${item.dateStart} ~ ${item.dateEnd}` : item.dateStart) : '-';
-        html += `<td style="text-align:center;font-size:13px;color:#565A5B;">${dateStr}</td>`;
-        html += `<td style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(item.status)}">${calcScheduleStatus(item).label}</span></td>`;
-        html += '</tr>';
-      });
-    }
-  }
-  html += '</tbody></table>';
   html += '</div></div>';
 
   // "올해 심사 없음" section
@@ -5534,9 +5560,29 @@ function init() {
   populateStationDropdown();
   switchTab(0);
   initFirebase();
+
+  // FAB scroll to top
+  window.addEventListener('scroll', () => {
+    const fab = document.getElementById('fabScrollTop');
+    if (fab) fab.style.display = window.scrollY > 300 ? 'block' : 'none';
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
+<!-- FAB: Scroll to Top -->
+<button id="fabScrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:80px;right:16px;z-index:999;width:44px;height:44px;border-radius:50%;background:#D20015;color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;font-size:18px;line-height:44px;text-align:center;transition:opacity 0.2s;">&#8593;</button>
+
+<!-- Analysis Modal Overlay -->
+<div id="analysisModalOverlay" class="analysis-modal-overlay" onclick="if(event.target===this)closeAnalysisModal()">
+  <div class="analysis-modal">
+    <div class="analysis-modal-header">
+      <h3 id="analysisModalTitle" style="font-size:17px;font-weight:600;color:#303A3C;"></h3>
+      <button onclick="closeAnalysisModal()" style="background:none;border:none;font-size:24px;color:#9EA2A1;cursor:pointer;padding:0 4px;">&times;</button>
+    </div>
+    <div class="analysis-modal-body" id="analysisModalBody"></div>
+  </div>
+</div>
+
 </body>
 </html>
