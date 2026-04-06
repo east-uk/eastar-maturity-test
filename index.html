@@ -682,16 +682,16 @@ select.apple-input {
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-5 text-sm">
           <div>
-            <span style="color:rgba(255,255,255,0.55);font-size:12px;">총점</span>
+            <span id="bottomLabel1" style="color:rgba(255,255,255,0.55);font-size:12px;">총점</span>
             <span id="totalScoreDisplay" class="font-semibold text-white text-lg ml-1">0</span>
             <span style="color:rgba(255,255,255,0.35);font-size:12px;"> / <span id="maxScoreDisplay">0</span></span>
           </div>
           <div>
-            <span style="color:rgba(255,255,255,0.55);font-size:12px;">평균</span>
+            <span id="bottomLabel2" style="color:rgba(255,255,255,0.55);font-size:12px;">평균</span>
             <span id="avgScoreDisplay" style="color:#D20015;" class="font-semibold text-lg ml-1">0.00</span>
           </div>
           <div>
-            <span style="color:rgba(255,255,255,0.55);font-size:12px;">달성률</span>
+            <span id="bottomLabel3" style="color:rgba(255,255,255,0.55);font-size:12px;">달성률</span>
             <span id="achieveRateDisplay" style="color:#22C55E;" class="font-semibold text-lg ml-1">0%</span>
           </div>
         </div>
@@ -2161,6 +2161,7 @@ const CHECKLIST_REGISTRY = {
   qa_flight_ops: { name:"운항본부 품질심사", checklist: CHECKLIST_QA_FLIGHT_OPS, scoring:"binary", category:"division" },
   qa_flight_quality: { name:"운항품질팀 품질심사", checklist: CHECKLIST_QA_FLIGHT_QUALITY, scoring:"binary", category:"division" },
   qa_maintenance: { name:"정비본부 품질심사", checklist: CHECKLIST_QA_MAINTENANCE, scoring:"binary", category:"division" },
+  qa_maint: { name:"정비본부 품질심사", checklist: CHECKLIST_QA_MAINTENANCE, scoring:"binary", category:"division" },
   qa_ground_ops: { name:"운송본부 품질심사", checklist: CHECKLIST_QA_GROUND_OPS, scoring:"binary", category:"division" },
   qa_cabin: { name:"객실본부 품질심사", checklist: CHECKLIST_QA_CABIN, scoring:"binary", category:"division" },
   qa_safety_security: { name:"안전보안실 품질심사", checklist: CHECKLIST_QA_SAFETY_SECURITY, scoring:"binary", category:"division" },
@@ -2807,10 +2808,10 @@ function loadAllData() {
     const stored = SafeStorage.get(STORAGE_KEY, null);
     if (stored) {
       allData = stored;
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
       saveAllData();
     }
   } catch (e) {
@@ -3447,21 +3448,30 @@ function updateCategoryScore(catIdx) {
 
 function updateTotalDisplay() {
   const scoring = getScoringMethod(selectedType);
+  const totalEl = document.getElementById('totalScoreDisplay');
+  const maxEl = document.getElementById('maxScoreDisplay');
+  const avgEl = document.getElementById('avgScoreDisplay');
+  const rateEl = document.getElementById('achieveRateDisplay');
+  const lbl1 = document.getElementById('bottomLabel1');
+  const lbl2 = document.getElementById('bottomLabel2');
+  const lbl3 = document.getElementById('bottomLabel3');
   if (scoring === 'binary') {
+    if (lbl1) lbl1.textContent = '판정';
+    if (lbl2) lbl2.textContent = '적합률';
+    if (lbl3) lbl3.textContent = '적합률';
     const result = calculateBinaryScores(currentScores, currentChecklist);
-    const totalEl = document.getElementById('bottomTotal');
-    const avgEl = document.getElementById('bottomAvg');
-    const rateEl = document.getElementById('bottomRate');
-    if (totalEl) totalEl.textContent = `S: ${result.yesCount} / U: ${result.noCount} / NA: ${result.naCount}`;
-    if (avgEl) avgEl.textContent = `적합률`;
+    if (totalEl) totalEl.textContent = `S:${result.yesCount} U:${result.noCount}`;
+    if (maxEl) maxEl.textContent = `NA:${result.naCount}`;
+    if (avgEl) { avgEl.textContent = `${result.complianceRate.toFixed(1)}%`; avgEl.style.color = result.complianceRate >= 90 ? CONFIG.colors.success : result.complianceRate >= 70 ? CONFIG.colors.warning : CONFIG.colors.brand; }
     if (rateEl) rateEl.textContent = `${result.complianceRate.toFixed(1)}%`;
   } else {
+    if (lbl1) lbl1.textContent = '총점';
+    if (lbl2) lbl2.textContent = '평균';
+    if (lbl3) lbl3.textContent = '달성률';
     const result = calculateScores(currentScores, currentChecklist);
-    const totalEl = document.getElementById('bottomTotal');
-    const avgEl = document.getElementById('bottomAvg');
-    const rateEl = document.getElementById('bottomRate');
-    if (totalEl) totalEl.textContent = `${result.totalScore} / ${result.maxScore}`;
-    if (avgEl) avgEl.textContent = result.overallAverage.toFixed(2);
+    if (totalEl) totalEl.textContent = result.totalScore;
+    if (maxEl) maxEl.textContent = result.maxScore;
+    if (avgEl) { avgEl.textContent = result.overallAverage.toFixed(2); avgEl.style.color = result.overallAverage >= 3.5 ? CONFIG.colors.success : result.overallAverage >= 3.0 ? CONFIG.colors.warning : CONFIG.colors.brand; }
     if (rateEl) rateEl.textContent = `${result.achievementRate.toFixed(1)}%`;
   }
 }
