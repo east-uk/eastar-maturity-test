@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 품질관리시스템 포털 v12</title>
+<title>이스타항공 품질관리시스템 포털 v13</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -513,7 +513,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v12</span>
+      <span style="margin-left:8px;">v13</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -1077,10 +1077,44 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v12 &middot; 2026
+  안전기획팀 &middot; v13 &middot; 2026
 </footer>
 
 <script>
+(function() {
+'use strict';
+
+// ============================================================================
+// CONFIG
+// ============================================================================
+const CONFIG = {
+  version: '13.0.0',
+  storage: {
+    data: 'eastar_maturity_data',
+    auditors: 'eastar_auditors',
+    schedule: 'eastar_schedule_data',
+    customStations: 'eastar_custom_stations',
+    gasUrl: 'eastar_gas_url',
+  },
+  scoreThresholds: [
+    { max: 2.0, label: '개선 필요', color: '#D20015', bg: 'rgba(210,0,21,0.15)' },
+    { max: 3.0, label: '보통', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' },
+    { max: 3.5, label: '양호', color: '#22C55E', bg: 'rgba(34,197,94,0.15)' },
+    { max: 4.0, label: '우수', color: '#D20015', bg: 'rgba(210,0,21,0.15)' },
+  ],
+  rateThresholds: { high: 90, mid: 70 },
+  colors: {
+    brand: '#D20015', brandDark: '#8E0114',
+    success: '#22C55E', warning: '#F59E0B',
+    dark: '#303A3C', medium: '#565A5B',
+    gray: '#9EA2A1', light: '#C0CED1',
+    dimRed: '#CAAAB5', bg: '#f5f5f7',
+    gold: '#987B37', silver: '#8C8C8C',
+  },
+  regionColors: { '국내': '#D20015', '일본': '#F59E0B', '동남아': '#22C55E', '기타': '#565A5B' },
+  delta: 0.01,
+};
+
 // ============================================================================
 // DATA CONSTANTS
 // ============================================================================
@@ -2258,14 +2292,12 @@ const AUDITOR_STORAGE_KEY = 'eastar_auditors';
 let auditorList = [];
 
 function loadAuditors() {
-  try {
-    const stored = localStorage.getItem(AUDITOR_STORAGE_KEY);
-    if (stored) { auditorList = JSON.parse(stored); }
-    else { auditorList = JSON.parse(JSON.stringify(PRELOADED_AUDITORS)); saveAuditors(); }
-  } catch(e) { auditorList = JSON.parse(JSON.stringify(PRELOADED_AUDITORS)); saveAuditors(); }
+  const stored = SafeStorage.get(AUDITOR_STORAGE_KEY, null);
+  if (stored) { auditorList = stored; }
+  else { auditorList = JSON.parse(JSON.stringify(PRELOADED_AUDITORS)); saveAuditors(); }
 }
 function saveAuditors() {
-  localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
+  SafeStorage.set(AUDITOR_STORAGE_KEY, auditorList);
   firebaseSaveAuditors();
 }
 function getAuditorActivityCount(auditorName, year) {
@@ -2450,7 +2482,7 @@ function loadCustomStations() {
 }
 
 function saveCustomStations() {
-  localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
+  SafeStorage.set(CUSTOM_STATIONS_KEY, customStations);
   firebaseSaveCustomStations();
 }
 
@@ -2553,7 +2585,7 @@ function loadSchedule() {
 }
 
 function saveSchedule() {
-  localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
+  SafeStorage.set(SCHEDULE_STORAGE_KEY, scheduleData);
   firebaseSaveSchedule();
 }
 
@@ -2615,18 +2647,39 @@ function getRegionColor(region) {
   return colors[region] || '#9EA2A1';
 }
 
+// ============================================================================
+// SCORING UTILITIES
+// ============================================================================
+const Scoring = {
+  getLevel(avg) {
+    if (avg === null || avg === undefined || isNaN(avg)) return { label: '-', color: CONFIG.colors.gray, bg: 'rgba(158,162,161,0.15)' };
+    for (const t of CONFIG.scoreThresholds) {
+      if (avg <= t.max) return t;
+    }
+    return CONFIG.scoreThresholds[CONFIG.scoreThresholds.length - 1];
+  },
+  getColor(avg) { return this.getLevel(avg).color; },
+  getBadgeStyle(avg) {
+    const lv = this.getLevel(avg);
+    return `background:${lv.bg};color:${lv.color};`;
+  },
+  getRateColor(rate) {
+    if (rate >= CONFIG.rateThresholds.high) return CONFIG.colors.success;
+    if (rate >= CONFIG.rateThresholds.mid) return CONFIG.colors.warning;
+    return CONFIG.colors.brand;
+  },
+  getRateBadgeStyle(rate) {
+    const c = this.getRateColor(rate);
+    return `background:${c}15;color:${c};`;
+  },
+};
+
 function avgColor(avg) {
-  if (avg < 2.0) return 'color:#565A5B;background:rgba(86,90,91,0.08)';
-  if (avg < 3.0) return 'color:#F59E0B;background:rgba(245,158,11,0.08)';
-  if (avg < 3.5) return 'color:#22C55E;background:rgba(34,197,94,0.08)';
-  return 'color:#D20015;background:rgba(210,0,21,0.08)';
+  return Scoring.getBadgeStyle(avg);
 }
 
 function avgBadgeStyle(avg) {
-  if (avg < 2.0) return 'background:rgba(86,90,91,0.15);color:#565A5B';
-  if (avg < 3.0) return 'background:rgba(245,158,11,0.15);color:#F59E0B';
-  if (avg < 3.5) return 'background:rgba(34,197,94,0.15);color:#22C55E';
-  return 'background:rgba(210,0,21,0.15);color:#D20015';
+  return Scoring.getBadgeStyle(avg);
 }
 
 // avgBadgeColor() 제거됨 (v10.0) — avgBadgeStyle()로 대체 완료
@@ -2725,13 +2778,35 @@ function updateTypePills() {
 }
 
 // ============================================================================
+// STORAGE UTILITIES
+// ============================================================================
+const SafeStorage = {
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch(e) { showToast('저장 공간이 부족합니다: ' + key, 'error'); return false; }
+  },
+  get(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch(e) {
+      console.warn('Storage load failed:', key, e);
+      return typeof fallback === 'function' ? fallback() : fallback;
+    }
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch(e) {}
+  },
+};
+
+// ============================================================================
 // DATA PERSISTENCE
 // ============================================================================
 function loadAllData() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = SafeStorage.get(STORAGE_KEY, null);
     if (stored) {
-      allData = JSON.parse(stored);
+      allData = stored;
       allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
@@ -2749,17 +2824,15 @@ function loadAllData() {
 }
 
 function saveAllData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
-  } catch (e) {
-    showToast('저장 공간이 부족합니다.', 'error');
-  }
+  SafeStorage.set(STORAGE_KEY, allData);
   firebaseSaveAllData();
 }
 
 function saveGasUrl() {
   GAS_URL = document.getElementById('gasUrl').value.trim();
-  localStorage.setItem('eastar_gas_url', GAS_URL);
+  try {
+    localStorage.setItem('eastar_gas_url', GAS_URL);
+  } catch(e) { /* GAS URL 저장 실패는 무시 가능 */ }
   showToast('GAS URL이 저장되었습니다.', 'success');
 }
 
@@ -5204,14 +5277,52 @@ function calcAvgForTypeRegion(data, type) {
 }
 
 // ============================================================================
+// CHART UTILITIES
+// ============================================================================
+const ChartUtil = {
+  create(canvasId, config) {
+    this.destroy(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) { console.warn('Canvas not found:', canvasId); return null; }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    try {
+      chartInstances[canvasId] = new Chart(ctx, config);
+      return chartInstances[canvasId];
+    } catch(e) { console.warn('Chart creation failed:', canvasId, e); return null; }
+  },
+  destroy(id) {
+    if (chartInstances[id]) {
+      chartInstances[id].destroy();
+      delete chartInstances[id];
+    }
+  },
+  destroyAll() {
+    Object.keys(chartInstances).forEach(id => this.destroy(id));
+  },
+  baseOptions(overrides = {}) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, family: '-apple-system, BlinkMacSystemFont, sans-serif' }, padding: 12 } },
+        ...overrides.plugins,
+      },
+      ...overrides,
+    };
+  },
+  scoreYAxis() {
+    return { min: 0, max: 4, ticks: { stepSize: 0.5, font: { size: 11 } }, grid: { color: 'rgba(192,206,209,0.3)' } };
+  },
+};
+
+function destroyChart(id) {
+  ChartUtil.destroy(id);
+}
+
+// ============================================================================
 // TAB 4: ANALYSIS (QMS/SMS)
 // ============================================================================
-function destroyChart(id) {
-  if (chartInstances[id]) {
-    chartInstances[id].destroy();
-    delete chartInstances[id];
-  }
-}
 
 function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
@@ -7073,6 +7184,11 @@ function importJSON(event) {
     try {
       const imported = JSON.parse(e.target.result);
       if (!Array.isArray(imported)) throw new Error('Invalid format');
+      const invalid = imported.filter(d => !d || typeof d !== 'object' || !d.year || !d.station || !d.type || typeof d.scores !== 'object');
+      if (invalid.length > 0) {
+        showToast(`${invalid.length}건의 데이터가 필수 필드(year, station, type, scores) 누락. 가져오기를 중단합니다.`, 'error');
+        return;
+      }
       if (!confirm(`${imported.length}건의 데이터를 가져옵니다. 기존 데이터가 교체됩니다. 계속하시겠습니까?`)) return;
       allData = imported;
       saveAllData();
@@ -7095,11 +7211,11 @@ function resetAllData() {
   // 일정 데이터 초기화
   localStorage.removeItem(SCHEDULE_STORAGE_KEY);
   scheduleData = [];
-  if (firebaseDb) firebaseDb.ref('schedule').remove().catch(() => {});
+  if (firebaseDb) firebaseDb.ref('schedule').remove().catch(e => console.warn('Firebase 일정 삭제 실패:', e));
   // 심사원 데이터 초기화
   localStorage.removeItem(AUDITOR_STORAGE_KEY);
   auditorList = [];
-  if (firebaseDb) firebaseDb.ref('auditors').remove().catch(() => {});
+  if (firebaseDb) firebaseDb.ref('auditors').remove().catch(e => console.warn('Firebase 심사원 삭제 실패:', e));
   showToast('모든 데이터가 초기화되었습니다.', 'info');
   renderDataManagement();
 }
@@ -7366,7 +7482,7 @@ function decodeScoresFromFirebase(scores) {
 }
 
 function firebaseSaveAllData() {
-  if (!firebaseDb) return;
+  if (!firebaseDb) return Promise.resolve();
   try {
     const assessmentObj = {};
     allData.forEach((d, i) => {
@@ -7376,54 +7492,56 @@ function firebaseSaveAllData() {
       const copy = { ...d, scores: encodeScoresForFirebase(d.scores || {}) };
       assessmentObj[key] = copy;
     });
-    firebaseDb.ref('assessments').set(assessmentObj);
-  } catch(e) { console.warn('Firebase save assessments failed:', e); }
+    return firebaseDb.ref('assessments').set(assessmentObj);
+  } catch(e) { console.warn('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
 function firebaseSaveAuditors() {
-  if (!firebaseDb) return;
+  if (!firebaseDb) return Promise.resolve();
   try {
     const obj = {};
     auditorList.forEach((a, i) => {
       obj[a.id || ('A' + i)] = a;
     });
-    firebaseDb.ref('auditors').set(obj);
-  } catch(e) { console.warn('Firebase save auditors failed:', e); }
+    return firebaseDb.ref('auditors').set(obj);
+  } catch(e) { console.warn('Firebase save auditors failed:', e); showToast('심사원 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
 function firebaseSaveSchedule() {
-  if (!firebaseDb) return;
+  if (!firebaseDb) return Promise.resolve();
   try {
     const obj = {};
     scheduleData.forEach(s => {
       obj[s.id] = s;
     });
-    firebaseDb.ref('schedule').set(obj);
-  } catch(e) { console.warn('Firebase save schedule failed:', e); }
+    return firebaseDb.ref('schedule').set(obj);
+  } catch(e) { console.warn('Firebase save schedule failed:', e); showToast('일정 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
 function firebaseSaveCustomStations() {
-  if (!firebaseDb) return;
+  if (!firebaseDb) return Promise.resolve();
   try {
     const obj = {};
     customStations.forEach((cs, i) => {
       obj[cs.station.replace(/[.#$/\[\]]/g, '_')] = cs;
     });
-    firebaseDb.ref('customStations').set(obj);
-  } catch(e) { console.warn('Firebase save custom stations failed:', e); }
+    return firebaseDb.ref('customStations').set(obj);
+  } catch(e) { console.warn('Firebase save custom stations failed:', e); showToast('커스텀 지점 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
-function uploadAllToFirebase() {
+async function uploadAllToFirebase() {
   if (!firebaseDb) { showToast('Firebase가 연결되지 않았습니다.', 'error'); return; }
   showLoading('Firebase에 업로드 중...');
   try {
-    firebaseSaveAllData();
-    firebaseSaveAuditors();
-    firebaseSaveSchedule();
-    firebaseSaveCustomStations();
+    await Promise.all([
+      firebaseSaveAllData(),
+      firebaseSaveAuditors(),
+      firebaseSaveSchedule(),
+      firebaseSaveCustomStations()
+    ]);
     showToast('모든 데이터가 Firebase에 업로드되었습니다.', 'success');
   } catch(e) {
-    showToast('업로드 실패: ' + e.message, 'error');
+    showToast('업로드 실패: ' + (e.message || '알 수 없는 오류'), 'error');
   }
   hideLoading();
 }
@@ -7473,6 +7591,7 @@ async function syncToSheets(data) {
       method: 'POST',
       body: JSON.stringify({ action: 'save', data }),
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
     if (result.success) showToast('Google Sheets에 저장되었습니다.', 'success');
     else showToast('동기화 실패: ' + (result.error || '알 수 없는 오류'), 'error');
@@ -7486,8 +7605,9 @@ async function loadFromSheets() {
   if (!GAS_URL) return null;
   try {
     const response = await fetch(GAS_URL + '?action=getAll');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
-  } catch (e) { return null; }
+  } catch (e) { console.warn('Google Sheets 로드 실패:', e); return null; }
 }
 
 async function testSheetsConnection() {
@@ -7497,6 +7617,7 @@ async function testSheetsConnection() {
   showLoading('연결 테스트 중...');
   try {
     const response = await fetch(GAS_URL + '?action=ping', { method: 'GET' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
     const statusEl = document.getElementById('sheetsStatus');
     if (result && !result.error) {
@@ -7960,6 +8081,63 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ============================================================================
+// PUBLIC API - onclick 핸들러에서 접근 가능한 함수 노출
+// ============================================================================
+Object.assign(window, {
+  // App
+  switchTab, goToHome, init,
+  // Input tab
+  switchAuditCategory, inputSearch, inputGoBack, inputGoHome,
+  selectChecklistType, inputShowTypes, saveAssessment,
+  setScore, setScoreNA, setBinaryScore, setRemark,
+  toggleAccordion, updateTypePills,
+  clearAllInputFields, clearAllSearchFields,
+  updateInputExclusion, updateSearchExclusion,
+  // View tab
+  switchViewCategory, viewSearch, viewGoBack, viewGoHome,
+  toggleViewDetail, startEditRecord, cancelEdit, saveEdit, deleteRecord,
+  setEditScore, setEditScoreNA, setEditRemark,
+  showTypeDetail, startGroupEditCommon, cancelGroupEdit, saveGroupCommon,
+  startGroupTypeEdit, saveGroupTypeEdit, deleteGroupType,
+  navigateToInput, renderScoreView,
+  // Stats tab
+  switchStatsSubTab, renderStatsDashboard, toggleWeakDetail,
+  // Analysis tab
+  switchAnalysisSubTab, renderAnalysis, toggleAnalysisDetail, closeAnalysisModal,
+  // Schedule tab
+  renderSchedule, showScheduleStation, saveScheduleItem,
+  showAddScheduleForm, saveNewSchedule, deleteScheduleItem,
+  scrollToMonthDetail, addExceptionAudit, toggleExceptionReason,
+  autoDetectCycle, toggleNewStationForm, renderAddScheduleForm,
+  // Data management
+  renderDataManagement, exportAllExcel, exportStationExcel,
+  exportJSON, importJSON, resetAllData,
+  showAddAuditorForm, hideAuditorForm, editAuditor,
+  saveAuditorForm, deleteAuditor,
+  renderAuditorPicker, addAuditorTag, removeAuditorTag,
+  // Firebase
+  uploadAllToFirebase, downloadFromFirebase,
+  // Network
+  syncToSheets, syncToSheetsAll, testSheetsConnection, saveGasUrl,
+  // Home
+  renderHome, renderInputPendingStations, renderViewRecentStations,
+  // UI
+  showToast, showLoading, hideLoading,
+  // Schedule helpers exposed for onclick in dynamic HTML
+  updateScheduleStatuses, calcScheduleStatus,
+  // Scoring/Utils (for dynamic HTML)
+  getTypeLabel, getChecklistName, avgColor, avgBadgeStyle,
+  getScheduleStatusLabels, getScheduleStatusBadgeStyle,
+  populateStationDropdown, populateViewStationDropdown,
+  setInputPhase, setViewPhase,
+  renderDivisionStats, renderDivisionAnalysis,
+  // Utility exposed
+  Scoring, ChartUtil, SafeStorage, CONFIG,
+});
+
+})(); // end IIFE
 </script>
 <!-- FAB: Scroll to Top -->
 <button id="fabScrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:80px;right:16px;z-index:999;width:44px;height:44px;border-radius:50%;background:#D20015;color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;font-size:18px;line-height:44px;text-align:center;transition:opacity 0.2s;">&#8593;</button>
