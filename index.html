@@ -132,6 +132,10 @@ p, span, td, th, label, div {
   .checklist-item-row .item-score-area { flex-shrink: 0; }
   .score-btn { min-width: 40px; min-height: 40px; font-size: 15px; border-radius: 10px; }
 }
+/* Hide default details marker */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+
 /* Collapsible remark toggle */
 .remark-toggle {
   font-size: 12px; color: #9EA2A1; cursor: pointer; user-select: none;
@@ -666,9 +670,13 @@ select.apple-input {
 
     <!-- Phase 4: Checklist -->
     <div id="inputPhase4" class="hidden">
-      <div class="mb-4 flex items-center gap-3">
-        <span id="phase4TypeBadge" class="badge-pill" style="background:#D20015;color:#fff;font-size:13px;padding:4px 14px;"></span>
-        <span id="phase4CompanyInfo" style="font-size:14px;color:#565A5B;"></span>
+      <div class="mb-4">
+        <div class="flex items-center gap-3">
+          <span id="phase4TypeBadge" class="badge-pill" style="background:#D20015;color:#fff;font-size:13px;padding:4px 14px;"></span>
+          <span id="phase4MaturityToggle" style="font-size:12px;color:#9EA2A1;cursor:pointer;display:none;" onclick="document.getElementById('maturityHeaderPanel').classList.toggle('hidden')">▶ 성숙도 기준 보기</span>
+        </div>
+        <div id="phase4CompanyInfo" style="font-size:14px;color:#565A5B;margin-top:4px;"></div>
+        <div id="maturityHeaderPanel" class="hidden" style="margin-top:8px;padding:16px;background:#f5f5f7;border-radius:12px;font-size:13px;color:#565A5B;"></div>
       </div>
       <div id="checklistArea"></div>
     </div>
@@ -3139,7 +3147,7 @@ function renderChecklistItems(items, scores, remarks, type, options) {
     // Maturity criteria (grade checklists with item.maturity)
     if (!isBinary && item.maturity) {
       html += `<details style="margin-left:44px;margin-top:4px;">`;
-      html += `<summary style="font-size:12px;color:#6366F1;cursor:pointer;">▶ 성숙도 기준</summary>`;
+      html += `<summary style="font-size:12px;color:#6366F1;cursor:pointer;list-style:none;-webkit-appearance:none;">▶ 성숙도 기준</summary>`;
       html += `<div style="font-size:12px;color:#565A5B;padding:8px 12px;background:rgba(99,102,241,0.06);border-radius:8px;margin-top:4px;">`;
       for (const lvl of [1, 2, 3, 4]) {
         if (item.maturity[lvl]) {
@@ -3182,20 +3190,23 @@ function renderChecklist() {
   const scoring = getScoringMethod(selectedType);
   let html = '';
 
-  // Maturity header panel (grade checklists only)
-  if (scoring !== 'binary') {
-    html += `<div style="margin-bottom:12px;">`;
-    html += `<span style="font-size:12px;color:#9EA2A1;cursor:pointer;" onclick="document.getElementById('maturityHeaderPanel').classList.toggle('hidden')">▶ 성숙도 기준 보기</span>`;
-    html += `<div id="maturityHeaderPanel" class="hidden" style="margin-top:8px;padding:16px;background:#f5f5f7;border-radius:12px;font-size:13px;color:#565A5B;">`;
+  // Maturity header panel (grade checklists only) - render into fixed DOM element
+  const maturityToggle = document.getElementById('phase4MaturityToggle');
+  const maturityPanel = document.getElementById('maturityHeaderPanel');
+  if (scoring !== 'binary' && maturityToggle && maturityPanel) {
+    maturityToggle.style.display = '';
+    let mhtml = '';
     for (const lvl of [1, 2, 3, 4]) {
       if (MATURITY_HEADER[lvl]) {
-        html += `<div style="margin-bottom:8px;">`;
-        html += `<span style="font-weight:700;color:${SCORE_COLORS[lvl]};">${lvl}점</span>`;
-        html += `<div style="white-space:pre-line;margin-top:2px;">${MATURITY_HEADER[lvl]}</div>`;
-        html += `</div>`;
+        mhtml += `<div style="margin-bottom:8px;">`;
+        mhtml += `<span style="font-weight:700;color:${SCORE_COLORS[lvl]};">${lvl}점</span>`;
+        mhtml += `<div style="white-space:pre-line;margin-top:2px;">${MATURITY_HEADER[lvl]}</div>`;
+        mhtml += `</div>`;
       }
     }
-    html += `</div></div>`;
+    maturityPanel.innerHTML = mhtml;
+  } else if (maturityToggle) {
+    maturityToggle.style.display = 'none';
   }
 
   let catIdx = 0;
