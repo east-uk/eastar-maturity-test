@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 성숙도점검 통합 플랫폼 v9.0</title>
+<title>이스타항공 성숙도점검 통합 플랫폼 v9.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -488,7 +488,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v9.0</span>
+      <span style="margin-left:8px;">v9.1</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -1030,7 +1030,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v9.0 &middot; 2026
+  안전기획팀 &middot; v9.1 &middot; 2026
 </footer>
 
 <script>
@@ -1621,19 +1621,15 @@ const CHECKLIST_QA_SAFETY_SECURITY = {
       {id:"3-14",text:"3-14. 모든 임직원들은 안전관리 절차, 결정, 활동 등과 관련하여 자신의 책임과 권한, 의무를 이해하고 있는가?",verification:"- Operation 내 규정 준수의 책임",manual:"SMSM 1.3, 2.3"}
     ]
   },
-  "4. 위험 관리 (Risk Management)": {
+  "4. 위험 관리(Risk Management)": {
     items: [
       {id:"4-1",text:"4-1. 사후적 및 선제적 방법을 포함한 위험 식별 프로그램을 갖추고 있는가?",verification:"- 위해요인 식별 프로세스",manual:"SMSM 3.1.3, 3.2\nIOSA ORG 3.1.1"},
       {id:"4-2",text:"4-2. 항공안전정보의 수집, 분석, 활용을 통한 항공기 사고의 예방을 위하여 안전보고 시스템을 운영하고 있으며, 접수 시 위험관리 절차에 맞게 관리하고 있는가?",verification:"- 의무보고제도, 자율보고제도(SCR) 운영\n- 보고 접수 담당자\n- 사고/준사고/항공안전장애 등의 보고 시스템을 통한 안전 이슈 공유\n- 위험 분석 및 관리 조치 시스템",manual:"SMSM 3.2, 3.6\nIOSA ORG 3.1.2\n\nOP035A\nOP310A"},
       {id:"4-3",text:"4-3. 보고받은 자료에 대한 조사 및 분석 등의 절차 등 안전 정보 관리 절차가 수립 및 운영되고 있는가?",verification:"- 사고/준사고/항공안전장애에 대한 F/U 조사",manual:"OP035A\nOP310A\nIOSA ORG 3.1.2"},
+      {id:"4-4",text:"4-4. 항공기 운영과 관련된 변화들을 식별하고, 발생하거나 영향을 미칠 수 있는 위험을 관리하는 프로세스가 있는가?",verification:"- 변화관리 수행 절차 및 실적\n- 지속 모니터링 여부",manual:"SMSM 4.5\nIOSA ORG 3.1.5"},
+      {id:"4-5",text:"4-5. 보고/조사/변화 등을 통해 발굴된 위해요소의 식별, 분석 및 평가를 통해 수용 가능한 안전 수준을 유지하기 위한 위험관리절차를 수립하고 운영하고 있는가?",verification:"- 위험 경감 조치 수립 및 이행\n- 조치 사항에 대한 효과성 검토\n- 관련 기록을 보관하고, 지속적으로 모니터링 하는가?\n- 실시 기록 확인",manual:"SMSM 3.1.3, 3.2, 3.3, 3.4\nIOSA ORG 3.2.1\nOP035A\nOP310A"},
       {id:"4-6",text:"4-6. 식별된 안전 문제는 해당 부서에 전달하여 사례 공유가 되는가?",verification:"",manual:"OP310A"},
       {id:"4-7",text:"4-7. 최근 3년 내에 FOD, BIRD STRIKE에 의한 당사 항공기의 Irregularity 사례 등을 보고 받은 이력이 있는가?",verification:"- 재발방지대책을 수립하고, 관계 기관에 공유하는가?",manual:""}
-    ]
-  },
-  "4. 위험 관리(Risk Management)": {
-    items: [
-      {id:"4-4",text:"4-4. 항공기 운영과 관련된 변화들을 식별하고, 발생하거나 영향을 미칠 수 있는 위험을 관리하는 프로세스가 있는가?",verification:"- 변화관리 수행 절차 및 실적\n- 지속 모니터링 여부",manual:"SMSM 4.5\nIOSA ORG 3.1.5"},
-      {id:"4-5",text:"4-5. 보고/조사/변화 등을 통해 발굴된 위해요소의 식별, 분석 및 평가를 통해 수용 가능한 안전 수준을 유지하기 위한 위험관리절차를 수립하고 운영하고 있는가?",verification:"- 위험 경감 조치 수립 및 이행\n- 조치 사항에 대한 효과성 검토\n- 관련 기록을 보관하고, 지속적으로 모니터링 하는가?\n- 실시 기록 확인",manual:"SMSM 3.1.3, 3.2, 3.3, 3.4\nIOSA ORG 3.2.1\nOP035A\nOP310A"}
     ]
   },
   "5. 비행자료분석 프로그램(Flight Data Analysis Program)": {
@@ -2362,7 +2358,7 @@ function initFirebase() {
     };
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDb = firebase.database();
-    firebaseConnected = true;
+    // firebaseConnected는 실제 연결 확인 후 true로 설정
 
     // Listen for connection state
     firebase.database().ref('.info/connected').on('value', (snap) => {
@@ -2447,7 +2443,7 @@ function loadSchedule() {
           const stationClean = target.replace(/\s*\(.*?\)\s*/g, '').trim();
           const note = target.includes('(') ? target.match(/\((.*?)\)/)?.[1] || '' : '';
           // Auto-detect status from allData
-          const hasData = allData.some(d => d.year === 2026 && d.station === stationClean);
+          const hasData = allData.some(d => d.year === s.year && d.station === stationClean);
           const detectedStatus = hasData ? 'completed' : s.status;
           // details에서 심사원, 일자, 비고 가져오기
           const detail = s.details?.[stationClean] || {};
@@ -2577,23 +2573,23 @@ function avgBadgeStyle(avg) {
   return 'background:rgba(210,0,21,0.15);color:#D20015';
 }
 
-// Keep old function signatures for compatibility
-function avgBadgeColor(avg) {
-  // Return empty - we use inline styles now via avgBadgeStyle
-  return '';
-}
+// avgBadgeColor() 제거됨 (v9.1.0) — avgBadgeStyle()로 대체 완료
 
 function calculateScores(scores, checklist) {
   const categoryAverages = {};
   let totalScore = 0;
   let totalItems = 0;
   let maxScore = 0;
+  let maxPointsPerItem = 4; // 기본 배점 (1~4점 척도)
   for (const [catName, catData] of Object.entries(checklist)) {
     let catSum = 0;
     let catCount = 0;
+    let catNaCount = 0;
     for (const item of catData.items) {
       const score = scores[item.id];
-      if (score !== null && score !== undefined && score !== 'N/A') {
+      if (score === 'N/A') {
+        catNaCount++;
+      } else if (score !== null && score !== undefined) {
         catSum += Number(score);
         catCount++;
         totalScore += Number(score);
@@ -2601,7 +2597,10 @@ function calculateScores(scores, checklist) {
       }
     }
     categoryAverages[catName] = catCount > 0 ? catSum / catCount : 0;
-    maxScore += catData.maxPoints;
+    // maxPoints에서 N/A 항목의 배점을 차감
+    const catMaxPoints = catData.maxPoints || (catData.items.length * maxPointsPerItem);
+    const naDeduction = catNaCount * (catData.items.length > 0 ? catMaxPoints / catData.items.length : maxPointsPerItem);
+    maxScore += (catMaxPoints - naDeduction);
   }
   return {
     categoryAverages,
@@ -2677,10 +2676,10 @@ function loadAllData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       allData = JSON.parse(stored);
-      allData = allData.map(d => { if(!d.auditCategory){d.auditCategory="branch";d.scoringMethod="grade"} if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
-      allData = allData.map(d => { if(!d.auditCategory){d.auditCategory="branch";d.scoringMethod="grade"} if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
       saveAllData();
     }
   } catch (e) {
@@ -3388,22 +3387,41 @@ function viewSearch() {
 
 function renderViewSummaryCards(entries, year) {
   const completed = entries.filter(e => e.record);
-  const totalAvg = completed.length > 0
-    ? completed.reduce((s, e) => s + calculateScores(e.record.scores, getChecklist(e.type)).overallAverage, 0) / completed.length
-    : 0;
-  const totalRate = completed.length > 0
-    ? completed.reduce((s, e) => s + calculateScores(e.record.scores, getChecklist(e.type)).achievementRate, 0) / completed.length
-    : 0;
   const pending = entries.length - completed.length;
+
+  // 지점(grade)과 본부(binary) 분리 집계
+  const gradeCompleted = completed.filter(e => getScoringMethod(e.type) !== 'binary');
+  const binaryCompleted = completed.filter(e => getScoringMethod(e.type) === 'binary');
+
+  const totalAvg = gradeCompleted.length > 0
+    ? gradeCompleted.reduce((s, e) => s + calculateScores(e.record.scores, getChecklist(e.type)).overallAverage, 0) / gradeCompleted.length
+    : 0;
+
+  const binaryRate = binaryCompleted.length > 0
+    ? binaryCompleted.reduce((s, e) => s + calculateBinaryScores(e.record.scores, getChecklist(e.type)).complianceRate, 0) / binaryCompleted.length
+    : 0;
+
+  // 두 번째 카드: 지점만 있으면 달성률, 본부만 있으면 적합률, 혼합이면 적합률 우선
+  let secondLabel, secondValue;
+  if (binaryCompleted.length > 0) {
+    secondLabel = '평균 적합률';
+    secondValue = binaryRate ? binaryRate.toFixed(1) + '%' : '-';
+  } else {
+    const totalRate = gradeCompleted.length > 0
+      ? gradeCompleted.reduce((s, e) => s + calculateScores(e.record.scores, getChecklist(e.type)).achievementRate, 0) / gradeCompleted.length
+      : 0;
+    secondLabel = '평균 달성률';
+    secondValue = totalRate ? totalRate.toFixed(1) + '%' : '-';
+  }
 
   document.getElementById('viewSummaryCards').innerHTML = `
     <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">전체 평균</div>
-      <div style="font-size:28px;font-weight:600;color:#303A3C;">${totalAvg ? totalAvg.toFixed(2) : '-'}</div>
+      <div style="font-size:12px;color:#9EA2A1;">${gradeCompleted.length > 0 ? '전체 평균' : '적합률'}</div>
+      <div style="font-size:28px;font-weight:600;color:#303A3C;">${gradeCompleted.length > 0 ? (totalAvg ? totalAvg.toFixed(2) : '-') : (binaryRate ? binaryRate.toFixed(1) + '%' : '-')}</div>
     </div>
     <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">평균 달성률</div>
-      <div style="font-size:28px;font-weight:600;color:#D20015;">${totalRate ? totalRate.toFixed(1) + '%' : '-'}</div>
+      <div style="font-size:12px;color:#9EA2A1;">${secondLabel}</div>
+      <div style="font-size:28px;font-weight:600;color:#D20015;">${secondValue}</div>
     </div>
     <div class="apple-card" style="padding:16px;text-align:center;">
       <div style="font-size:12px;color:#9EA2A1;">심사 완료</div>
@@ -3427,42 +3445,68 @@ function renderScoreViewTable() {
   const groupMap = {};
   viewEntries.forEach(entry => {
     if (!groupMap[entry.station]) {
-      groupMap[entry.station] = { station: entry.station, region: entry.region, year: entry.year, types: {} };
+      groupMap[entry.station] = { station: entry.station, region: entry.region, year: entry.year, types: {}, auditCategory: entry.auditCategory || 'branch' };
     }
     groupMap[entry.station].types[entry.type] = entry;
+    if (entry.auditCategory === 'division') groupMap[entry.station].auditCategory = 'division';
   });
-  const groups = Object.values(groupMap);
-  // Sort: 완료 데이터 있는 지점 우선
-  groups.sort((a, b) => {
-    const aHas = Object.values(a.types).some(e => e.record);
-    const bHas = Object.values(b.types).some(e => e.record);
-    if (aHas && !bHas) return -1;
-    if (!aHas && bHas) return 1;
-    return a.station.localeCompare(b.station, 'ko');
-  });
+  const allGroups = Object.values(groupMap);
+
+  // 지점/본부 분리
+  const branchGroups = allGroups.filter(g => g.auditCategory !== 'division');
+  const divisionGroups = allGroups.filter(g => g.auditCategory === 'division');
+
+  // Sort: 완료 데이터 있는 그룹 우선
+  function sortGroups(groups) {
+    groups.sort((a, b) => {
+      const aHas = Object.values(a.types).some(e => e.record);
+      const bHas = Object.values(b.types).some(e => e.record);
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      return a.station.localeCompare(b.station, 'ko');
+    });
+    return groups;
+  }
+  sortGroups(branchGroups);
+  sortGroups(divisionGroups);
+
+  // 전체 그룹 (지점 먼저, 본부 다음 — gIdx는 연속)
+  const groups = [...branchGroups, ...divisionGroups];
 
   const isMobile = window.innerWidth < 768;
 
-  // Mobile: card-style per station (no table)
+  // === 공통 헬퍼: 점수 뱃지 생성 ===
+  function makeTypeBadge(entry, type) {
+    if (!entry || !entry.record) return '<span style="color:#C0CED1;font-size:12px;">-</span>';
+    const method = getScoringMethod(type);
+    if (method === 'binary') {
+      const result = calculateBinaryScores(entry.record.scores, getChecklist(type));
+      const rate = result.complianceRate;
+      const style = rate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E'
+        : rate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B'
+        : 'background:rgba(210,0,21,0.15);color:#D20015';
+      return `<span class="badge-pill" style="${style}">${rate.toFixed(0)}%</span>`;
+    } else {
+      const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
+      return `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
+    }
+  }
+
+  function makeStatusBadge(completedTypes, totalTypes) {
+    if (completedTypes.length === 0) return {html:'<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">심사예정</span>', hasData:false};
+    if (completedTypes.length >= totalTypes) return {html:'<span class="badge-pill" style="background:rgba(34,197,94,0.15);color:#22C55E;">완료</span>', hasData:true};
+    return {html:`<span class="badge-pill" style="background:rgba(245,158,11,0.15);color:#F59E0B;">${completedTypes.length}/${totalTypes}</span>`, hasData:true};
+  }
+
+  // === Mobile: card-style ===
   if (isMobile) {
     let mhtml = '';
     groups.forEach((group, gIdx) => {
+      const isDivision = group.auditCategory === 'division';
       const rowId = `viewGroup_${gIdx}`;
       const anyRecord = Object.values(group.types).find(e => e.record)?.record;
       const completedTypes = Object.values(group.types).filter(e => e.record);
-
-      function typeBadge(type) {
-        const entry = group.types[type];
-        if (!entry || !entry.record) return '<span style="color:#C0CED1;">-</span>';
-        const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
-        return `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
-      }
-
-      const statusResult = completedTypes.length > 0
-        ? (completedTypes.length === Object.values(group.types).length
-          ? {style:'background:rgba(34,197,94,0.15);color:#22C55E', label:'완료'}
-          : {style:`background:rgba(245,158,11,0.15);color:#F59E0B`, label:`${completedTypes.length}/${Object.values(group.types).length}`})
-        : {style:'background:rgba(158,162,161,0.15);color:#9EA2A1', label:'심사예정'};
+      const status = makeStatusBadge(completedTypes, Object.values(group.types).length);
 
       let dateDisplay = '-';
       if (anyRecord) {
@@ -3473,44 +3517,49 @@ function renderScoreViewTable() {
           : (anyRecord.auditDate || '-');
       }
 
-      mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1'};" onclick="toggleViewDetail('${rowId}')">`;
-      // Header: station + badge
+      const borderColor = completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1';
+      mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${isDivision ? '#6366F1' : borderColor};" onclick="toggleViewDetail('${rowId}')">`;
       mhtml += `<div class="flex justify-between items-center" style="margin-bottom:8px;">`;
-      mhtml += `<div><span style="font-weight:600;font-size:15px;color:#303A3C;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${group.region}</span></div>`;
-      mhtml += `<span class="badge-pill" style="${statusResult.style};font-size:11px;">${statusResult.label}</span>`;
+      mhtml += `<div><span style="font-weight:600;font-size:15px;color:#303A3C;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${isDivision ? '실/본부' : group.region}</span></div>`;
+      mhtml += `<span class="badge-pill" style="${status.html.match(/style="([^"]*)"/)?.[1] || ''};font-size:11px;">${status.html.match(/>([^<]*)</)?.[1] || ''}</span>`;
       mhtml += `</div>`;
-      // Scores with mini progress bars
+      // 점수 미니 바
       mhtml += `<div class="flex justify-between" style="gap:8px;">`;
-      ['branch', 'pax', 'ramp'].forEach(type => {
+      const typeKeys = isDivision ? Object.keys(group.types) : ['branch', 'pax', 'ramp'];
+      typeKeys.forEach(type => {
         const entry = group.types[type];
-        const label = type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프';
+        const reg = CHECKLIST_REGISTRY[type];
+        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프');
         if (entry && entry.record) {
-          const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
-          const barW = (avg / 4 * 100).toFixed(0);
-          const barColor = avg < 2.5 ? '#D20015' : avg < 3.0 ? '#F59E0B' : '#22C55E';
-          mhtml += `<div style="flex:1;text-align:center;">`;
-          mhtml += `<div style="font-size:16px;font-weight:600;color:#303A3C;">${avg.toFixed(2)}</div>`;
-          mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"><div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;"></div></div>`;
-          mhtml += `<div style="font-size:10px;color:#9EA2A1;">${label}</div>`;
-          mhtml += `</div>`;
+          const method = getScoringMethod(type);
+          if (method === 'binary') {
+            const result = calculateBinaryScores(entry.record.scores, getChecklist(type));
+            const rate = result.complianceRate;
+            const barW = rate.toFixed(0);
+            const barColor = rate >= 90 ? '#22C55E' : rate >= 70 ? '#F59E0B' : '#D20015';
+            mhtml += `<div style="flex:1;text-align:center;"><div style="font-size:16px;font-weight:600;color:#303A3C;">${rate.toFixed(0)}%</div>`;
+            mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"><div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;"></div></div>`;
+            mhtml += `<div style="font-size:10px;color:#9EA2A1;">${label}</div></div>`;
+          } else {
+            const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
+            const barW = (avg / 4 * 100).toFixed(0);
+            const barColor = avg < 2.5 ? '#D20015' : avg < 3.0 ? '#F59E0B' : '#22C55E';
+            mhtml += `<div style="flex:1;text-align:center;"><div style="font-size:16px;font-weight:600;color:#303A3C;">${avg.toFixed(2)}</div>`;
+            mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"><div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;"></div></div>`;
+            mhtml += `<div style="font-size:10px;color:#9EA2A1;">${label}</div></div>`;
+          }
         } else {
-          mhtml += `<div style="flex:1;text-align:center;">`;
-          mhtml += `<div style="font-size:16px;color:#C0CED1;">-</div>`;
+          mhtml += `<div style="flex:1;text-align:center;"><div style="font-size:16px;color:#C0CED1;">-</div>`;
           mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"></div>`;
-          mhtml += `<div style="font-size:10px;color:#C0CED1;">${label}</div>`;
-          mhtml += `</div>`;
+          mhtml += `<div style="font-size:10px;color:#C0CED1;">${label}</div></div>`;
         }
       });
       mhtml += `</div>`;
-      // Footer: date + auditor
       if (anyRecord) {
         mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${(anyRecord.auditor || '-')}</div>`;
       }
       mhtml += `</div>`;
-
-      // Detail (hidden, same as before)
-      mhtml += `<div id="${rowId}" class="hidden" style="margin-bottom:8px;">`;
-      mhtml += `<div id="viewGroupDetail_${gIdx}" style="padding:4px;">`;
+      mhtml += `<div id="${rowId}" class="hidden" style="margin-bottom:8px;"><div id="viewGroupDetail_${gIdx}" style="padding:4px;">`;
       mhtml += renderGroupReadOnlyDetail(gIdx, group);
       mhtml += `</div></div>`;
     });
@@ -3518,71 +3567,106 @@ function renderScoreViewTable() {
     return;
   }
 
-  let html = '<div class="overflow-x-auto">';
-  html += '<table class="apple-table">';
-  html += '<thead><tr>';
-  html += '<th style="text-align:left;">지점</th>';
-  html += '<th style="text-align:left;">심사일</th>';
-  html += '<th style="text-align:left;">심사원</th>';
-  html += '<th style="text-align:center;">지점</th>';
-  html += '<th style="text-align:center;">여객</th>';
-  html += '<th style="text-align:center;">램프</th>';
-  html += '<th style="text-align:center;">상태</th>';
-  html += '</tr></thead><tbody>';
+  // === Desktop: 지점 테이블 + 본부 테이블 분리 ===
+  let html = '';
 
-  groups.forEach((group, gIdx) => {
-    const rowId = `viewGroup_${gIdx}`;
-    const anyRecord = Object.values(group.types).find(e => e.record)?.record;
-    const completedTypes = Object.values(group.types).filter(e => e.record);
-    const totalTypes = Object.values(group.types).length;
-    const hasAnyData = completedTypes.length > 0;
+  // --- 지점 테이블 ---
+  if (branchGroups.length > 0) {
+    html += '<div class="overflow-x-auto" style="margin-bottom:24px;">';
+    html += '<table class="apple-table"><thead><tr>';
+    html += '<th style="text-align:left;">지점</th>';
+    html += '<th style="text-align:left;">심사일</th>';
+    html += '<th style="text-align:left;">심사원</th>';
+    html += '<th style="text-align:center;">지점</th>';
+    html += '<th style="text-align:center;">여객</th>';
+    html += '<th style="text-align:center;">램프</th>';
+    html += '<th style="text-align:center;">상태</th>';
+    html += '</tr></thead><tbody>';
+    branchGroups.forEach((group, i) => {
+      const gIdx = groups.indexOf(group);
+      const rowId = `viewGroup_${gIdx}`;
+      const anyRecord = Object.values(group.types).find(e => e.record)?.record;
+      const completedTypes = Object.values(group.types).filter(e => e.record);
+      const totalTypes = Object.values(group.types).length;
+      const status = makeStatusBadge(completedTypes, totalTypes);
 
-    // 심사일/심사원 (공통: 첫 번째 레코드 기준)
-    let dateDisplay = '-';
-    let auditorDisplay = '-';
-    if (anyRecord) {
-      dateDisplay = anyRecord.auditDateStart
-        ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-          ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd
-          : anyRecord.auditDateStart)
-        : (anyRecord.auditDate || '-');
-      auditorDisplay = anyRecord.auditor || '-';
+      let dateDisplay = '-', auditorDisplay = '-';
+      if (anyRecord) {
+        dateDisplay = anyRecord.auditDateStart
+          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
+            ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd : anyRecord.auditDateStart)
+          : (anyRecord.auditDate || '-');
+        auditorDisplay = anyRecord.auditor || '-';
+      }
+
+      html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
+      html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
+      html += `<td style="font-size:13px;">${dateDisplay}</td>`;
+      html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
+      html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
+      html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
+      html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
+      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+      html += `</tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // --- 본부 테이블 ---
+  if (divisionGroups.length > 0) {
+    if (branchGroups.length > 0) {
+      html += '<div style="margin:24px 0 12px;"><h4 style="font-size:15px;font-weight:600;color:#303A3C;">실/본부 심사</h4></div>';
     }
+    html += '<div class="overflow-x-auto">';
+    html += '<table class="apple-table"><thead><tr>';
+    html += '<th style="text-align:left;">실/본부</th>';
+    html += '<th style="text-align:left;">심사일</th>';
+    html += '<th style="text-align:left;">심사원</th>';
 
-    // 구분별 평균 뱃지
-    function typeBadge(type) {
-      const entry = group.types[type];
-      if (!entry) return '<span style="color:#C0CED1;font-size:12px;">-</span>';
-      if (!entry.record) return '<span style="color:#C0CED1;font-size:12px;">-</span>';
-      const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
-      return `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
-    }
+    // 본부 점검표 유형 컬럼 동적 생성 — 모든 본부의 유형 합집합
+    const allDivTypes = new Set();
+    divisionGroups.forEach(g => Object.keys(g.types).forEach(t => allDivTypes.add(t)));
+    const divTypeArr = [...allDivTypes];
+    divTypeArr.forEach(type => {
+      const reg = CHECKLIST_REGISTRY[type];
+      const shortName = reg ? reg.name.replace('품질심사', '품질').replace('안전감사', '안전').replace('비행안전문서시스템', 'FSDS') : type;
+      html += `<th style="text-align:center;font-size:10px;letter-spacing:0;">${shortName}</th>`;
+    });
+    html += '<th style="text-align:center;">상태</th>';
+    html += '</tr></thead><tbody>';
 
-    const statusBadge = hasAnyData
-      ? (completedTypes.length === totalTypes
-        ? '<span class="badge-pill" style="background:rgba(34,197,94,0.15);color:#22C55E;">완료</span>'
-        : `<span class="badge-pill" style="background:rgba(245,158,11,0.15);color:#F59E0B;">${completedTypes.length}/${totalTypes}</span>`)
-      : '<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">심사예정</span>';
+    divisionGroups.forEach((group, i) => {
+      const gIdx = groups.indexOf(group);
+      const rowId = `viewGroup_${gIdx}`;
+      const anyRecord = Object.values(group.types).find(e => e.record)?.record;
+      const completedTypes = Object.values(group.types).filter(e => e.record);
+      const totalTypes = Object.values(group.types).length;
+      const status = makeStatusBadge(completedTypes, totalTypes);
 
-    html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
-    html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
-    html += `<td style="font-size:13px;">${dateDisplay}</td>`;
-    html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
-    html += `<td style="text-align:center;">${typeBadge('branch')}</td>`;
-    html += `<td style="text-align:center;">${typeBadge('pax')}</td>`;
-    html += `<td style="text-align:center;">${typeBadge('ramp')}</td>`;
-    html += `<td style="text-align:center;">${hasAnyData ? statusBadge : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${statusBadge}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
-    html += `</tr>`;
+      let dateDisplay = '-', auditorDisplay = '-';
+      if (anyRecord) {
+        dateDisplay = anyRecord.auditDateStart
+          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
+            ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd : anyRecord.auditDateStart)
+          : (anyRecord.auditDate || '-');
+        auditorDisplay = anyRecord.auditor || '-';
+      }
 
-    // Detail row
-    html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;">`;
-    html += `<div id="viewGroupDetail_${gIdx}" style="padding:16px;">`;
-    html += renderGroupReadOnlyDetail(gIdx, group);
-    html += `</div>`;
-    html += `</td></tr>`;
-  });
+      html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
+      html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#6366F1;">실/본부</div></td>`;
+      html += `<td style="font-size:13px;">${dateDisplay}</td>`;
+      html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
+      divTypeArr.forEach(type => {
+        html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
+      });
+      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+      html += `</tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  }
 
-  html += '</tbody></table></div>';
   container.innerHTML = html;
 }
 
@@ -3607,54 +3691,91 @@ function renderGroupReadOnlyDetail(gIdx, group) {
   }
 
   // 구분별 점수 카드 (높이 정렬 + 클릭 시 상세보기)
-  html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3" style="align-items:stretch;">';
-  ['branch', 'pax', 'ramp'].forEach(type => {
+  const isDivGroup = group.auditCategory === 'division' || !!DIVISIONS[group.station];
+  const typeKeys = isDivGroup ? Object.keys(group.types) : ['branch', 'pax', 'ramp'].filter(t => group.types[t]);
+  const gridCols = Math.min(typeKeys.length, 4);
+  html += `<div class="grid grid-cols-1 md:grid-cols-${gridCols} gap-3" style="align-items:stretch;">`;
+  typeKeys.forEach(type => {
     const entry = group.types[type];
     if (!entry) return;
-    const label = getTypeLabel(type);
+    const reg = CHECKLIST_REGISTRY[type];
+    const label = reg ? reg.name : getTypeLabel(type);
     const company = entry.company || '';
+    const method = getScoringMethod(type);
 
     if (entry.record) {
       const checklist = getChecklist(type);
-      const result = calculateScores(entry.record.scores, checklist);
       html += `<div class="apple-card" style="padding:14px;display:flex;flex-direction:column;cursor:pointer;transition:all 0.15s ease;"
         onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
         onmouseout="this.style.boxShadow='none'"
         onclick="event.stopPropagation();showTypeDetail(${gIdx},'${type}')">`;
       html += `<div class="flex justify-between items-center mb-2">`;
-      html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${label}</span>`;
+      html += `<span style="font-size:13px;font-weight:600;color:#303A3C;word-break:keep-all;">${label}</span>`;
       if (company) html += `<span style="font-size:11px;color:#9EA2A1;">${company}</span>`;
       html += `</div>`;
-      // 카테고리별 평균
-      html += `<div style="flex:1;">`;
-      for (const [catName, catAvg] of Object.entries(result.categoryAverages)) {
-        const shortName = catName.match(/^\d+\.\s*(.+)/)?.[1] || catName;
-        html += `<div class="flex justify-between" style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
-        html += `<span style="color:#565A5B;">${shortName.substring(0, 15)}${shortName.length > 15 ? '...' : ''}</span>`;
-        html += `<span class="badge-pill" style="${avgBadgeStyle(catAvg)};font-size:11px;">${catAvg.toFixed(2)}</span>`;
+
+      if (method === 'binary') {
+        // 바이너리 채점 카드
+        const result = calculateBinaryScores(entry.record.scores, checklist);
+        html += `<div style="flex:1;">`;
+        for (const [catName, catResult] of Object.entries(result.categoryResults)) {
+          const shortName = catName.match(/^\d+\.\s*(.+)/)?.[1] || catName;
+          const catRate = catResult.total > 0 ? (catResult.yesCount / catResult.total * 100) : 0;
+          const catStyle = catRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E'
+            : catRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B'
+            : 'background:rgba(210,0,21,0.15);color:#D20015';
+          html += `<div class="flex justify-between" style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
+          html += `<span style="color:#565A5B;">${shortName.substring(0, 12)}${shortName.length > 12 ? '..' : ''}</span>`;
+          html += `<span class="badge-pill" style="${catStyle};font-size:11px;">${catRate.toFixed(0)}%</span>`;
+          html += `</div>`;
+        }
+        html += `</div>`;
+        html += `<div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(192,206,209,0.3);">`;
+        html += `<div class="flex justify-between items-center">`;
+        const overallStyle = result.complianceRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : result.complianceRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015';
+        html += `<div><span style="font-size:11px;color:#9EA2A1;">적합률</span><span class="badge-pill" style="${overallStyle};font-size:13px;margin-left:4px;">${result.complianceRate.toFixed(1)}%</span></div>`;
+        html += `<div class="flex gap-1">`;
+        html += `<button onclick="event.stopPropagation();startGroupTypeEdit(${gIdx},'${type}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">수정</button>`;
+        html += `<button onclick="event.stopPropagation();deleteGroupType(${gIdx},'${type}')" style="background:none;border:none;color:#565A5B;font-size:12px;cursor:pointer;">삭제</button>`;
+        html += `</div></div>`;
+        html += `<div style="font-size:11px;color:#6366F1;text-align:center;margin-top:6px;">S:${result.yesCount} U:${result.noCount} NA:${result.naCount}</div>`;
+        html += `</div>`;
+      } else {
+        // 등급(grade) 채점 카드 — 기존 로직
+        const result = calculateScores(entry.record.scores, checklist);
+        html += `<div style="flex:1;">`;
+        for (const [catName, catAvg] of Object.entries(result.categoryAverages)) {
+          const shortName = catName.match(/^\d+\.\s*(.+)/)?.[1] || catName;
+          html += `<div class="flex justify-between" style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
+          html += `<span style="color:#565A5B;">${shortName.substring(0, 15)}${shortName.length > 15 ? '...' : ''}</span>`;
+          html += `<span class="badge-pill" style="${avgBadgeStyle(catAvg)};font-size:11px;">${catAvg.toFixed(2)}</span>`;
+          html += `</div>`;
+        }
+        html += `</div>`;
+        html += `<div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(192,206,209,0.3);">`;
+        html += `<div class="flex justify-between items-center">`;
+        html += `<div><span style="font-size:11px;color:#9EA2A1;">전체 평균</span><span class="badge-pill" style="${avgBadgeStyle(result.overallAverage)};font-size:13px;margin-left:4px;">${result.overallAverage.toFixed(2)}</span></div>`;
+        html += `<div class="flex gap-1">`;
+        html += `<button onclick="event.stopPropagation();startGroupTypeEdit(${gIdx},'${type}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">수정</button>`;
+        html += `<button onclick="event.stopPropagation();deleteGroupType(${gIdx},'${type}')" style="background:none;border:none;color:#565A5B;font-size:12px;cursor:pointer;">삭제</button>`;
+        html += `</div></div>`;
+        html += `<div style="font-size:11px;color:#D20015;text-align:center;margin-top:6px;">상세보기 ></div>`;
         html += `</div>`;
       }
-      html += `</div>`;
-      // 하단 고정: 전체 평균 + 버튼
-      html += `<div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(192,206,209,0.3);">`;
-      html += `<div class="flex justify-between items-center">`;
-      html += `<div><span style="font-size:11px;color:#9EA2A1;">전체 평균</span><span style="font-size:15px;font-weight:600;margin-left:4px;" class="badge-pill" style="${avgBadgeStyle(result.overallAverage)}">${result.overallAverage.toFixed(2)}</span></div>`;
-      html += `<div class="flex gap-1">`;
-      html += `<button onclick="event.stopPropagation();startGroupTypeEdit(${gIdx},'${type}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">수정</button>`;
-      html += `<button onclick="event.stopPropagation();deleteGroupType(${gIdx},'${type}')" style="background:none;border:none;color:#565A5B;font-size:12px;cursor:pointer;">삭제</button>`;
-      html += `</div></div>`;
-      html += `<div style="font-size:11px;color:#D20015;text-align:center;margin-top:6px;">상세보기 ></div>`;
-      html += `</div>`;
       html += `</div>`;
     } else {
       html += `<div class="apple-card" style="padding:14px;display:flex;flex-direction:column;">`;
       html += `<div class="flex justify-between items-center mb-2">`;
-      html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${label}</span>`;
+      html += `<span style="font-size:13px;font-weight:600;color:#303A3C;word-break:keep-all;">${label}</span>`;
       if (company) html += `<span style="font-size:11px;color:#9EA2A1;">${company}</span>`;
       html += `</div>`;
       html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px 0;">`;
       html += `<span style="color:#9EA2A1;font-size:13px;">미작성</span>`;
-      html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','${type}')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+      if (isDivGroup) {
+        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+      } else {
+        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','${type}')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+      }
       html += `</div></div>`;
     }
   });
@@ -3670,35 +3791,58 @@ function showTypeDetail(gIdx, type) {
   if (!entry || !entry.record) return;
 
   const checklist = getChecklist(type);
-  const result = calculateScores(entry.record.scores, checklist);
+  const method = getScoringMethod(type);
+  const isBinary = method === 'binary';
+  const result = isBinary ? calculateBinaryScores(entry.record.scores, checklist) : calculateScores(entry.record.scores, checklist);
   const container = document.getElementById(`viewGroupDetail_${gIdx}`);
+  const reg = CHECKLIST_REGISTRY[type];
+  const typeLabel = reg ? reg.name : getTypeLabel(type);
 
   let html = '';
   // 헤더
   html += `<div class="flex items-center justify-between mb-4">`;
-  html += `<div class="flex items-center gap-3">`;
+  html += `<div class="flex items-center gap-3 flex-wrap">`;
   html += `<button onclick="event.stopPropagation();cancelGroupEdit(${gIdx})" class="pill-btn pill-btn-outline" style="padding:4px 12px;font-size:12px;">← 돌아가기</button>`;
-  html += `<span class="badge-pill" style="background:#D20015;color:#fff;font-size:13px;padding:4px 14px;">${getTypeLabel(type)}</span>`;
+  html += `<span class="badge-pill" style="background:${isBinary ? '#6366F1' : '#D20015'};color:#fff;font-size:13px;padding:4px 14px;">${typeLabel}</span>`;
   html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${group.station}</span>`;
   if (entry.company) html += `<span style="font-size:12px;color:#9EA2A1;">${entry.company}</span>`;
   html += `</div>`;
   html += `<div style="text-align:right;">`;
-  html += `<div style="font-size:11px;color:#9EA2A1;">전체 평균</div>`;
-  html += `<div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;"><span class="badge-pill" style="${avgBadgeStyle(result.overallAverage)};font-size:20px;padding:4px 16px;">${result.overallAverage.toFixed(2)}</span></div>`;
+  if (isBinary) {
+    const overallStyle = result.complianceRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : result.complianceRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015';
+    html += `<div style="font-size:11px;color:#9EA2A1;">적합률</div>`;
+    html += `<div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;"><span class="badge-pill" style="${overallStyle};font-size:20px;padding:4px 16px;">${result.complianceRate.toFixed(1)}%</span></div>`;
+  } else {
+    html += `<div style="font-size:11px;color:#9EA2A1;">전체 평균</div>`;
+    html += `<div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;"><span class="badge-pill" style="${avgBadgeStyle(result.overallAverage)};font-size:20px;padding:4px 16px;">${result.overallAverage.toFixed(2)}</span></div>`;
+  }
   html += `</div></div>`;
 
   // 카테고리별 상세
   for (const [catName, catData] of Object.entries(checklist)) {
-    const catAvg = result.categoryAverages[catName];
     html += `<div class="apple-card mb-3" style="padding:14px;">`;
     html += `<div class="flex justify-between items-center mb-3">`;
     html += `<span style="font-size:13px;font-weight:600;color:#303A3C;">${catName}</span>`;
-    html += `<div class="flex items-center gap-2"><span style="font-size:11px;color:#9EA2A1;">평균</span><span class="badge-pill" style="${avgBadgeStyle(catAvg)}">${catAvg.toFixed(2)}</span></div>`;
+    if (isBinary) {
+      const catR = result.categoryResults[catName];
+      const catRate = catR && catR.total > 0 ? (catR.yes / catR.total * 100) : 0;
+      const catStyle = catRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : catRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015';
+      html += `<div class="flex items-center gap-2"><span style="font-size:11px;color:#9EA2A1;">적합률</span><span class="badge-pill" style="${catStyle}">${catRate.toFixed(0)}%</span></div>`;
+    } else {
+      const catAvg = result.categoryAverages[catName];
+      html += `<div class="flex items-center gap-2"><span style="font-size:11px;color:#9EA2A1;">평균</span><span class="badge-pill" style="${avgBadgeStyle(catAvg)}">${catAvg.toFixed(2)}</span></div>`;
+    }
     html += `</div>`;
     for (const item of catData.items) {
       const s = entry.record.scores[item.id];
-      const scoreText = (s === 'N/A' || s === undefined || s === null) ? 'N/A' : s;
-      const scoreColor = s === 'N/A' || s === undefined ? '#9EA2A1' : (Number(s) <= 2 ? '#D20015' : Number(s) <= 3 ? '#F59E0B' : '#22C55E');
+      let scoreText, scoreColor;
+      if (isBinary) {
+        scoreText = s || '-';
+        scoreColor = s === 'S' || s === 'YES' || s === 'Y' ? '#22C55E' : s === 'U' || s === 'NO' || s === 'N' ? '#D20015' : '#9EA2A1';
+      } else {
+        scoreText = (s === 'N/A' || s === undefined || s === null) ? 'N/A' : s;
+        scoreColor = s === 'N/A' || s === undefined ? '#9EA2A1' : (Number(s) <= 2 ? '#D20015' : Number(s) <= 3 ? '#F59E0B' : '#22C55E');
+      }
       html += `<div class="flex justify-between items-center" style="font-size:13px;padding:4px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
       html += `<span style="color:#565A5B;flex:1;"><span style="font-weight:600;color:#303A3C;margin-right:6px;">${item.id}</span>${item.text}</span>`;
       html += `<span style="font-weight:600;color:${scoreColor};margin-left:12px;flex-shrink:0;min-width:32px;text-align:center;">${scoreText}</span>`;
@@ -4479,7 +4623,7 @@ function renderStatsDashboard() {
   const ctx3y = document.getElementById('threeYearChart')?.getContext('2d');
   if (ctx3y) {
     const commonStations3y = [...allStations].filter(station => {
-      return years.some(y => allData.some(d => d.year == y && d.station === station));
+      return years.every(y => allData.some(d => d.year == y && d.station === station));
     }).sort((a, b) => a.localeCompare(b, 'ko'));
 
     const datasets3y = years.map((y, i) => {
@@ -4707,20 +4851,20 @@ function renderAnalysis() {
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
     stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
-  const stations2025 = {};
+  const prevYearStations = {};
   prevYearData.filter(d => d.type === 'branch').forEach(d => {
-    stations2025[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    prevYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
-  const stations2026 = {};
+  const currYearStations = {};
   yearData.filter(d => d.type === 'branch').forEach(d => {
-    stations2026[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    currYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
-  const comparisons = [...new Set([...Object.keys(stationsTwoYearsAgo), ...Object.keys(stations2025), ...Object.keys(stations2026)])].map(s => ({
+  const comparisons = [...new Set([...Object.keys(stationsTwoYearsAgo), ...Object.keys(prevYearStations), ...Object.keys(currYearStations)])].map(s => ({
     station: s,
     twoYearsAgo: stationsTwoYearsAgo[s] || null,
-    prev: stations2025[s] || null,
-    curr: stations2026[s] || null,
-    delta: (stations2026[s] && stations2025[s]) ? stations2026[s] - stations2025[s] : null
+    prev: prevYearStations[s] || null,
+    curr: currYearStations[s] || null,
+    delta: (currYearStations[s] && prevYearStations[s]) ? currYearStations[s] - prevYearStations[s] : null
   })).sort((a, b) => (b.delta || 0) - (a.delta || 0));
   let improved = 0, declined = 0, unchanged = 0;
   comparisons.forEach(c => {
@@ -5433,8 +5577,8 @@ function renderDivisionTrendChart(allDivData, currentYear) {
     spanGaps: true
   }));
 
-  if (window._divTrendChart) window._divTrendChart.destroy();
-  window._divTrendChart = new Chart(ctx, {
+  destroyChart('divTrendChart');
+  chartInstances['divTrendChart'] = new Chart(ctx, {
     type: 'line',
     data: { labels: years.map(y => y + '년'), datasets },
     options: { responsive: true, scales: { y: { min: 0, max: 100, title: { display: true, text: '적합률 (%)' } } }, plugins: { legend: { position: 'bottom' } } }
@@ -5455,8 +5599,8 @@ function renderDivisionRiskChart(yearData) {
 
   const sorted = Object.entries(divU).sort((a, b) => b[1] - a[1]);
 
-  if (window._divRiskChart) window._divRiskChart.destroy();
-  window._divRiskChart = new Chart(ctx, {
+  destroyChart('divRiskChart');
+  chartInstances['divRiskChart'] = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: sorted.map(s => s[0]),
@@ -5677,20 +5821,29 @@ function getScheduleStatusBadgeStyle(status) {
   return styles[status] || styles.upcoming;
 }
 
+function getExpectedTypesForStation(station) {
+  // 본부/실인 경우 해당 점검표 유형 반환
+  if (DIVISIONS[station]) return DIVISIONS[station].checklists;
+  // 지점인 경우 기본 3종
+  return ['branch', 'pax', 'ramp'];
+}
+
 function calcScheduleStatus(item) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const year = item.year;
   const station = item.station;
 
-  // 점검표 완료 건수 확인 (지점/여객/램프 3종)
-  const completedTypes = ['branch', 'pax', 'ramp'].filter(type => {
-    return allData.some(d => d.year == year && d.station === station && d.type === type);
+  // 점검표 완료 건수 확인 (지점: branch/pax/ramp 3종, 본부: 해당 본부 점검표 N종)
+  const expectedTypes = getExpectedTypesForStation(station);
+  const totalExpected = expectedTypes.length;
+  const completedTypes = expectedTypes.filter(type => {
+    return allData.some(d => d.year == year && (d.station === station || d.division === station) && d.type === type);
   });
   const completedCount = completedTypes.length;
 
-  // 3종 모두 완료 → 완료 (기한 무관)
-  if (completedCount === 3) return { status: 'completed', label: '완료', count: completedCount };
+  // 전종 완료 → 완료 (기한 무관)
+  if (completedCount >= totalExpected) return { status: 'completed', label: '완료', count: completedCount, total: totalExpected };
 
   // 심사일 파싱
   const hasDateStart = item.dateStart && item.dateStart.length >= 10;
@@ -5699,22 +5852,22 @@ function calcScheduleStatus(item) {
   const endDate = hasDateEnd ? new Date(item.dateEnd) : null;
 
   // 심사일 미등록 → 예정
-  if (!startDate) return { status: 'upcoming', label: '예정', count: completedCount };
+  if (!startDate) return { status: 'upcoming', label: '예정', count: completedCount, total: totalExpected };
 
   // 오늘이 시작일~종료일 사이 → 진행 중
   const effectiveEnd = endDate || startDate;
-  if (today >= startDate && today <= effectiveEnd) return { status: 'in_progress', label: '진행 중', count: completedCount };
+  if (today >= startDate && today <= effectiveEnd) return { status: 'in_progress', label: '진행 중', count: completedCount, total: totalExpected };
 
   // 아직 시작일 전 → 예정
-  if (today < startDate) return { status: 'upcoming', label: '예정', count: completedCount };
+  if (today < startDate) return { status: 'upcoming', label: '예정', count: completedCount, total: totalExpected };
 
   // 심사일 경과 후
   if (today > effectiveEnd) {
-    if (completedCount === 0) return { status: 'overdue', label: '점검 미등록', count: 0 };
-    return { status: 'incomplete', label: `미완료(${completedCount}/3)`, count: completedCount };
+    if (completedCount === 0) return { status: 'overdue', label: '점검 미등록', count: 0, total: totalExpected };
+    return { status: 'incomplete', label: `미완료(${completedCount}/${totalExpected})`, count: completedCount, total: totalExpected };
   }
 
-  return { status: 'upcoming', label: '예정', count: completedCount };
+  return { status: 'upcoming', label: '예정', count: completedCount, total: totalExpected };
 }
 
 function updateScheduleStatuses() {
@@ -5737,29 +5890,29 @@ function renderSchedule() {
   schedulePhase = 1;
   currentScheduleId = null;
 
-  const statusLabels = getScheduleStatusLabels();
   const currentMonth = new Date().getMonth() + 1;
+  const scheduleYear = new Date().getFullYear();
 
   // Group by month
   const monthMap = {};
   for (let m = 1; m <= 12; m++) monthMap[m] = [];
-  scheduleData.filter(s => s.year === 2026).forEach(s => {
+  scheduleData.filter(s => s.year === scheduleYear).forEach(s => {
     if (!monthMap[s.month]) monthMap[s.month] = [];
     monthMap[s.month].push(s);
   });
 
   let html = '';
   html += '<div class="flex items-end justify-between mb-6">';
-  html += '<div><h2 class="section-title">2026년 품질심사 일정</h2>';
+  html += `<div><h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
   html += '</div>';
 
   // Summary stats
-  const totalStations = scheduleData.filter(s => s.year === 2026).length;
-  const completedCount = scheduleData.filter(s => s.year === 2026 && s.status === 'completed').length;
-  const inProgressCount = scheduleData.filter(s => s.year === 2026 && s.status === 'in_progress').length;
-  const upcomingCount = scheduleData.filter(s => s.year === 2026 && s.status === 'upcoming').length;
+  const totalStations = scheduleData.filter(s => s.year === scheduleYear).length;
+  const completedCount = scheduleData.filter(s => s.year === scheduleYear && s.status === 'completed').length;
+  const inProgressCount = scheduleData.filter(s => s.year === scheduleYear && s.status === 'in_progress').length;
+  const upcomingCount = scheduleData.filter(s => s.year === scheduleYear && s.status === 'upcoming').length;
   const progressPct = totalStations > 0 ? Math.round((completedCount / totalStations) * 100) : 0;
 
   html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">';
@@ -5864,7 +6017,7 @@ function renderSchedule() {
   html += '</tbody></table></div></div>';
 
   // "올해 심사 없음" section
-  const scheduledStations = new Set(scheduleData.filter(s => s.year === 2026).map(s => s.station));
+  const scheduledStations = new Set(scheduleData.filter(s => s.year === scheduleYear).map(s => s.station));
   const allStations = [];
   for (const [region, data] of Object.entries(REGIONS)) {
     for (const station of data.stations) {
@@ -5939,7 +6092,7 @@ function showScheduleStation(scheduleId) {
 
   schedulePhase = 2;
   currentScheduleId = scheduleId;
-  const statusLabels = getScheduleStatusLabels();
+  const isDivisionSchedule = !!DIVISIONS[item.station];
 
   let html = '';
   // Navigation bar
@@ -5978,12 +6131,13 @@ function showScheduleStation(scheduleId) {
   html += '<label class="apple-label">상태 (자동 계산)</label>';
   html += `<div class="flex items-center gap-3">`;
   html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(statusResult.status)};font-size:14px;padding:6px 16px;">${statusResult.label}</span>`;
-  html += `<span style="font-size:12px;color:#9EA2A1;">점검표 ${statusResult.count}/3종 완료</span>`;
+  html += `<span style="font-size:12px;color:#9EA2A1;">점검표 ${statusResult.count}/${statusResult.total || getExpectedTypesForStation(item.station).length}종 완료</span>`;
   html += `</div></div>`;
 
   // Audit cycle info
   const cycleInfo = STATION_AUDIT_CYCLES[item.station] || {};
-  const cycleDef = CYCLE_LABELS[item.auditCycle || cycleInfo.cycle] || CYCLE_LABELS.biennial;
+  const defaultCycle = isDivisionSchedule ? 'hq_yearly' : 'biennial';
+  const cycleDef = CYCLE_LABELS[item.auditCycle || cycleInfo.cycle || defaultCycle] || CYCLE_LABELS[defaultCycle];
   const lastAudit = getLastAuditYear(item.station);
   const nextDue = getNextDueYear(item.station, lastAudit);
 
@@ -6012,34 +6166,50 @@ function showScheduleStation(scheduleId) {
   html += '</div>';
 
   // Score Summary Card
-  const stationData = allData.filter(d => d.year === item.year && d.station === item.station);
+  const stationData = allData.filter(d => d.year === item.year && (d.station === item.station || d.division === item.station));
   html += '<div class="apple-card p-6 mb-5">';
   html += '<h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">점검 현황</h3>';
 
-  if (stationData.length > 0) {
-    // Score summaries by type
-    html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">';
-    const types = [
-      { key: 'branch', label: '지점' },
-      { key: 'pax', label: '여객협력사' },
-      { key: 'ramp', label: '램프협력사' }
-    ];
+  // 본부/지점에 따라 점검표 유형 결정
+  const expectedTypes = getExpectedTypesForStation(item.station);
+  const types = expectedTypes.map(key => {
+    const reg = CHECKLIST_REGISTRY[key];
+    return { key, label: reg ? reg.name : key, scoring: reg ? reg.scoring : 'grade' };
+  });
+
+  // 그리드 컬럼 수를 점검표 종류 수에 맞게 조정
+  const gridCols = types.length <= 3 ? types.length : Math.min(types.length, 4);
+
+  if (stationData.length > 0 || isDivisionSchedule) {
+    html += `<div class="grid gap-4 mb-5" style="grid-template-columns:repeat(${gridCols},1fr);">`;
     types.forEach(t => {
       const record = stationData.find(d => d.type === t.key);
       if (record) {
-        const result = calculateScores(record.scores, getChecklist(t.key));
-        const avg = result.overallAverage.toFixed(2);
-        const rate = result.achievementRate.toFixed(1);
-        html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
-        html += `<div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">${t.label}</div>`;
-        html += `<div style="font-size:28px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${avg}</div>`;
-        html += `<div style="font-size:12px;color:#9EA2A1;">달성률 ${rate}%</div>`;
-        html += `</div>`;
+        if (t.scoring === 'binary') {
+          // 바이너리 채점 (S/U/NA)
+          const result = calculateBinaryScores(record.scores, getChecklist(t.key));
+          const rate = result.complianceRate.toFixed(1);
+          html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
+          html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
+          html += `<div style="font-size:24px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${rate}%</div>`;
+          html += `<div style="font-size:11px;color:#9EA2A1;">적합 ${result.yesCount} / 부적합 ${result.noCount}</div>`;
+          html += `</div>`;
+        } else {
+          // 등급 채점 (1~4)
+          const result = calculateScores(record.scores, getChecklist(t.key));
+          const avg = result.overallAverage.toFixed(2);
+          const rate = result.achievementRate.toFixed(1);
+          html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
+          html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
+          html += `<div style="font-size:24px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${avg}</div>`;
+          html += `<div style="font-size:11px;color:#9EA2A1;">달성률 ${rate}%</div>`;
+          html += `</div>`;
+        }
       } else {
         html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
-        html += `<div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">${t.label}</div>`;
-        html += `<div style="font-size:28px;font-weight:600;color:#C0CED1;">-</div>`;
-        html += `<div style="font-size:12px;color:#C0CED1;">미실시</div>`;
+        html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
+        html += `<div style="font-size:24px;font-weight:600;color:#C0CED1;">-</div>`;
+        html += `<div style="font-size:11px;color:#C0CED1;">미실시</div>`;
         html += `</div>`;
       }
     });
@@ -6047,14 +6217,28 @@ function showScheduleStation(scheduleId) {
 
     // Action buttons
     html += '<div class="flex gap-3 flex-wrap">';
-    html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewStationSelect').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
-    html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
+    if (stationData.length > 0) {
+      if (isDivisionSchedule) {
+        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewCategoryFilter').value='division';toggleViewCategoryUI();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+      } else {
+        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewStationSelect').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+      }
+    }
+    if (isDivisionSchedule) {
+      html += `<button onclick="switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
+    } else {
+      html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
+    }
     html += '</div>';
   } else {
     html += '<div style="text-align:center;padding:32px 0;">';
     html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
     html += '<p style="font-size:15px;color:#9EA2A1;margin-bottom:16px;">아직 점검이 실시되지 않았습니다</p>';
-    html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-primary">점검표 작성</button>`;
+    if (isDivisionSchedule) {
+      html += `<button onclick="switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
+    } else {
+      html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-primary">점검표 작성</button>`;
+    }
     html += '</div>';
   }
   html += '</div>';
@@ -6524,12 +6708,21 @@ function importJSON(event) {
 }
 
 function resetAllData() {
-  if (!confirm('정말로 모든 데이터를 초기화하시겠습니까?')) return;
+  if (!confirm('정말로 모든 데이터를 초기화하시겠습니까?\n(심사 데이터, 일정, 심사원 정보가 모두 삭제됩니다)')) return;
   if (!confirm('이 작업은 되돌릴 수 없습니다. 최종 확인합니다. 초기화하시겠습니까?')) return;
+  // 심사 데이터 초기화
   localStorage.removeItem(STORAGE_KEY);
   allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
   saveAllData();
-  showToast('데이터가 초기화되었습니다.', 'info');
+  // 일정 데이터 초기화
+  localStorage.removeItem(SCHEDULE_STORAGE_KEY);
+  scheduleData = [];
+  if (firebaseDb) firebaseDb.ref('schedule').remove().catch(() => {});
+  // 심사원 데이터 초기화
+  localStorage.removeItem(AUDITOR_STORAGE_KEY);
+  auditorList = [];
+  if (firebaseDb) firebaseDb.ref('auditors').remove().catch(() => {});
+  showToast('모든 데이터가 초기화되었습니다.', 'info');
   renderDataManagement();
 }
 
@@ -6715,6 +6908,8 @@ function setupFirebaseListeners() {
   firebaseDb.ref('assessments').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
+      // 편집 중(unsavedChanges)이면 원격 데이터로 덮어쓰지 않음
+      if (unsavedChanges) return;
       // Firebase 키 복원: _dot_ → .
       const newData = Object.values(data).map(d => ({
         ...d,
@@ -6778,14 +6973,16 @@ function refreshCurrentView() {
 function encodeScoresForFirebase(scores) {
   const encoded = {};
   for (const [k, v] of Object.entries(scores)) {
-    encoded[k.replace(/\./g, '_dot_')] = v;
+    const safeKey = k.replace(/\./g, '_dot_').replace(/#/g, '_hash_').replace(/\$/g, '_dollar_').replace(/\//g, '_slash_').replace(/\[/g, '_lbr_').replace(/\]/g, '_rbr_');
+    encoded[safeKey] = v;
   }
   return encoded;
 }
 function decodeScoresFromFirebase(scores) {
   const decoded = {};
   for (const [k, v] of Object.entries(scores)) {
-    decoded[k.replace(/_dot_/g, '.')] = v;
+    const origKey = k.replace(/_dot_/g, '.').replace(/_hash_/g, '#').replace(/_dollar_/g, '$').replace(/_slash_/g, '/').replace(/_lbr_/g, '[').replace(/_rbr_/g, ']');
+    decoded[origKey] = v;
   }
   return decoded;
 }
@@ -6795,7 +6992,9 @@ function firebaseSaveAllData() {
   try {
     const assessmentObj = {};
     allData.forEach((d, i) => {
-      const key = `${d.year}_${d.station}_${d.type}`.replace(/[.#$/\[\]]/g, '_');
+      let key = `${d.year}_${d.station}_${d.type}`;
+      if (d.company) key += `_${d.company}`;
+      key = key.replace(/[.#$/\[\]]/g, '_');
       const copy = { ...d, scores: encodeScoresForFirebase(d.scores || {}) };
       assessmentObj[key] = copy;
     });
@@ -6971,12 +7170,15 @@ function renderHome() {
   const totalStations = Object.values(REGIONS).reduce((sum, r) => sum + r.stations.length, 0);
   const completionRate = totalStations > 0 ? ((completedStations.size / totalStations) * 100).toFixed(0) : '0';
 
-  // Overall average
+  // Overall average (grade 방식만 집계, binary 방식 제외)
   let totalAvg = 0, totalCount = 0;
   yearData.forEach(d => {
+    if (getScoringMethod(d.type) === 'binary') return;
     const result = calculateScores(d.scores, getChecklist(d.type));
-    totalAvg += result.overallAverage;
-    totalCount++;
+    if (!isNaN(result.overallAverage)) {
+      totalAvg += result.overallAverage;
+      totalCount++;
+    }
   });
   const overallAvg = totalCount > 0 ? (totalAvg / totalCount).toFixed(2) : '-';
 
@@ -7062,12 +7264,30 @@ function renderHome() {
   } else {
     recentStations.forEach(station => {
       const stationRecords = yearData.filter(d => d.station === station);
-      const avg = stationRecords.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stationRecords.length;
       const dateDisplay = stationRecords[0]?.auditDateStart || stationRecords[0]?.auditDate || '-';
-      const types = stationRecords.map(d => getTypeLabel(d.type)).join(', ');
+      const types = stationRecords.map(d => { const reg = CHECKLIST_REGISTRY[d.type]; return reg ? reg.name : getTypeLabel(d.type); }).join(', ');
+      // 바이너리/등급 분리 표시
+      const hasBinary = stationRecords.some(d => getScoringMethod(d.type) === 'binary');
+      const hasGrade = stationRecords.some(d => getScoringMethod(d.type) !== 'binary');
+      let scoreBadge;
+      if (hasBinary && !hasGrade) {
+        // 본부 심사만: 적합률 표시
+        const totalRate = stationRecords.reduce((s, d) => s + calculateBinaryScores(d.scores, getChecklist(d.type)).complianceRate, 0) / stationRecords.length;
+        const style = totalRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : totalRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015';
+        scoreBadge = `<span class="badge-pill" style="${style}">${totalRate.toFixed(0)}%</span>`;
+      } else {
+        // 지점 심사 (또는 혼합): 평균점수 표시
+        const gradeRecords = stationRecords.filter(d => getScoringMethod(d.type) !== 'binary');
+        if (gradeRecords.length > 0) {
+          const avg = gradeRecords.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / gradeRecords.length;
+          scoreBadge = `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
+        } else {
+          scoreBadge = `<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">-</span>`;
+        }
+      }
       recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
-      recentHtml += `<div style="display:flex;align-items:center;gap:6px;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span><svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
+      recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
     });
   }
@@ -7075,7 +7295,7 @@ function renderHome() {
 
   // Upcoming audits from scheduleData
   const currentMonth = new Date().getMonth() + 1;
-  const upcomingItems = scheduleData.filter(s => s.year === 2026 && s.month >= currentMonth && s.status !== 'completed');
+  const upcomingItems = scheduleData.filter(s => s.year === currentYear && s.month >= currentMonth && s.status !== 'completed');
   // Group by month for display, take first 3 months
   const upcomingMonths = {};
   upcomingItems.forEach(s => {
@@ -7132,13 +7352,14 @@ function renderInputPendingStations() {
   if (!container) return;
   const year = parseInt(document.getElementById('inputYear').value);
 
-  // Get schedule data sorted by date, filter to stations without all 3 checklists
+  // Get schedule data sorted by date, filter to stations without all checklists completed
   const pendingStations = [];
   scheduleData.filter(s => s.year === year).forEach(s => {
-    const completedTypes = ['branch', 'pax', 'ramp'].filter(type => {
-      return allData.some(d => d.year == year && d.station === s.station && d.type === type);
+    const expected = getExpectedTypesForStation(s.station);
+    const completedTypes = expected.filter(type => {
+      return allData.some(d => d.year == year && (d.station === s.station || d.division === s.station) && d.type === type);
     });
-    if (completedTypes.length < 3) {
+    if (completedTypes.length < expected.length) {
       pendingStations.push({
         station: s.station,
         displayName: s.displayName || s.station,
@@ -7146,6 +7367,7 @@ function renderInputPendingStations() {
         dateStart: s.dateStart,
         auditors: s.auditors,
         completed: completedTypes.length,
+        total: expected.length,
         status: calcScheduleStatus(s)
       });
     }
@@ -7189,53 +7411,96 @@ function renderViewRecentStations() {
   if (!container) return;
   const year = parseInt(document.getElementById('viewYear').value);
 
-  // Get all stations with data for this year, grouped by station
-  const stationMap = {};
+  // 지점/본부 분리 집계
+  const branchMap = {};
+  const divisionMap = {};
   allData.filter(d => d.year == year).forEach(d => {
-    if (!stationMap[d.station]) {
-      stationMap[d.station] = {
-        station: d.station,
-        region: d.region,
-        types: {},
-        latestDate: ''
-      };
+    const isDivType = getScoringMethod(d.type) === 'binary' && d.auditCategory === 'division';
+    const map = isDivType ? divisionMap : branchMap;
+    const key = isDivType ? (d.division || d.station) : d.station;
+    if (!map[key]) {
+      map[key] = { station: key, region: isDivType ? '실/본부' : (d.region || getRegionForStation(d.station)), types: {}, latestDate: '', isDivision: isDivType };
     }
-    stationMap[d.station].types[d.type] = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-    // Track latest audit date
+    if (isDivType) {
+      const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+      map[key].types[d.type] = result.complianceRate;
+    } else {
+      map[key].types[d.type] = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+    }
     const date = d.auditDateStart || d.auditDate || '';
-    if (date > stationMap[d.station].latestDate) stationMap[d.station].latestDate = date;
+    if (date > map[key].latestDate) map[key].latestDate = date;
   });
 
-  // Sort by latest date descending (most recent first)
-  const stations = Object.values(stationMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
+  const branchStations = Object.values(branchMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
+  const divisionStations = Object.values(divisionMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
 
-  if (stations.length === 0) {
+  if (branchStations.length === 0 && divisionStations.length === 0) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">' + year + '년 입력된 점검표가 없습니다.</div></div>';
     return;
   }
 
-  let html = '<div class="apple-card" style="padding:14px;">';
-  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + stations.length + '개 지점)</span></h3>';
-  html += '<table class="apple-table compact-mobile"><thead><tr>';
-  html += '<th style="text-align:left;">지점</th>';
-  html += '<th style="text-align:center;">지점</th>';
-  html += '<th style="text-align:center;">여객</th>';
-  html += '<th style="text-align:center;">램프</th>';
-  html += '<th style="text-align:center;">심사일</th>';
-  html += '</tr></thead><tbody>';
+  let html = '';
 
-  stations.forEach(s => {
-    const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-    html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
-    html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
-    html += `<td data-label="지점 점수" style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
-    html += `<td data-label="여객 점수" style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
-    html += `<td data-label="램프 점수" style="text-align:center;">${s.types.ramp ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.ramp) + '">' + s.types.ramp.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
-    html += `<td data-label="심사일" style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
-    html += '</tr>';
-  });
+  // --- 지점 테이블 ---
+  if (branchStations.length > 0) {
+    html += '<div class="apple-card" style="padding:14px;margin-bottom:16px;">';
+    html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + branchStations.length + '개 지점)</span></h3>';
+    html += '<table class="apple-table compact-mobile"><thead><tr>';
+    html += '<th style="text-align:left;">지점</th>';
+    html += '<th style="text-align:center;">지점</th>';
+    html += '<th style="text-align:center;">여객</th>';
+    html += '<th style="text-align:center;">램프</th>';
+    html += '<th style="text-align:center;">심사일</th>';
+    html += '</tr></thead><tbody>';
+    branchStations.forEach(s => {
+      const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
+      html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
+      html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+      html += `<td style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+      html += `<td style="text-align:center;">${s.types.ramp ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.ramp) + '">' + s.types.ramp.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+      html += `<td style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
 
-  html += '</tbody></table></div>';
+  // --- 본부 테이블 ---
+  if (divisionStations.length > 0) {
+    html += '<div class="apple-card" style="padding:14px;">';
+    html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 실/본부 심사 완료 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + divisionStations.length + '개 부서)</span></h3>';
+    // 동적 컬럼 헤더
+    const allDivTypes = new Set();
+    divisionStations.forEach(s => Object.keys(s.types).forEach(t => allDivTypes.add(t)));
+    const divTypeArr = [...allDivTypes];
+    html += '<table class="apple-table compact-mobile"><thead><tr>';
+    html += '<th style="text-align:left;">실/본부</th>';
+    divTypeArr.forEach(type => {
+      const reg = CHECKLIST_REGISTRY[type];
+      const shortName = reg ? reg.name.replace('품질심사', '품질').replace('안전감사', '안전').replace('비행안전문서시스템', 'FSDS') : type;
+      html += `<th style="text-align:center;font-size:10px;letter-spacing:0;">${shortName}</th>`;
+    });
+    html += '<th style="text-align:center;">심사일</th>';
+    html += '</tr></thead><tbody>';
+    divisionStations.forEach(s => {
+      const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';document.getElementById('viewCategoryFilter').value='division';toggleViewCategoryUI();viewSearch()">`;
+      html += `<td style="font-weight:600;">${s.station}<div style="font-size:10px;color:#6366F1;">실/본부</div></td>`;
+      divTypeArr.forEach(type => {
+        const rate = s.types[type];
+        if (rate !== undefined) {
+          const style = rate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : rate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015';
+          html += `<td style="text-align:center;"><span class="badge-pill" style="${style}">${rate.toFixed(0)}%</span></td>`;
+        } else {
+          html += `<td style="text-align:center;"><span style="color:#C0CED1;">-</span></td>`;
+        }
+      });
+      html += `<td style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
   container.innerHTML = html;
 }
 
@@ -7253,6 +7518,14 @@ function init() {
   window.addEventListener('scroll', () => {
     const fab = document.getElementById('fabScrollTop');
     if (fab) fab.style.display = window.scrollY > 300 ? 'block' : 'none';
+  });
+
+  // 미저장 데이터 있을 때 브라우저 닫기/새로고침 경고
+  window.addEventListener('beforeunload', (e) => {
+    if (unsavedChanges) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
   });
 }
 
