@@ -4533,7 +4533,6 @@ function renderDivisionStats() {
 
   let html = '';
 
-  // 상단 연도 선택기 사용 (중복 제거)
   html += `<div class="flex items-center gap-3 mb-4">`;
   html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 실/본부 심사 ${divData.length}건</span>`;
   html += `</div>`;
@@ -4542,70 +4541,127 @@ function renderDivisionStats() {
     html += `<div class="apple-card" style="padding:40px;text-align:center;">`;
     html += `<div style="font-size:15px;color:#9EA2A1;">${year}년 실/본부 심사 데이터가 없습니다</div>`;
     html += `</div>`;
-  } else {
-    // Division compliance summary
-    html += `<div class="apple-card mb-4" style="padding:20px;">`;
-    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 적합률 현황</div>`;
-    html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+    document.getElementById('divisionStatsContent').innerHTML = html;
+    return;
+  }
 
-    const divGroups = {};
-    divData.forEach(d => {
-      const div = d.division || d.station;
-      if (!divGroups[div]) divGroups[div] = [];
-      divGroups[div].push(d);
+  // Group by division
+  const divGroups = {};
+  divData.forEach(d => {
+    const div = d.division || d.station;
+    if (!divGroups[div]) divGroups[div] = [];
+    divGroups[div].push(d);
+  });
+
+  // Summary cards (like branch stats)
+  let totalS = 0, totalU = 0, totalNA = 0, totalDivs = Object.keys(divGroups).length;
+  divData.forEach(d => {
+    const r = calculateBinaryScores(d.scores, getChecklist(d.type));
+    totalS += r.yesCount; totalU += r.noCount; totalNA += r.naCount;
+  });
+  const totalApp = totalS + totalU;
+  const overallRate = totalApp > 0 ? (totalS / totalApp * 100) : 0;
+
+  html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">`;
+  html += `<div class="apple-card" style="padding:16px;text-align:center;">`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">전체 적합률</div>`;
+  html += `<div style="font-size:28px;font-weight:600;color:${overallRate >= 90 ? '#22C55E' : overallRate >= 70 ? '#F59E0B' : '#D20015'};">${overallRate.toFixed(1)}%</div>`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">${divData.length}건 심사</div>`;
+  html += `</div>`;
+  html += `<div class="apple-card" style="padding:16px;text-align:center;">`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">적합 (S)</div>`;
+  html += `<div style="font-size:28px;font-weight:600;color:#22C55E;">${totalS}</div>`;
+  html += `</div>`;
+  html += `<div class="apple-card" style="padding:16px;text-align:center;">`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">부적합 (U)</div>`;
+  html += `<div style="font-size:28px;font-weight:600;color:#D20015;">${totalU}</div>`;
+  html += `</div>`;
+  html += `<div class="apple-card" style="padding:16px;text-align:center;">`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">심사 부서</div>`;
+  html += `<div style="font-size:28px;font-weight:600;color:#303A3C;">${totalDivs}</div>`;
+  html += `<div style="font-size:12px;color:#9EA2A1;">/ 7개 부서</div>`;
+  html += `</div></div>`;
+
+  // Division cards (expandable, like branch)
+  let cardIdx = 0;
+  for (const [divName, records] of Object.entries(divGroups)) {
+    let dS = 0, dU = 0, dNA = 0;
+    records.forEach(r => {
+      const res = calculateBinaryScores(r.scores, getChecklist(r.type));
+      dS += res.yesCount; dU += res.noCount; dNA += res.naCount;
     });
+    const dApp = dS + dU;
+    const dRate = dApp > 0 ? (dS / dApp * 100) : 0;
+    const rateColor = dRate >= 90 ? '#22C55E' : dRate >= 70 ? '#F59E0B' : '#D20015';
+    const barW = Math.min(dRate, 100).toFixed(0);
+    const detailId = `divStatDetail_${cardIdx}`;
 
-    for (const [divName, records] of Object.entries(divGroups)) {
-      let totalS = 0, totalU = 0, totalNA = 0;
-      records.forEach(r => {
-        const result = calculateBinaryScores(r.scores, getChecklist(r.type));
-        totalS += result.yesCount;
-        totalU += result.noCount;
-        totalNA += result.naCount;
-      });
-      const totalApp = totalS + totalU;
-      const rate = totalApp > 0 ? (totalS / totalApp * 100) : 0;
-      const rateClass = rate >= 90 ? 'compliance-high' : rate >= 70 ? 'compliance-mid' : 'compliance-low';
-
-      html += `<div style="padding:16px;background:rgba(245,245,247,0.8);border-radius:12px;">`;
-      html += `<div style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:8px;">${divName}</div>`;
-      html += `<div class="flex items-center gap-3">`;
-      html += `<span class="compliance-badge ${rateClass}">${rate.toFixed(1)}%</span>`;
-      html += `<span style="font-size:12px;color:#9EA2A1;">S:${totalS} U:${totalU} NA:${totalNA}</span>`;
-      html += `</div>`;
-      html += `<div style="margin-top:8px;font-size:12px;color:#9EA2A1;">${records.length}건 심사</div>`;
-      html += `</div>`;
-    }
-
+    html += `<div class="apple-card mb-3" style="overflow:hidden;">`;
+    // Card header (clickable)
+    html += `<div style="padding:16px;cursor:pointer;" onclick="document.getElementById('${detailId}').classList.toggle('hidden');this.querySelector('svg').style.transform=document.getElementById('${detailId}').classList.contains('hidden')?'':'rotate(180deg)'">`;
+    html += `<div class="flex justify-between items-center mb-2">`;
+    html += `<div class="flex items-center gap-3">`;
+    html += `<span style="font-size:15px;font-weight:600;color:#303A3C;">${divName}</span>`;
+    html += `<span class="badge-pill" style="background:rgba(99,102,241,0.15);color:#6366F1;font-size:11px;">실/본부</span>`;
+    html += `</div>`;
+    html += `<div class="flex items-center gap-2">`;
+    html += `<span style="font-size:20px;font-weight:600;color:${rateColor};">${dRate.toFixed(1)}%</span>`;
+    html += `<svg class="w-4 h-4" style="color:#9EA2A1;transition:transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+    html += `</div></div>`;
+    // Mini stats row
+    html += `<div class="flex gap-4" style="margin-top:8px;">`;
+    html += `<div style="flex:1;">`;
+    html += `<div style="height:4px;background:#f0f0f0;border-radius:2px;"><div style="height:4px;width:${barW}%;background:${rateColor};border-radius:2px;"></div></div>`;
+    html += `</div>`;
+    html += `<span style="font-size:12px;color:#9EA2A1;white-space:nowrap;">S:${dS} U:${dU} NA:${dNA} · ${records.length}건</span>`;
     html += `</div></div>`;
 
-    // U (Unsatisfactory) items list
-    html += `<div class="apple-card mb-4" style="padding:20px;">`;
-    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부적합(U) 항목 목록</div>`;
-    let hasU = false;
-    divData.forEach(d => {
-      const checklist = getChecklist(d.type);
-      for (const [catName, catData] of Object.entries(checklist)) {
+    // Detail (hidden by default)
+    html += `<div id="${detailId}" class="hidden" style="border-top:1px solid rgba(192,206,209,0.3);padding:16px;background:#f9f9fb;">`;
+    // Per-checklist breakdown
+    records.forEach(r => {
+      const res = calculateBinaryScores(r.scores, getChecklist(r.type));
+      const cRate = res.complianceRate;
+      const cColor = cRate >= 90 ? '#22C55E' : cRate >= 70 ? '#F59E0B' : '#D20015';
+      html += `<div style="margin-bottom:12px;">`;
+      html += `<div class="flex justify-between items-center mb-1">`;
+      html += `<span style="font-size:13px;font-weight:600;color:#303A3C;">${getChecklistName(r.type)}</span>`;
+      html += `<span class="compliance-badge" style="background:${cColor}20;color:${cColor};">${cRate.toFixed(1)}%</span>`;
+      html += `</div>`;
+      // Category breakdown
+      for (const [catName, catRes] of Object.entries(res.categoryResults)) {
+        const catRate = catRes.complianceRate;
+        const catColor = catRate >= 90 ? '#22C55E' : catRate >= 70 ? '#F59E0B' : '#D20015';
+        html += `<div class="flex items-center gap-2" style="margin-left:12px;margin-bottom:4px;">`;
+        html += `<div style="flex:1;font-size:12px;color:#565A5B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${catName}</div>`;
+        html += `<div style="width:60px;height:3px;background:#f0f0f0;border-radius:2px;flex-shrink:0;"><div style="height:3px;width:${catRate.toFixed(0)}%;background:${catColor};border-radius:2px;"></div></div>`;
+        html += `<span style="font-size:11px;color:${catColor};min-width:36px;text-align:right;">${catRate.toFixed(0)}%</span>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    // U items in this division
+    let divUItems = [];
+    records.forEach(r => {
+      const cl = getChecklist(r.type);
+      for (const [,catData] of Object.entries(cl)) {
         for (const item of catData.items) {
-          if (d.scores[item.id] === 'U') {
-            if (!hasU) {
-              html += `<div style="overflow-x:auto;"><table class="w-full" style="font-size:13px;">`;
-              html += `<thead><tr style="border-bottom:2px solid rgba(192,206,209,0.3);"><th style="text-align:left;padding:8px;">부서</th><th style="text-align:left;padding:8px;">점검표</th><th style="text-align:left;padding:8px;">항목</th><th style="text-align:left;padding:8px;">내용</th></tr></thead><tbody>`;
-              hasU = true;
-            }
-            html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.2);">`;
-            html += `<td style="padding:8px;color:#303A3C;">${d.division || d.station}</td>`;
-            html += `<td style="padding:8px;color:#565A5B;">${getChecklistName(d.type)}</td>`;
-            html += `<td style="padding:8px;"><span style="background:#D20015;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;">${item.id}</span></td>`;
-            html += `<td style="padding:8px;color:#565A5B;">${item.text.substring(0, 80)}${item.text.length > 80 ? '...' : ''}</td>`;
-            html += `</tr>`;
-          }
+          if (r.scores[item.id] === 'U') divUItems.push({type: r.type, item});
         }
       }
     });
-    if (hasU) html += `</tbody></table></div>`;
-    else html += `<div style="font-size:13px;color:#22C55E;text-align:center;padding:20px;">부적합 항목이 없습니다</div>`;
-    html += `</div>`;
+    if (divUItems.length > 0) {
+      html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(192,206,209,0.2);">`;
+      html += `<div style="font-size:12px;font-weight:600;color:#D20015;margin-bottom:6px;">부적합 항목 (${divUItems.length}건)</div>`;
+      divUItems.forEach(u => {
+        html += `<div style="font-size:12px;color:#565A5B;margin-bottom:3px;padding-left:8px;border-left:2px solid #D20015;">`;
+        html += `<span style="color:#9EA2A1;">[${getChecklistName(u.type)}]</span> ${u.item.id}. ${u.item.text.substring(0, 60)}${u.item.text.length > 60 ? '...' : ''}`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+    cardIdx++;
   }
 
   document.getElementById('divisionStatsContent').innerHTML = html;
@@ -5253,68 +5309,95 @@ function switchAnalysisSubTab(tab) {
 function renderDivisionAnalysis() {
   const year = parseInt(document.getElementById('analysisYear')?.value || new Date().getFullYear());
   const divData = allData.filter(d => d.auditCategory === 'division');
+  const yearData = divData.filter(d => d.year == year);
 
   let html = '';
 
-  // 상단 연도 선택기 사용 (중복 제거)
-  const yearData = divData.filter(d => d.year == year);
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 실/본부 심사 분석</span>`;
+  html += `</div>`;
 
   if (yearData.length === 0) {
     html += `<div class="apple-card" style="padding:40px;text-align:center;"><div style="font-size:15px;color:#9EA2A1;">${year}년 실/본부 심사 데이터가 없습니다</div></div>`;
   } else {
-    // Compliance trend by division (multi-year)
+    // Trend chart
     html += `<div class="apple-card mb-4" style="padding:20px;">`;
-    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 적합률 ���렌드</div>`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 적합률 트렌드</div>`;
     html += `<canvas id="divTrendChart" height="200"></canvas>`;
     html += `</div>`;
 
-    // Risk analysis - divisions with most U items
+    // Risk chart
     html += `<div class="apple-card mb-4" style="padding:20px;">`;
     html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 부적합 분석</div>`;
     html += `<canvas id="divRiskChart" height="200"></canvas>`;
     html += `</div>`;
 
-    // Checklist type comparison
+    // Card-based comparison (품질/안전/FSDS per division)
     html += `<div class="apple-card mb-4" style="padding:20px;">`;
-    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">품질심사 vs 안전감사 vs FSDS 비교</div>`;
-    html += `<div class="overflow-x-auto"><table class="w-full" style="font-size:13px;">`;
-    html += `<thead><tr style="border-bottom:2px solid rgba(192,206,209,0.3);">`;
-    html += `<th style="text-align:left;padding:8px;">부서</th>`;
-    html += `<th style="text-align:center;padding:8px;">품질심사</th>`;
-    html += `<th style="text-align:center;padding:8px;">안전감사</th>`;
-    html += `<th style="text-align:center;padding:8px;">FSDS</th>`;
-    html += `</tr></thead><tbody>`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">부서별 품질심사 · 안전감사 · FSDS 비교</div>`;
 
     const divGroups = {};
     yearData.forEach(d => {
       const div = d.division || d.station;
       if (!divGroups[div]) divGroups[div] = {};
       const result = calculateBinaryScores(d.scores, getChecklist(d.type));
-      if (d.type.startsWith('qa_')) divGroups[div].qa = result.complianceRate;
-      else if (d.type.includes('safety')) divGroups[div].safety = result.complianceRate;
-      else if (d.type === 'fsds') divGroups[div].fsds = result.complianceRate;
+      if (d.type.startsWith('qa_')) divGroups[div].qa = result;
+      else if (d.type.includes('safety')) divGroups[div].safety = result;
+      else if (d.type === 'fsds') divGroups[div].fsds = result;
     });
 
-    for (const [div, rates] of Object.entries(divGroups)) {
-      html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.2);">`;
-      html += `<td style="padding:8px;font-weight:600;color:#303A3C;">${div}</td>`;
-      for (const key of ['qa', 'safety', 'fsds']) {
-        const rate = rates[key];
-        if (rate !== undefined) {
-          const cls = rate >= 90 ? 'compliance-high' : rate >= 70 ? 'compliance-mid' : 'compliance-low';
-          html += `<td style="text-align:center;padding:8px;"><span class="compliance-badge ${cls}">${rate.toFixed(1)}%</span></td>`;
+    let aIdx = 0;
+    for (const [div, results] of Object.entries(divGroups)) {
+      const aDetailId = `divAnalDetail_${aIdx}`;
+      html += `<div style="margin-bottom:12px;border:1px solid rgba(192,206,209,0.3);border-radius:12px;overflow:hidden;">`;
+      html += `<div style="padding:14px;cursor:pointer;background:#fff;" onclick="document.getElementById('${aDetailId}').classList.toggle('hidden');this.querySelector('svg').style.transform=document.getElementById('${aDetailId}').classList.contains('hidden')?'':'rotate(180deg)'">`;
+      html += `<div class="flex justify-between items-center">`;
+      html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${div}</span>`;
+      html += `<svg class="w-4 h-4" style="color:#9EA2A1;transition:transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
+      html += `</div>`;
+      // Mini badges
+      html += `<div class="flex gap-3 mt-2">`;
+      for (const [key, label] of [['qa','품질심사'],['safety','안전감사'],['fsds','FSDS']]) {
+        const r = results[key];
+        if (r) {
+          const c = r.complianceRate >= 90 ? '#22C55E' : r.complianceRate >= 70 ? '#F59E0B' : '#D20015';
+          html += `<div style="flex:1;text-align:center;padding:6px;background:${c}10;border-radius:8px;">`;
+          html += `<div style="font-size:16px;font-weight:600;color:${c};">${r.complianceRate.toFixed(0)}%</div>`;
+          html += `<div style="font-size:10px;color:#9EA2A1;">${label}</div>`;
+          html += `</div>`;
         } else {
-          html += `<td style="text-align:center;padding:8px;color:#C0CED1;">-</td>`;
+          html += `<div style="flex:1;text-align:center;padding:6px;background:#f5f5f7;border-radius:8px;">`;
+          html += `<div style="font-size:16px;color:#C0CED1;">-</div>`;
+          html += `<div style="font-size:10px;color:#C0CED1;">${label}</div>`;
+          html += `</div>`;
         }
       }
-      html += `</tr>`;
+      html += `</div></div>`;
+      // Detail (hidden)
+      html += `<div id="${aDetailId}" class="hidden" style="padding:14px;background:#f9f9fb;border-top:1px solid rgba(192,206,209,0.2);">`;
+      for (const [key, label] of [['qa','품질심사'],['safety','안전감사'],['fsds','FSDS']]) {
+        const r = results[key];
+        if (!r) continue;
+        html += `<div style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:6px;">${label} — S:${r.yesCount} U:${r.noCount} NA:${r.naCount}</div>`;
+        for (const [catName, catRes] of Object.entries(r.categoryResults)) {
+          const catRate = catRes.complianceRate;
+          const catColor = catRate >= 90 ? '#22C55E' : catRate >= 70 ? '#F59E0B' : '#D20015';
+          html += `<div class="flex items-center gap-2" style="margin-left:8px;margin-bottom:3px;">`;
+          html += `<div style="flex:1;font-size:12px;color:#565A5B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${catName}</div>`;
+          html += `<div style="width:50px;height:3px;background:#f0f0f0;border-radius:2px;flex-shrink:0;"><div style="height:3px;width:${catRate.toFixed(0)}%;background:${catColor};border-radius:2px;"></div></div>`;
+          html += `<span style="font-size:11px;color:${catColor};min-width:32px;text-align:right;">${catRate.toFixed(0)}%</span>`;
+          html += `</div>`;
+        }
+        html += `<div style="margin-bottom:10px;"></div>`;
+      }
+      html += `</div></div>`;
+      aIdx++;
     }
-    html += `</tbody></table></div></div>`;
+    html += `</div>`;
   }
 
   document.getElementById('divisionAnalysisContent').innerHTML = html;
 
-  // Render charts if data exists
   if (yearData.length > 0) {
     setTimeout(() => {
       renderDivisionTrendChart(divData, year);
