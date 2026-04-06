@@ -4118,7 +4118,7 @@ function renderStatsDashboard() {
   if (statsSubTab === 'division') { renderDivisionStats(); return; }
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
-  const yearData = allData.filter(d => d.year == year);
+  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
 
   // Calculate averages
   let totalAvg = 0, totalCount = 0;
@@ -4407,7 +4407,7 @@ function renderStatsDashboard() {
   // 연도별 전체 평균 비교 카드
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y);
+    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division');
     let avg = 0, count = 0;
     yData.forEach(d => {
       avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
@@ -4426,7 +4426,7 @@ function renderStatsDashboard() {
 
   // 연도별 지점 비교 테이블
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y).forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division').forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -4439,7 +4439,7 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station);
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
       if (stData.length === 0) return null;
       return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
     });
@@ -4487,7 +4487,7 @@ function renderStatsDashboard() {
       return {
         label: `${y}년`,
         data: commonStations3y.map(station => {
-          const stData = allData.filter(d => d.year == y && d.station === station);
+          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
           if (stData.length === 0) return null;
           return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
         }),
@@ -4533,15 +4533,9 @@ function renderDivisionStats() {
 
   let html = '';
 
-  // Year selector
-  const thisYear = new Date().getFullYear();
+  // 상단 연도 선택기 사용 (중복 제거)
   html += `<div class="flex items-center gap-3 mb-4">`;
-  html += `<select id="divStatsYear" class="apple-select" style="width:auto;" onchange="window.statsSubTab='division';renderStatsDashboard()">`;
-  for (let y = thisYear; y >= thisYear - 2; y--) {
-    html += `<option value="${y}" ${y == year ? 'selected' : ''}>${y}년</option>`;
-  }
-  html += `</select>`;
-  html += `<span style="font-size:13px;color:#9EA2A1;">실/본부 심사 ${divData.length}건</span>`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 실/본부 심사 ${divData.length}건</span>`;
   html += `</div>`;
 
   if (divData.length === 0) {
@@ -4645,14 +4639,14 @@ function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const yearData = allData.filter(d => d.year == year);
-  const prevYearData = allData.filter(d => d.year == year - 1);
+  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
+  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division');
   const container = document.getElementById('analysisContainer');
 
   // ===== Pre-calculate all analysis data =====
 
   // 1. Trend: 3-year comparison
-  const twoYearsAgoData = allData.filter(d => d.year == year - 2);
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division');
   const stationsTwoYearsAgo = {};
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
     stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
@@ -5262,15 +5256,7 @@ function renderDivisionAnalysis() {
 
   let html = '';
 
-  // Year selector
-  const thisYear = new Date().getFullYear();
-  html += `<div class="flex items-center gap-3 mb-4">`;
-  html += `<select id="divAnalysisYear" class="apple-select" style="width:auto;" onchange="window.analysisSubTab='division';renderAnalysis()">`;
-  for (let y = thisYear; y >= thisYear - 2; y--) {
-    html += `<option value="${y}" ${y == year ? 'selected' : ''}>${y}년</option>`;
-  }
-  html += `</select></div>`;
-
+  // 상단 연도 선택기 사용 (중복 제거)
   const yearData = divData.filter(d => d.year == year);
 
   if (yearData.length === 0) {
