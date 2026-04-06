@@ -519,12 +519,12 @@ select.apple-input {
     </div>
 
     <!-- 현황 요약 -->
-    <div id="homeSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+    <div id="homeSummary" class="grid grid-cols-2 gap-4 mb-8"></div>
 
     <!-- 빠른 실행 -->
     <div class="mb-8">
       <h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:12px;">빠른 실행</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quickActions"></div>
+      <div class="grid grid-cols-2 gap-4" id="quickActions"></div>
     </div>
 
     <!-- 최근 완료 / 예정 심사 -->
@@ -7189,8 +7189,26 @@ function renderHome() {
     return diff < 90;
   });
 
-  // Summary cards
+  // 실/본부 진행률 계산
+  const divisionData = yearData.filter(d => d.auditCategory === 'division');
+  const completedDivisions = new Set(divisionData.map(d => d.division || d.station));
+  const totalDivisions = DIVISION_NAMES.length;
+  const divCompletionRate = totalDivisions > 0 ? ((completedDivisions.size / totalDivisions) * 100).toFixed(0) : '0';
+
+  // 실/본부 평균 적합률 계산
+  let divTotalRate = 0, divRateCount = 0;
+  divisionData.forEach(d => {
+    const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+    if (!isNaN(result.complianceRate)) {
+      divTotalRate += result.complianceRate;
+      divRateCount++;
+    }
+  });
+  const divAvgRate = divRateCount > 0 ? (divTotalRate / divRateCount).toFixed(0) : '-';
+
+  // Summary cards — 지점/실본부 구분
   document.getElementById('homeSummary').innerHTML = `
+    <div style="grid-column:1/-1;font-size:13px;font-weight:600;color:#9EA2A1;margin-bottom:-8px;">지점 및 외주협력업체</div>
     <div class="apple-card" style="padding:20px;text-align:center;">
       <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
       <div style="font-size:36px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${completionRate}%</div>
@@ -7201,24 +7219,26 @@ function renderHome() {
       <div style="font-size:36px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${overallAvg}</div>
       <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
     </div>
+    <div style="grid-column:1/-1;font-size:13px;font-weight:600;color:#9EA2A1;margin-top:8px;margin-bottom:-8px;">실·본부</div>
     <div class="apple-card" style="padding:20px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">등록 심사원</div>
-      <div style="font-size:36px;font-weight:600;color:#22C55E;letter-spacing:-0.28px;">${auditorList.length}</div>
-      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">명</div>
+      <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
+      <div style="font-size:36px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${divCompletionRate}%</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${completedDivisions.size} / ${totalDivisions} 본부</div>
     </div>
     <div class="apple-card" style="padding:20px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">교육 만료 임박</div>
-      <div style="font-size:36px;font-weight:600;color:${expiringAuditors.length > 0 ? '#F59E0B' : '#22C55E'};letter-spacing:-0.28px;">${expiringAuditors.length}</div>
-      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">명</div>
+      <div style="font-size:12px;color:#9EA2A1;">평균 적합률</div>
+      <div style="font-size:36px;font-weight:600;color:${divAvgRate !== '-' && parseInt(divAvgRate) >= 90 ? '#22C55E' : divAvgRate !== '-' && parseInt(divAvgRate) >= 70 ? '#F59E0B' : '#303A3C'};letter-spacing:-0.28px;">${divAvgRate}${divAvgRate !== '-' ? '%' : ''}</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
     </div>
   `;
 
-  // Quick actions
+  // Quick actions — 지점/실본부 구분
   document.getElementById('quickActions').innerHTML = `
+    <div style="grid-column:1/-1;font-size:13px;font-weight:600;color:#9EA2A1;margin-bottom:-8px;">지점 및 외주협력업체</div>
     <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
       onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
       onmouseout="this.style.boxShadow='none'"
-      onclick="switchTab(1)">
+      onclick="selectedAuditCategory='branch';switchTab(1);">
       <svg class="w-8 h-8 mx-auto mb-2" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <div style="font-size:14px;font-weight:600;color:#303A3C;">점수 입력</div>
       <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">새 심사 작성</div>
@@ -7226,11 +7246,29 @@ function renderHome() {
     <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
       onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
       onmouseout="this.style.boxShadow='none'"
-      onclick="switchTab(2)">
+      onclick="selectedAuditCategory='branch';switchTab(2);">
       <svg class="w-8 h-8 mx-auto mb-2" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       <div style="font-size:14px;font-weight:600;color:#303A3C;">점수 조회</div>
       <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">결과 확인</div>
     </div>
+    <div style="grid-column:1/-1;font-size:13px;font-weight:600;color:#9EA2A1;margin-top:8px;margin-bottom:-8px;">실·본부</div>
+    <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
+      onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
+      onmouseout="this.style.boxShadow='none'"
+      onclick="selectedAuditCategory='division';switchTab(1);">
+      <svg class="w-8 h-8 mx-auto mb-2" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      <div style="font-size:14px;font-weight:600;color:#303A3C;">점수 입력</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">새 심사 작성</div>
+    </div>
+    <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
+      onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
+      onmouseout="this.style.boxShadow='none'"
+      onclick="selectedAuditCategory='division';switchTab(2);">
+      <svg class="w-8 h-8 mx-auto mb-2" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <div style="font-size:14px;font-weight:600;color:#303A3C;">점수 조회</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">결과 확인</div>
+    </div>
+    <div style="grid-column:1/-1;font-size:13px;font-weight:600;color:#9EA2A1;margin-top:8px;margin-bottom:-8px;">공통</div>
     <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
       onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
       onmouseout="this.style.boxShadow='none'"
