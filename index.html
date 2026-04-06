@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 이스타항공 품질심사 플랫폼 v10</title>
+<title>이스타항공 품질관리시스템 포털 v11</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -119,6 +119,31 @@ p, span, td, th, label, div {
   background-color: #565A5B;
   color: #ffffff;
 }
+
+/* Checklist compact layout (PC) */
+@media (min-width: 769px) {
+  .checklist-item-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .checklist-item-row .item-text-area { flex: 1; min-width: 0; }
+  .checklist-item-row .item-score-area { flex-shrink: 0; }
+  .score-btn { min-width: 40px; min-height: 40px; font-size: 15px; border-radius: 10px; }
+}
+/* Collapsible remark toggle */
+.remark-toggle {
+  font-size: 12px; color: #9EA2A1; cursor: pointer; user-select: none;
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 0;
+}
+.remark-toggle:hover { color: #565A5B; }
+.remark-input-wrap { margin-top: 4px; }
+.remark-input-wrap input {
+  font-size: 13px; padding: 6px 12px; border: 1px solid rgba(192,206,209,0.4);
+  border-radius: 8px; background: #fff; color: #303A3C; outline: none; width: 100%;
+}
+.remark-input-wrap input:focus { border-color: #D20015; }
 
 /* Accordion */
 .accordion-content {
@@ -484,11 +509,11 @@ select.apple-input {
   <div class="max-w-7xl mx-auto px-4 w-full flex items-center justify-between" style="height:52px;">
     <div class="flex items-center gap-2.5" style="cursor:pointer;" onclick="goToHome()">
       <svg class="w-6 h-6" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질심사 플랫폼</h1>
+      <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질관리시스템 포털</h1>
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v10</span>
+      <span style="margin-left:8px;">v11</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -514,8 +539,8 @@ select.apple-input {
   <div id="tab0" class="tab-content fade-in">
     <div class="mb-8" style="text-align:center;padding-top:20px;">
       <svg style="width:48px;height:48px;margin:0 auto 12px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      <h2 class="section-title">이스타항공 품질심사 플랫폼</h2>
-      <p class="section-subtitle mt-1">이스타항공 안전감사 및 품질심사 통합 관리 플랫폼</p>
+      <h2 class="section-title">이스타항공 품질관리시스템 포털</h2>
+      <p class="section-subtitle mt-1">Eastar Jet QMS Portal</p>
     </div>
 
     <!-- 현황 요약 -->
@@ -564,31 +589,17 @@ select.apple-input {
         <p class="section-subtitle mt-1">심사 대상 지점을 선택하고 조회합니다</p>
       </div>
       <div class="apple-card p-6">
+        <!-- 심사 유형 토글 (조회 탭과 동일 패턴) -->
+        <div class="mb-5">
+          <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
+          <div class="flex gap-2">
+            <button id="catBtnAll" onclick="switchAuditCategory('all')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">전체</button>
+            <button id="catBtnBranch" onclick="switchAuditCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">지점 심사</button>
+            <button id="catBtnDivision" onclick="switchAuditCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
+          </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
-
-    <!-- 심사 카테고리 선택 -->
-    <div class="mb-4">
-      <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
-      <div class="flex gap-2">
-        <button id="catBtnBranch" onclick="switchAuditCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">지점 심사</button>
-        <button id="catBtnDivision" onclick="switchAuditCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
-      </div>
-    </div>
-    <!-- 실/본부 선택 (hidden by default) -->
-    <div id="divisionSelectArea" class="mb-4 hidden">
-      <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">실/본부 선택</label>
-      <select id="inputDivision" class="apple-select" onchange="">
-        <option value="">선택하세요</option>
-        <option value="운항본부">운항본부</option>
-        <option value="정비본부">정비본부</option>
-        <option value="운송본부">운송본부</option>
-        <option value="객실본부">객실본부</option>
-        <option value="안전보안실">안전보안실</option>
-        <option value="종합통제실">종합통제실</option>
-        <option value="케이터링운영파트">케이터링운영파트</option>
-      </select>
-    </div>
             <label class="apple-label">연도</label>
             <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
               <option value="2025">2025</option>
@@ -596,9 +607,22 @@ select.apple-input {
               <option value="2027">2027</option>
             </select>
           </div>
-          <div>
+          <div id="stationSelectArea">
             <label class="apple-label">지점</label>
             <select id="inputStation" class="apple-input"></select>
+          </div>
+          <div id="divisionSelectArea">
+            <label class="apple-label">실/본부 선택</label>
+            <select id="inputDivision" class="apple-input">
+              <option value="">선택하세요</option>
+              <option value="운항본부">운항본부</option>
+              <option value="정비본부">정비본부</option>
+              <option value="운송본부">운송본부</option>
+              <option value="객실본부">객실본부</option>
+              <option value="안전보안실">안전보안실</option>
+              <option value="종합통제실">종합통제실</option>
+              <option value="케이터링운영파트">케이터링운영파트</option>
+            </select>
           </div>
         </div>
         <button onclick="inputSearch()" class="pill-btn pill-btn-primary">조회</button>
@@ -692,25 +716,27 @@ select.apple-input {
         <p class="section-subtitle mt-1">조건을 선택하여 심사 결과를 조회합니다</p>
       </div>
       <div class="apple-card p-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-          <div>
-            <label class="apple-label">심사 유형</label>
-            <select id="viewCategoryFilter" class="apple-input" onchange="toggleViewCategoryUI()">
-              <option value="all">전체</option>
-              <option value="branch">지점 심사</option>
-              <option value="division">실/본부 심사</option>
-            </select>
+        <!-- 심사 유형 토글 (입력 탭과 동일 패턴) -->
+        <div class="mb-5">
+          <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
+          <div class="flex gap-2">
+            <button id="viewCatBtnAll" onclick="switchViewCategory('all')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">전체</button>
+            <button id="viewCatBtnBranch" onclick="switchViewCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">지점 심사</button>
+            <button id="viewCatBtnDivision" onclick="switchViewCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
           </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
             <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
             </select>
           </div>
           <div id="viewRegionArea">
             <label class="apple-label">지역</label>
-            <select id="viewRegion" class="apple-input">
+            <select id="viewRegion" class="apple-input" onchange="populateViewStationDropdown()">
               <option value="전체">전체</option>
               <option value="국내">국내</option>
               <option value="일본">일본</option>
@@ -718,9 +744,7 @@ select.apple-input {
               <option value="동북아">동북아</option>
             </select>
           </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-          <div>
+          <div id="viewTypeArea">
             <label class="apple-label">구분</label>
             <select id="viewType" class="apple-input">
               <option value="전체">전체</option>
@@ -729,6 +753,8 @@ select.apple-input {
               <option value="ramp">램프협력사</option>
             </select>
           </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
           <div>
             <label class="apple-label">심사 상태</label>
             <select id="viewStatus" class="apple-input">
@@ -737,12 +763,28 @@ select.apple-input {
               <option value="pending">심사 예정</option>
             </select>
           </div>
-          <div>
+          <div id="viewStationSearchArea">
             <label class="apple-label">지점 검색</label>
             <div class="flex gap-2">
               <input id="viewStationSearch" type="text" placeholder="지점명 입력 (예: 도쿄)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()">
               <select id="viewStationSelect" class="apple-input" style="flex:1;">
                 <option value="">전체 지점</option>
+              </select>
+            </div>
+          </div>
+          <div id="viewDivisionSearchArea">
+            <label class="apple-label">실/본부 검색</label>
+            <div class="flex gap-2">
+              <input id="viewDivisionSearch" type="text" placeholder="실/본부명 입력 (예: 운항)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()">
+              <select id="viewDivisionSelect" class="apple-input" style="flex:1;">
+                <option value="">전체 실/본부</option>
+                <option value="운항본부">운항본부</option>
+                <option value="정비본부">정비본부</option>
+                <option value="운송본부">운송본부</option>
+                <option value="객실본부">객실본부</option>
+                <option value="안전보안실">안전보안실</option>
+                <option value="종합통제실">종합통제실</option>
+                <option value="케이터링운영파트">케이터링운영파트</option>
               </select>
             </div>
           </div>
@@ -1031,7 +1073,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v10 &middot; 2026
+  안전기획팀 &middot; v11 &middot; 2026
 </footer>
 
 <script>
@@ -2085,7 +2127,8 @@ const CHECKLIST_REGISTRY = {
   fsds: { name:"비행안전문서시스템", checklist: CHECKLIST_FSDS, scoring:"binary", category:"division" }
 };
 
-let selectedAuditCategory = 'branch'; // 'branch' or 'division'
+let selectedAuditCategory = 'all'; // 'all', 'branch', or 'division'
+let selectedViewCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedDivision = '';
 let currentRemarks = {};
 
@@ -2324,6 +2367,7 @@ const STORAGE_KEY = 'eastar_maturity_data';
 let GAS_URL = '';
 let viewEntries = [];
 let editingScores = {};
+let editingRemarks = {};
 let inputPhase = 1;
 let selectedStation = '';
 let selectedYear = 2026;
@@ -2815,22 +2859,31 @@ function inputGoHome() {
 
 function switchAuditCategory(cat) {
   selectedAuditCategory = cat;
+  const allBtn = document.getElementById('catBtnAll');
   const branchBtn = document.getElementById('catBtnBranch');
   const divBtn = document.getElementById('catBtnDivision');
-  const stationArea = document.getElementById('stationSelectArea') || document.getElementById('inputStation')?.parentElement;
+  const stationArea = document.getElementById('stationSelectArea');
   const divArea = document.getElementById('divisionSelectArea');
 
-  if (cat === 'branch') {
-    branchBtn.style.cssText = 'background:#D20015;color:#fff;';
-    divBtn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+  // 모든 버튼 비활성
+  [allBtn, branchBtn, divBtn].forEach(btn => {
+    if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+  });
+
+  if (cat === 'all') {
+    if (allBtn) allBtn.style.cssText = 'background:#D20015;color:#fff;';
+    if (stationArea) stationArea.classList.remove('hidden');
+    if (divArea) divArea.classList.remove('hidden');
+  } else if (cat === 'branch') {
+    if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (stationArea) stationArea.classList.remove('hidden');
     if (divArea) divArea.classList.add('hidden');
   } else {
-    divBtn.style.cssText = 'background:#6366F1;color:#fff;';
-    branchBtn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+    if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
     if (stationArea) stationArea.classList.add('hidden');
     if (divArea) divArea.classList.remove('hidden');
   }
+  renderInputPendingStations();
 }
 
 function inputSearch() {
@@ -2838,12 +2891,26 @@ function inputSearch() {
   if (selectedAuditCategory === 'division') {
     selectedDivision = document.getElementById('inputDivision').value;
     if (!selectedDivision) { showToast('실/본부를 선택해주세요.', 'warning'); return; }
-    selectedStation = selectedDivision; // Use division name as station for compatibility
+    selectedStation = selectedDivision;
+  } else if (selectedAuditCategory === 'all') {
+    // 전체 모드: 실/본부 값이 있으면 division, 지점 값이 있으면 branch
+    const divVal = document.getElementById('inputDivision').value;
+    const staVal = document.getElementById('inputStation').value;
+    if (divVal) {
+      selectedDivision = divVal;
+      selectedStation = divVal;
+      selectedAuditCategory = 'division';
+    } else if (staVal) {
+      selectedStation = staVal;
+      selectedAuditCategory = 'branch';
+    } else {
+      showToast('지점 또는 실/본부를 선택해주세요.', 'warning'); return;
+    }
   } else {
     selectedStation = document.getElementById('inputStation').value;
     if (!selectedStation) { showToast('지점을 선택해주세요.', 'warning'); return; }
   }
-  if (!selectedStation) { showToast('지점을 선택해주세요.', 'warning'); return; }
+  if (!selectedStation) { showToast('지점 또는 실/본부를 선택해주세요.', 'warning'); return; }
 
   document.getElementById('phase2StationTitle').textContent = `${selectedStation} — ${selectedYear}년`;
   const today = new Date().toISOString().slice(0, 10);
@@ -3030,49 +3097,59 @@ function renderChecklist() {
     html += `<div class="accordion-content open" id="${catId}" style="background:#f5f5f7;">`;
     for (const item of catData.items) {
       const selected = currentScores[item.id];
-      html += `<div style="padding:14px 20px;border-bottom:1px solid rgba(192,206,209,0.3);">`;
-      html += `<div class="flex items-start gap-3 mb-3">`;
+      const remarkVal = currentRemarks[item.id] || '';
+      html += `<div style="padding:12px 20px;border-bottom:1px solid rgba(192,206,209,0.3);">`;
+      // PC: inline row / Mobile: stack
+      html += `<div class="checklist-item-row">`;
+      html += `<div class="item-text-area flex items-start gap-3">`;
       html += `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:6px;background:#303A3C;color:#fff;font-size:11px;font-weight:600;letter-spacing:-0.224px;flex-shrink:0;margin-top:2px;">${item.id}</span>`;
       html += `<span style="font-size:14px;color:#303A3C;font-weight:400;letter-spacing:-0.374px;line-height:1.47;">${item.text}</span>`;
       html += `</div>`;
       const scoring = getScoringMethod(selectedType);
+      html += `<div class="item-score-area">`;
       if (scoring === 'binary') {
-        // Binary scoring: S / U / N/A buttons
-        html += '<div class="flex flex-wrap gap-2" style="margin-left:44px;">';
+        html += '<div class="flex flex-wrap gap-2">';
         const sSelected = selected === 'S' ? 'selected' : '';
         const uSelected = selected === 'U' ? 'selected' : '';
         const naSelected2 = (selected === 'NA' || selected === 'N/A') ? 'selected' : '';
-        html += `<button class="score-btn binary-s-btn ${sSelected}" style="flex:1;min-width:60px;${sSelected ? 'background:#22C55E;color:#fff;border-color:#22C55E;' : ''}" onclick="setBinaryScore('${item.id}', 'S', this, ${catIdx})">S (적합)</button>`;
-        html += `<button class="score-btn binary-u-btn ${uSelected}" style="flex:1;min-width:60px;${uSelected ? 'background:#D20015;color:#fff;border-color:#D20015;' : ''}" onclick="setBinaryScore('${item.id}', 'U', this, ${catIdx})">U (부적합)</button>`;
-        html += `<button class="score-btn na-btn ${naSelected2}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="setBinaryScore('${item.id}', 'NA', this, ${catIdx})">N/A</button>`;
+        html += `<button class="score-btn binary-s-btn ${sSelected}" style="flex:1;min-width:60px;${sSelected ? 'background:#22C55E;color:#fff;border-color:#22C55E;' : ''}" onclick="setBinaryScore('${item.id}', 'S', this, ${catIdx})">S</button>`;
+        html += `<button class="score-btn binary-u-btn ${uSelected}" style="flex:1;min-width:60px;${uSelected ? 'background:#D20015;color:#fff;border-color:#D20015;' : ''}" onclick="setBinaryScore('${item.id}', 'U', this, ${catIdx})">U</button>`;
+        html += `<button class="score-btn na-btn ${naSelected2}" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="setBinaryScore('${item.id}', 'NA', this, ${catIdx})">N/A</button>`;
         html += '</div>';
-        // Show verification & manual info for binary checklists
-        if (item.verification || item.manual) {
-          html += '<div style="margin-left:44px;margin-top:6px;">';
-          if (item.verification) {
-            html += `<details style="margin-bottom:4px;"><summary style="font-size:12px;color:#9EA2A1;cursor:pointer;">확인내용 보기</summary><div style="font-size:12px;color:#565A5B;padding:8px 12px;background:rgba(192,206,209,0.15);border-radius:8px;margin-top:4px;white-space:pre-line;">${item.verification}</div></details>`;
-          }
-          if (item.manual) {
-            html += `<div style="font-size:11px;color:#987B37;margin-top:2px;">📋 ${item.manual}</div>`;
-          }
-          html += '</div>';
-        }
       } else {
-        // Grade scoring: 1-2-3-4-N/A buttons (existing)
-        html += `<div class="flex gap-2" style="margin-left:44px;">`;
+        html += `<div class="flex gap-2">`;
         for (const v of [1, 2, 3, 4]) {
           const isSelected = selected === v;
           html += `<button class="score-btn flex-1 ${isSelected ? 'selected' : ''}" onclick="setScore('${item.id}', ${v}, this, ${catIdx})">${v}</button>`;
         }
         const naSelected = selected === 'N/A';
-        html += `<button class="score-btn na-btn ${naSelected ? 'selected' : ''}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="setScoreNA('${item.id}', this, ${catIdx})">N/A</button>`;
+        html += `<button class="score-btn na-btn ${naSelected ? 'selected' : ''}" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="setScoreNA('${item.id}', this, ${catIdx})">N/A</button>`;
         html += `</div>`;
       }
-      // ��고란 (모든 점검표 공통)
-      const remarkVal = currentRemarks[item.id] || '';
-      html += `<div style="margin-left:44px;margin-top:8px;">`;
-      html += `<input type="text" class="w-full" style="font-size:13px;padding:8px 12px;border:1px solid rgba(192,206,209,0.4);border-radius:8px;background:#fff;color:#303A3C;outline:none;" placeholder="비고 / 의견 입력" value="${remarkVal.replace(/"/g, '&quot;')}" onchange="setRemark('${item.id}', this.value)">`;
-      html += `</div>`;
+      html += `</div></div>`;
+      // verification & manual (binary only)
+      if (scoring === 'binary' && (item.verification || item.manual)) {
+        html += '<div style="margin-left:44px;margin-top:4px;">';
+        if (item.verification) {
+          html += `<details style="margin-bottom:4px;"><summary style="font-size:12px;color:#9EA2A1;cursor:pointer;">확인내용 보기</summary><div style="font-size:12px;color:#565A5B;padding:8px 12px;background:rgba(192,206,209,0.15);border-radius:8px;margin-top:4px;white-space:pre-line;">${item.verification}</div></details>`;
+        }
+        if (item.manual) {
+          html += `<div style="font-size:11px;color:#987B37;margin-top:2px;">${item.manual}</div>`;
+        }
+        html += '</div>';
+      }
+      // Collapsible remarks
+      if (remarkVal) {
+        html += `<div class="remark-input-wrap" style="margin-left:44px;">`;
+        html += `<input type="text" placeholder="비고 / 의견" value="${remarkVal.replace(/"/g, '&quot;')}" onchange="setRemark('${item.id}', this.value)">`;
+        html += `</div>`;
+      } else {
+        html += `<div style="margin-left:44px;margin-top:2px;">`;
+        html += `<span class="remark-toggle" onclick="this.style.display='none';this.nextElementSibling.style.display='block';">+ 비고</span>`;
+        html += `<div class="remark-input-wrap" style="display:none;">`;
+        html += `<input type="text" placeholder="비고 / 의견" onchange="setRemark('${item.id}', this.value)">`;
+        html += `</div></div>`;
+      }
       html += `</div>`;
     }
     html += `</div></div>`;
@@ -3305,23 +3382,53 @@ function populateViewStationDropdown() {
   }
 }
 
-function toggleViewCategoryUI() {
-  const cat = document.getElementById('viewCategoryFilter').value;
+function switchViewCategory(cat) {
+  selectedViewCategory = cat;
+  const allBtn = document.getElementById('viewCatBtnAll');
+  const branchBtn = document.getElementById('viewCatBtnBranch');
+  const divBtn = document.getElementById('viewCatBtnDivision');
   const regionArea = document.getElementById('viewRegionArea');
-  if (cat === 'division') {
-    if (regionArea) regionArea.classList.add('hidden');
-  } else {
+  const typeArea = document.getElementById('viewTypeArea');
+  const stationSearchArea = document.getElementById('viewStationSearchArea');
+  const divisionSearchArea = document.getElementById('viewDivisionSearchArea');
+
+  // 모든 버튼 비활성 스타일로 초기화
+  [allBtn, branchBtn, divBtn].forEach(btn => {
+    if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+  });
+
+  // 선택된 버튼 활성화 + 필터 영역 표시/숨김
+  if (cat === 'all') {
+    if (allBtn) allBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (regionArea) regionArea.classList.remove('hidden');
+    if (typeArea) typeArea.classList.remove('hidden');
+    if (stationSearchArea) stationSearchArea.classList.remove('hidden');
+    if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
+  } else if (cat === 'branch') {
+    if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
+    if (regionArea) regionArea.classList.remove('hidden');
+    if (typeArea) typeArea.classList.remove('hidden');
+    if (stationSearchArea) stationSearchArea.classList.remove('hidden');
+    if (divisionSearchArea) divisionSearchArea.classList.add('hidden');
+  } else {
+    if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
+    if (regionArea) regionArea.classList.add('hidden');
+    if (typeArea) typeArea.classList.add('hidden');
+    if (stationSearchArea) stationSearchArea.classList.add('hidden');
+    if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
   }
+  renderViewRecentStations();
 }
 
 function viewSearch() {
   const year = parseInt(document.getElementById('viewYear').value);
-  const catFilter = document.getElementById('viewCategoryFilter')?.value || 'all';
+  const catFilter = selectedViewCategory || 'all';
   const region = document.getElementById('viewRegion').value;
   const type = document.getElementById('viewType').value;
   const searchText = document.getElementById('viewStationSearch').value.trim();
   const selectedStationFilter = document.getElementById('viewStationSelect').value;
+  const divisionSearchText = document.getElementById('viewDivisionSearch').value.trim();
+  const selectedDivisionFilter = document.getElementById('viewDivisionSelect').value;
   const statusFilter = document.getElementById('viewStatus').value;
 
   // Build entries
@@ -3333,7 +3440,8 @@ function viewSearch() {
     // Group by division
     const divNames = [...new Set(divRecords.map(d => d.division || d.station))];
     for (const divName of divNames) {
-      if (searchText && !divName.includes(searchText)) continue;
+      if (selectedDivisionFilter && divName !== selectedDivisionFilter) continue;
+      if (divisionSearchText && !divName.includes(divisionSearchText)) continue;
       const records = divRecords.filter(d => (d.division || d.station) === divName);
       records.forEach(r => {
         viewEntries.push({ station: divName, type: r.type, company: '', region: '실/본부', year, record: r, auditCategory: 'division' });
@@ -3342,7 +3450,8 @@ function viewSearch() {
     // Also add divisions without records
     if (catFilter === 'division') {
       for (const divName of DIVISION_NAMES) {
-        if (searchText && !divName.includes(searchText)) continue;
+        if (selectedDivisionFilter && divName !== selectedDivisionFilter) continue;
+        if (divisionSearchText && !divName.includes(divisionSearchText)) continue;
         const divInfo = DIVISIONS[divName];
         for (const checkType of divInfo.checklists) {
           const existing = viewEntries.find(e => e.station === divName && e.type === checkType);
@@ -3395,6 +3504,8 @@ function viewSearch() {
   if (statusFilter === 'pending') filterDesc.push('심사예정');
   if (searchText) filterDesc.push(`"${searchText}"`);
   if (selectedStationFilter) filterDesc.push(selectedStationFilter);
+  if (divisionSearchText) filterDesc.push(`"${divisionSearchText}"`);
+  if (selectedDivisionFilter) filterDesc.push(selectedDivisionFilter);
 
   document.getElementById('viewResultTitle').textContent = `${year}년 조회 결과`;
   document.getElementById('viewResultSubtitle').textContent =
@@ -3971,6 +4082,7 @@ function startGroupTypeEdit(gIdx, type) {
   if (entryIdx < 0) return;
 
   editingScores = { ...entry.record.scores };
+  editingRemarks = entry.record.remarks ? { ...entry.record.remarks } : {};
   const container = document.getElementById(`viewGroupDetail_${gIdx}`);
   let html = `<div style="margin-bottom:12px;"><span class="badge-pill" style="background:#D20015;color:#fff;font-size:13px;padding:4px 14px;">${getTypeLabel(type)} 점수 수정</span></div>`;
 
@@ -3986,10 +4098,12 @@ function startGroupTypeEdit(gIdx, type) {
     html += `<div style="background:#ffffff;">`;
     for (const item of catData.items) {
       const selected = editingScores[item.id];
+      const remarkVal = editingRemarks[item.id] || '';
       html += `<div style="padding:12px 20px;border-bottom:1px solid rgba(192,206,209,0.15);">`;
-      html += `<div class="flex items-start gap-3 mb-2"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:6px;background:#303A3C;color:#fff;font-size:11px;font-weight:600;flex-shrink:0;">${item.id}</span>`;
+      html += `<div class="checklist-item-row">`;
+      html += `<div class="item-text-area flex items-start gap-3"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:6px;background:#303A3C;color:#fff;font-size:11px;font-weight:600;flex-shrink:0;">${item.id}</span>`;
       html += `<span style="font-size:13px;color:#303A3C;line-height:1.47;">${item.text}</span></div>`;
-      html += `<div class="flex gap-2" style="margin-left:44px;">`;
+      html += `<div class="item-score-area"><div class="flex gap-2">`;
       if (isBinaryEdit) {
         for (const v of ['S', 'U', 'NA']) {
           const label = v === 'NA' ? 'N/A' : v;
@@ -4000,9 +4114,22 @@ function startGroupTypeEdit(gIdx, type) {
         for (const v of [1, 2, 3, 4]) {
           html += `<button class="score-btn flex-1 ${selected === v ? 'selected' : ''}" onclick="event.stopPropagation();setEditScore('${item.id}',${v},this)">${v}</button>`;
         }
-        html += `<button class="score-btn na-btn ${selected === 'N/A' ? 'selected' : ''}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="event.stopPropagation();setEditScoreNA('${item.id}',this)">N/A</button>`;
+        html += `<button class="score-btn na-btn ${selected === 'N/A' ? 'selected' : ''}" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="event.stopPropagation();setEditScoreNA('${item.id}',this)">N/A</button>`;
       }
-      html += `</div></div>`;
+      html += `</div></div></div>`;
+      // Collapsible remarks
+      if (remarkVal) {
+        html += `<div class="remark-input-wrap" style="margin-left:44px;">`;
+        html += `<input type="text" placeholder="비고 / 의견" value="${remarkVal.replace(/"/g, '&quot;')}" onchange="event.stopPropagation();setEditRemark('${item.id}', this.value)">`;
+        html += `</div>`;
+      } else {
+        html += `<div style="margin-left:44px;margin-top:2px;">`;
+        html += `<span class="remark-toggle" onclick="event.stopPropagation();this.style.display='none';this.nextElementSibling.style.display='block';">+ 비고</span>`;
+        html += `<div class="remark-input-wrap" style="display:none;">`;
+        html += `<input type="text" placeholder="비고 / 의견" onchange="event.stopPropagation();setEditRemark('${item.id}', this.value)">`;
+        html += `</div></div>`;
+      }
+      html += `</div>`;
     }
     html += `</div></div>`;
   }
@@ -4027,8 +4154,10 @@ function saveGroupTypeEdit(gIdx, type) {
   );
   if (recordIdx >= 0) {
     allData[recordIdx].scores = { ...editingScores };
+    allData[recordIdx].remarks = { ...(allData[recordIdx].remarks || {}), ...editingRemarks };
     saveAllData();
     editingScores = {};
+    editingRemarks = {};
     showToast(`${entry.station} ${getTypeLabel(type)} 점수가 저장되었습니다.`, 'success');
     viewSearch();
   }
@@ -4199,12 +4328,14 @@ function saveEdit(idx) {
 
   if (recordIdx >= 0) {
     allData[recordIdx].scores = { ...editingScores };
+    allData[recordIdx].remarks = { ...(allData[recordIdx].remarks || {}), ...editingRemarks };
     allData[recordIdx].auditor = auditor;
     allData[recordIdx].auditDate = auditDate;
     allData[recordIdx].auditDateStart = auditDateStart;
     allData[recordIdx].auditDateEnd = auditDateEnd;
     saveAllData();
     editingScores = {};
+    editingRemarks = {};
     showToast('수정사항이 저장되었습니다.', 'success');
     renderScoreView();
   }
@@ -4247,6 +4378,10 @@ function setEditScoreNA(itemId, btn) {
     row.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
   }
+}
+
+function setEditRemark(itemId, value) {
+  editingRemarks[itemId] = value;
 }
 
 function navigateToInput(year, station, type) {
@@ -6254,9 +6389,9 @@ function showScheduleStation(scheduleId) {
     html += '<div class="flex gap-3 flex-wrap">';
     if (stationData.length > 0) {
       if (isDivisionSchedule) {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewCategoryFilter').value='division';toggleViewCategoryUI();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       } else {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewStationSelect').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewStationSelect').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       }
     }
     if (isDivisionSchedule) {
@@ -7348,7 +7483,11 @@ function renderHome() {
           scoreBadge = `<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">-</span>`;
         }
       }
-      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
+      if (hasBinary && !hasGrade) {
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${station}';viewSearch()">`;
+      } else {
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);switchViewCategory('branch');document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
+      }
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
       recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
@@ -7414,10 +7553,15 @@ function renderInputPendingStations() {
   const container = document.getElementById('inputPendingStations');
   if (!container) return;
   const year = parseInt(document.getElementById('inputYear').value);
+  const cat = selectedAuditCategory;
 
-  // Get schedule data sorted by date, filter to stations without all checklists completed
   const pendingStations = [];
   scheduleData.filter(s => s.year === year).forEach(s => {
+    const isDivision = !!DIVISIONS[s.station];
+    // 카테고리 필터링
+    if (cat === 'branch' && isDivision) return;
+    if (cat === 'division' && !isDivision) return;
+
     const expected = getExpectedTypesForStation(s.station);
     const completedTypes = expected.filter(type => {
       return allData.some(d => d.year == year && (d.station === s.station || d.division === s.station) && d.type === type);
@@ -7431,36 +7575,48 @@ function renderInputPendingStations() {
         auditors: s.auditors,
         completed: completedTypes.length,
         total: expected.length,
+        isDivision: isDivision,
         status: calcScheduleStatus(s)
       });
     }
   });
 
-  // Sort by month/date (earliest first = most urgent)
   pendingStations.sort((a, b) => {
     if (a.month !== b.month) return a.month - b.month;
     return (a.dateStart || '').localeCompare(b.dateStart || '');
   });
 
+  // 제목 및 완료 메시지 동적 변경
+  const titleMap = { all: '점검표 미입력 지점/실본부', branch: '점검표 미입력 지점', division: '점검표 미입력 실/본부' };
+  const doneMap = { all: '모든 점검표가 입력 완료되었습니다.', branch: '모든 지점의 점검표가 입력 완료되었습니다.', division: '모든 실/본부의 점검표가 입력 완료되었습니다.' };
+  const colLabel = cat === 'division' ? '실/본부' : '지점';
+
   if (pendingStations.length === 0) {
-    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">모든 지점의 점검표가 입력 완료되었습니다.</div></div>';
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">' + doneMap[cat] + '</div></div>';
     return;
   }
 
   let html = '<div class="apple-card" style="padding:14px;">';
-  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">점검표 미입력 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + pendingStations.length + '건)</span></h3>';
+  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + titleMap[cat] + ' <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + pendingStations.length + '건)</span></h3>';
   html += '<table class="apple-table compact-mobile"><thead><tr>';
-  html += '<th style="text-align:left;">지점</th>';
+  html += '<th style="text-align:left;">' + (cat === 'all' ? '지점/실본부' : colLabel) + '</th>';
   html += '<th style="text-align:center;">심사월</th>';
   html += '<th style="text-align:center;">진행</th>';
   html += '<th style="text-align:center;">상태</th>';
   html += '</tr></thead><tbody>';
 
   pendingStations.forEach(s => {
-    html += `<tr style="cursor:pointer;" onclick="document.getElementById('inputStation').value='${s.station}';inputSearch()">`;
-    html += `<td data-label="지점" style="font-weight:600;">${s.displayName}</td>`;
+    let clickAction;
+    if (s.isDivision) {
+      clickAction = `switchAuditCategory('division');document.getElementById('inputDivision').value='${s.station}';inputSearch()`;
+    } else {
+      clickAction = `switchAuditCategory('branch');document.getElementById('inputStation').value='${s.station}';inputSearch()`;
+    }
+    const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : '';
+    html += `<tr style="cursor:pointer;" onclick="${clickAction}">`;
+    html += `<td data-label="${colLabel}" style="font-weight:600;">${s.displayName}${divTag}</td>`;
     html += `<td data-label="심사월" style="text-align:center;font-size:12px;">${s.month}월</td>`;
-    html += `<td data-label="진행" style="text-align:center;"><span class="badge-pill" style="background:${s.completed > 0 ? 'rgba(245,158,11,0.15);color:#F59E0B' : 'rgba(158,162,161,0.15);color:#9EA2A1'}">${s.completed}/3</span></td>`;
+    html += `<td data-label="진행" style="text-align:center;"><span class="badge-pill" style="background:${s.completed > 0 ? 'rgba(245,158,11,0.15);color:#F59E0B' : 'rgba(158,162,161,0.15);color:#9EA2A1'}">${s.completed}/${s.total}</span></td>`;
     html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(s.status.status)};font-size:10px;">${s.status.label}</span></td>`;
     html += '</tr>';
   });
@@ -7497,7 +7653,9 @@ function renderViewRecentStations() {
   const branchStations = Object.values(branchMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
   const divisionStations = Object.values(divisionMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
 
-  if (branchStations.length === 0 && divisionStations.length === 0) {
+  const showBranch = (selectedViewCategory === 'all' || selectedViewCategory === 'branch') && branchStations.length > 0;
+  const showDivision = (selectedViewCategory === 'all' || selectedViewCategory === 'division') && divisionStations.length > 0;
+  if (!showBranch && !showDivision) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">' + year + '년 입력된 점검표가 없습니다.</div></div>';
     return;
   }
@@ -7505,7 +7663,7 @@ function renderViewRecentStations() {
   let html = '';
 
   // --- 지점 테이블 ---
-  if (branchStations.length > 0) {
+  if (showBranch) {
     html += '<div class="apple-card" style="padding:14px;margin-bottom:16px;">';
     html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + branchStations.length + '개 지점)</span></h3>';
     html += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -7529,7 +7687,7 @@ function renderViewRecentStations() {
   }
 
   // --- 본부 테이블 ---
-  if (divisionStations.length > 0) {
+  if (showDivision) {
     html += '<div class="apple-card" style="padding:14px;">';
     html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 실/본부 심사 완료 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + divisionStations.length + '개 부서)</span></h3>';
     // 동적 컬럼 헤더
@@ -7547,7 +7705,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     divisionStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';document.getElementById('viewCategoryFilter').value='division';toggleViewCategoryUI();viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewDivisionSearch').value='${s.station}';switchViewCategory('division');viewSearch()">`;
       html += `<td style="font-weight:600;">${s.station}<div style="font-size:10px;color:#6366F1;">실/본부</div></td>`;
       divTypeArr.forEach(type => {
         const rate = s.types[type];
@@ -7573,6 +7731,7 @@ function init() {
   loadAuditors();
   loadSchedule();
   populateStationDropdown();
+  populateViewStationDropdown();
   switchTab(0);
   initFirebase();
   renderInputPendingStations();
