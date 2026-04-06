@@ -8089,77 +8089,105 @@ function init() {
     }
   });
 
-  // ── 스와이프 제스처로 Phase 뒤로/앞으로 이동 ──
-  // 모바일: 한 손가락 좌우 스와이프
-  // PC(트랙패드): 두 손가락 좌우 스와이프
-  (function initSwipeGesture() {
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    const SWIPE_THRESHOLD = 80;
-    const SWIPE_MAX_Y = 60;
-    const SWIPE_MAX_TIME = 400;
+  // ── 네비게이션 히스토리 + 스와이프 제스처 ──
+  // 화면 전환을 히스토리 스택에 기록, 스와이프로 뒤로/앞으로 이동
+  (function initNavHistory() {
+    const history = [];      // 뒤로가기 스택
+    const forward = [];      // 앞으로가기 스택
+    let navigating = false;  // 히스토리 탐색 중 플래그 (무한루프 방지)
+
+    function getState() {
+      return { tab: activeTab, inputPhase, viewPhase };
+    }
+
+    function restoreState(state) {
+      navigating = true;
+      if (state.tab !== activeTab) switchTab(state.tab);
+      if (state.tab === 1 && state.inputPhase !== inputPhase) setInputPhase(state.inputPhase);
+      if (state.tab === 2 && state.viewPhase !== viewPhase) setViewPhase(state.viewPhase);
+      navigating = false;
+    }
+
+    // 화면 전환 시 히스토리 기록 (switchTab, setInputPhase, setViewPhase 후킹)
+    const origSwitchTab = switchTab;
+    switchTab = function(idx) {
+      if (!navigating) { history.push(getState()); forward.length = 0; }
+      origSwitchTab(idx);
+    };
+    // window에도 반영
+    window.switchTab = switchTab;
+
+    const origSetInputPhase = setInputPhase;
+    setInputPhase = function(p) {
+      if (!navigating) { history.push(getState()); forward.length = 0; }
+      origSetInputPhase(p);
+    };
+    window.setInputPhase = setInputPhase;
+
+    const origSetViewPhase = setViewPhase;
+    setViewPhase = function(p) {
+      if (!navigating) { history.push(getState()); forward.length = 0; }
+      origSetViewPhase(p);
+    };
+    window.setViewPhase = setViewPhase;
+
+    function navBack() {
+      if (history.length === 0) return false;
+      forward.push(getState());
+      restoreState(history.pop());
+      return true;
+    }
+
+    function navForward() {
+      if (forward.length === 0) return false;
+      history.push(getState());
+      restoreState(forward.pop());
+      return true;
+    }
+
+    // 공개 API
+    window.navBack = navBack;
+    window.navForward = navForward;
+
+    // ── 스와이프 감지 ──
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+    const SWIPE_THRESHOLD = 80, SWIPE_MAX_Y = 60, SWIPE_MAX_TIME = 400;
 
     function isInputFocused() {
       const el = document.activeElement;
       return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
     }
 
-    function handleSwipe(direction) {
-      // direction: 'left' = 앞으로(다음), 'right' = 뒤로(이전)
-      if (activeTab === 1) {
-        // 점수 입력 탭 (4-phase)
-        if (direction === 'right' && inputPhase > 1) {
-          inputGoBack();
-          return true;
-        }
-      } else if (activeTab === 2) {
-        // 점수 조회 탭 (2-phase)
-        if (direction === 'right' && viewPhase > 1) {
-          viewGoBack();
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // 모바일 터치 이벤트
+    // 모바일: 한 손가락 스와이프
     document.addEventListener('touchstart', (e) => {
-      if (isInputFocused()) return;
-      if (e.touches.length !== 1) return;
+      if (isInputFocused() || e.touches.length !== 1) return;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       touchStartTime = Date.now();
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
-      if (isInputFocused()) return;
-      if (e.changedTouches.length !== 1) return;
+      if (isInputFocused() || e.changedTouches.length !== 1) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
       const dt = Date.now() - touchStartTime;
       if (Math.abs(dx) < SWIPE_THRESHOLD || dy > SWIPE_MAX_Y || dt > SWIPE_MAX_TIME) return;
-      const direction = dx > 0 ? 'right' : 'left';
-      if (handleSwipe(direction)) {
-        e.preventDefault();
-      }
-    }, { passive: false });
+      if (dx > 0) { navBack(); } else { navForward(); }
+    }, { passive: true });
 
-    // PC 트랙패드 두 손가락 스와이프 (wheel 이벤트)
-    let wheelAccX = 0;
-    let wheelTimeout = null;
+    // PC: 트랙패드 두 손가락 수평 스와이프
+    let wheelAccX = 0, wheelTimeout = null;
     const WHEEL_THRESHOLD = 150;
 
     document.addEventListener('wheel', (e) => {
       if (isInputFocused()) return;
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return; // 세로 스크롤 무시
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
       if (Math.abs(e.deltaX) < 2) return;
       wheelAccX += e.deltaX;
       clearTimeout(wheelTimeout);
       wheelTimeout = setTimeout(() => {
         if (Math.abs(wheelAccX) >= WHEEL_THRESHOLD) {
-          const direction = wheelAccX > 0 ? 'left' : 'right';
-          handleSwipe(direction);
+          if (wheelAccX > 0) navForward(); else navBack();
         }
         wheelAccX = 0;
       }, 100);
