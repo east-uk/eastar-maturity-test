@@ -770,8 +770,8 @@ select.apple-input {
           <div id="viewStationSearchArea">
             <label class="apple-label">지점 검색</label>
             <div class="flex gap-2">
-              <input id="viewStationSearch" type="text" placeholder="지점명 입력 (예: 도쿄)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="handleSearchInput('viewStationSearch','viewStationSelect')">
-              <select id="viewStationSelect" class="apple-input" style="flex:1;" onchange="handleSearchSelect('viewStationSelect','viewStationSearch')">
+              <input id="viewStationSearch" type="text" placeholder="지점명 입력 (예: 도쿄)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="updateSearchExclusion()">
+              <select id="viewStationSelect" class="apple-input" style="flex:1;" onchange="updateSearchExclusion()">
                 <option value="">전체 지점</option>
               </select>
             </div>
@@ -779,8 +779,8 @@ select.apple-input {
           <div id="viewDivisionSearchArea">
             <label class="apple-label">실/본부 검색</label>
             <div class="flex gap-2">
-              <input id="viewDivisionSearch" type="text" placeholder="실/본부명 입력 (예: 운항)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="handleSearchInput('viewDivisionSearch','viewDivisionSelect')">
-              <select id="viewDivisionSelect" class="apple-input" style="flex:1;" onchange="handleSearchSelect('viewDivisionSelect','viewDivisionSearch')">
+              <input id="viewDivisionSearch" type="text" placeholder="실/본부명 입력 (예: 운항)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="updateSearchExclusion()">
+              <select id="viewDivisionSelect" class="apple-input" style="flex:1;" onchange="updateSearchExclusion()">
                 <option value="">전체 실/본부</option>
                 <option value="운항본부">운항본부</option>
                 <option value="정비본부">정비본부</option>
@@ -2807,18 +2807,10 @@ function switchTab(idx) {
   if (idx === 2) {
     selectedViewCategory = 'all';
     switchViewCategory('all');
-    document.getElementById('viewStationSearch').value = '';
-    document.getElementById('viewDivisionSearch').value = '';
-    document.getElementById('viewStationSelect').value = '';
-    document.getElementById('viewDivisionSelect').value = '';
+    clearAllSearchFields();
     document.getElementById('viewRegion').value = '전체';
     document.getElementById('viewType').value = '전체';
     document.getElementById('viewStatus').value = '전체';
-    // Reset mutual exclusion disabled states
-    ['viewStationSearch','viewStationSelect','viewDivisionSearch','viewDivisionSelect'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.disabled = false; el.style.opacity = '1'; }
-    });
   }
   // Render tab-specific content
   if (idx === 0) renderHome();
@@ -2850,6 +2842,9 @@ function populateStationDropdown() {
 
 function setInputPhase(phase) {
   inputPhase = phase;
+  if (phase === 1) {
+    clearAllInputFields();
+  }
   document.getElementById('inputPhase1').classList.toggle('hidden', phase !== 1);
   document.getElementById('inputPhase2').classList.toggle('hidden', phase !== 2);
   document.getElementById('inputPhase3').classList.toggle('hidden', phase !== 3);
@@ -3469,6 +3464,9 @@ function setViewPhase(phase) {
   document.getElementById('viewPhase1').classList.toggle('hidden', phase !== 1);
   document.getElementById('viewPhase2').classList.toggle('hidden', phase !== 2);
   document.getElementById('viewNavBar').classList.toggle('hidden', phase <= 1);
+  if (phase === 1) {
+    clearAllSearchFields();
+  }
 }
 
 function viewGoBack() {
@@ -3538,32 +3536,57 @@ function switchViewCategory(cat) {
     if (stationSearchArea) stationSearchArea.classList.add('hidden');
     if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
   }
+  updateSearchExclusion();
   renderViewRecentStations();
 }
 
-function handleSearchInput(textId, selectId) {
-  const text = document.getElementById(textId);
-  const select = document.getElementById(selectId);
-  if (text.value.trim()) {
-    select.value = '';
-    select.disabled = true;
-    select.style.opacity = '0.5';
-  } else {
-    select.disabled = false;
-    select.style.opacity = '1';
-  }
+function clearAllSearchFields() {
+  ['viewStationSearch', 'viewDivisionSearch'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.disabled = false; el.style.opacity = '1'; }
+  });
+  ['viewStationSelect', 'viewDivisionSelect'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.disabled = false; el.style.opacity = '1'; }
+  });
 }
 
-function handleSearchSelect(selectId, textId) {
-  const select = document.getElementById(selectId);
-  const text = document.getElementById(textId);
-  if (select.value) {
-    text.value = '';
-    text.disabled = true;
-    text.style.opacity = '0.5';
-  } else {
-    text.disabled = false;
-    text.style.opacity = '1';
+function clearAllInputFields() {
+  ['inputStation', 'inputDivision'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function updateSearchExclusion() {
+  const fields = [
+    { id: 'viewStationSearch', type: 'text' },
+    { id: 'viewStationSelect', type: 'select' },
+    { id: 'viewDivisionSearch', type: 'text' },
+    { id: 'viewDivisionSelect', type: 'select' }
+  ];
+
+  // Find which field has a value (first one wins)
+  let activeField = null;
+  for (const f of fields) {
+    const el = document.getElementById(f.id);
+    if (el && ((f.type === 'text' && el.value.trim()) || (f.type === 'select' && el.value))) {
+      activeField = f.id;
+      break;
+    }
+  }
+
+  // Enable/disable based on active field
+  for (const f of fields) {
+    const el = document.getElementById(f.id);
+    if (!el) continue;
+    if (activeField && f.id !== activeField) {
+      el.disabled = true;
+      el.style.opacity = '0.4';
+    } else {
+      el.disabled = false;
+      el.style.opacity = '1';
+    }
   }
 }
 
@@ -3940,7 +3963,7 @@ function renderScoreViewTable() {
       divTypeArr.forEach(type => {
         html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
       });
-      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
       html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
@@ -4052,7 +4075,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
       html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px 0;">`;
       html += `<span style="color:#9EA2A1;font-size:13px;">미작성</span>`;
       if (isDivGroup) {
-        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       } else {
         html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','${type}')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       }
@@ -6547,13 +6570,13 @@ function showScheduleStation(scheduleId) {
     html += '<div class="flex gap-3 flex-wrap">';
     if (stationData.length > 0) {
       if (isDivisionSchedule) {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       } else {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewStationSelect').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewStationSearch').value='${item.station}';viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       }
     }
     if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
+      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
     } else {
       html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
     }
@@ -6563,7 +6586,7 @@ function showScheduleStation(scheduleId) {
     html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
     html += '<p style="font-size:15px;color:#9EA2A1;margin-bottom:16px;">아직 점검이 실시되지 않았습니다</p>';
     if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
+      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
     } else {
       html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-primary">점검표 작성</button>`;
     }
@@ -7642,9 +7665,9 @@ function renderHome() {
         }
       }
       if (hasBinary && !hasGrade) {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${station}';viewSearch()">`;
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${station}';viewSearch()">`;
       } else {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);switchViewCategory('branch');document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
       }
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
       recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
@@ -7766,9 +7789,9 @@ function renderInputPendingStations() {
   pendingStations.forEach(s => {
     let clickAction;
     if (s.isDivision) {
-      clickAction = `switchAuditCategory('division');document.getElementById('inputDivision').value='${s.station}';inputSearch()`;
+      clickAction = `clearAllInputFields();switchAuditCategory('division');document.getElementById('inputDivision').value='${s.station}';inputSearch()`;
     } else {
-      clickAction = `switchAuditCategory('branch');document.getElementById('inputStation').value='${s.station}';inputSearch()`;
+      clickAction = `clearAllInputFields();switchAuditCategory('branch');document.getElementById('inputStation').value='${s.station}';inputSearch()`;
     }
     const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : '';
     html += `<tr style="cursor:pointer;" onclick="${clickAction}">`;
@@ -7833,7 +7856,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     branchStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="switchViewCategory('branch');document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
       html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
       html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
@@ -7863,7 +7886,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     divisionStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewDivisionSearch').value='${s.station}';switchViewCategory('division');viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();switchViewCategory('division');document.getElementById('viewDivisionSearch').value='${s.station}';viewSearch()">`;
       html += `<td style="font-weight:600;">${s.station}<div style="font-size:10px;color:#6366F1;">실/본부</div></td>`;
       divTypeArr.forEach(type => {
         const rate = s.types[type];
