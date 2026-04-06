@@ -609,11 +609,11 @@ select.apple-input {
           </div>
           <div id="stationSelectArea">
             <label class="apple-label">지점</label>
-            <select id="inputStation" class="apple-input"></select>
+            <select id="inputStation" class="apple-input" onchange="updateInputExclusion()"></select>
           </div>
           <div id="divisionSelectArea">
             <label class="apple-label">실/본부 선택</label>
-            <select id="inputDivision" class="apple-input">
+            <select id="inputDivision" class="apple-input" onchange="updateInputExclusion()">
               <option value="">선택하세요</option>
               <option value="운항본부">운항본부</option>
               <option value="정비본부">정비본부</option>
@@ -2827,6 +2827,10 @@ function switchTab(idx) {
 function populateStationDropdown() {
   const sel = document.getElementById('inputStation');
   sel.innerHTML = '';
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = '선택하세요';
+  sel.appendChild(emptyOpt);
   for (const [region, data] of Object.entries(REGIONS)) {
     const optgroup = document.createElement('optgroup');
     optgroup.label = region;
@@ -2893,6 +2897,9 @@ function switchAuditCategory(cat) {
   const stationArea = document.getElementById('stationSelectArea');
   const divArea = document.getElementById('divisionSelectArea');
 
+  // 카테고리 전환 시 필드 초기화 (disabled 상태 포함)
+  clearAllInputFields();
+
   // 모든 버튼 비활성
   [allBtn, branchBtn, divBtn].forEach(btn => {
     if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
@@ -2911,6 +2918,7 @@ function switchAuditCategory(cat) {
     if (stationArea) stationArea.classList.add('hidden');
     if (divArea) divArea.classList.remove('hidden');
   }
+  updateInputExclusion();
   renderInputPendingStations();
 }
 
@@ -3554,8 +3562,27 @@ function clearAllSearchFields() {
 function clearAllInputFields() {
   ['inputStation', 'inputDivision'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = '';
+    if (el) { el.value = ''; el.disabled = false; el.style.opacity = '1'; }
   });
+}
+
+function updateInputExclusion() {
+  const station = document.getElementById('inputStation');
+  const division = document.getElementById('inputDivision');
+  if (!station || !division) return;
+
+  if (station.value) {
+    division.disabled = true;
+    division.style.opacity = '0.4';
+  } else if (division.value) {
+    station.disabled = true;
+    station.style.opacity = '0.4';
+  } else {
+    station.disabled = false;
+    station.style.opacity = '1';
+    division.disabled = false;
+    division.style.opacity = '1';
+  }
 }
 
 function updateSearchExclusion() {
