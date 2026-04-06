@@ -132,10 +132,6 @@ p, span, td, th, label, div {
   .checklist-item-row .item-score-area { flex-shrink: 0; }
   .score-btn { min-width: 40px; min-height: 40px; font-size: 15px; border-radius: 10px; }
 }
-/* Hide default details marker */
-details > summary { list-style: none; }
-details > summary::-webkit-details-marker { display: none; }
-
 /* Collapsible remark toggle */
 .remark-toggle {
   font-size: 12px; color: #9EA2A1; cursor: pointer; user-select: none;
@@ -3147,7 +3143,7 @@ function renderChecklistItems(items, scores, remarks, type, options) {
     // Maturity criteria (grade checklists with item.maturity)
     if (!isBinary && item.maturity) {
       html += `<details style="margin-left:44px;margin-top:4px;">`;
-      html += `<summary style="font-size:12px;color:#6366F1;cursor:pointer;list-style:none;-webkit-appearance:none;">▶ 성숙도 기준</summary>`;
+      html += `<summary style="font-size:12px;color:#6366F1;cursor:pointer;">성숙도 기준</summary>`;
       html += `<div style="font-size:12px;color:#565A5B;padding:8px 12px;background:rgba(99,102,241,0.06);border-radius:8px;margin-top:4px;">`;
       for (const lvl of [1, 2, 3, 4]) {
         if (item.maturity[lvl]) {
