@@ -8088,6 +8088,83 @@ function init() {
       e.returnValue = '';
     }
   });
+
+  // ── 스와이프 제스처로 Phase 뒤로/앞으로 이동 ──
+  // 모바일: 한 손가락 좌우 스와이프
+  // PC(트랙패드): 두 손가락 좌우 스와이프
+  (function initSwipeGesture() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    const SWIPE_THRESHOLD = 80;
+    const SWIPE_MAX_Y = 60;
+    const SWIPE_MAX_TIME = 400;
+
+    function isInputFocused() {
+      const el = document.activeElement;
+      return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+    }
+
+    function handleSwipe(direction) {
+      // direction: 'left' = 앞으로(다음), 'right' = 뒤로(이전)
+      if (activeTab === 1) {
+        // 점수 입력 탭 (4-phase)
+        if (direction === 'right' && inputPhase > 1) {
+          inputGoBack();
+          return true;
+        }
+      } else if (activeTab === 2) {
+        // 점수 조회 탭 (2-phase)
+        if (direction === 'right' && viewPhase > 1) {
+          viewGoBack();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // 모바일 터치 이벤트
+    document.addEventListener('touchstart', (e) => {
+      if (isInputFocused()) return;
+      if (e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (isInputFocused()) return;
+      if (e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      const dt = Date.now() - touchStartTime;
+      if (Math.abs(dx) < SWIPE_THRESHOLD || dy > SWIPE_MAX_Y || dt > SWIPE_MAX_TIME) return;
+      const direction = dx > 0 ? 'right' : 'left';
+      if (handleSwipe(direction)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // PC 트랙패드 두 손가락 스와이프 (wheel 이벤트)
+    let wheelAccX = 0;
+    let wheelTimeout = null;
+    const WHEEL_THRESHOLD = 150;
+
+    document.addEventListener('wheel', (e) => {
+      if (isInputFocused()) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return; // 세로 스크롤 무시
+      if (Math.abs(e.deltaX) < 2) return;
+      wheelAccX += e.deltaX;
+      clearTimeout(wheelTimeout);
+      wheelTimeout = setTimeout(() => {
+        if (Math.abs(wheelAccX) >= WHEEL_THRESHOLD) {
+          const direction = wheelAccX > 0 ? 'left' : 'right';
+          handleSwipe(direction);
+        }
+        wheelAccX = 0;
+      }, 100);
+    }, { passive: true });
+  })();
 }
 
 document.addEventListener('DOMContentLoaded', init);
