@@ -519,7 +519,7 @@ select.apple-input {
     </div>
 
     <!-- 현황 요약 -->
-    <div id="homeSummary" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;">
+    <div id="homeSummary" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     </div>
 
     <!-- 빠른 실행 -->
@@ -7211,32 +7211,32 @@ function renderHome() {
   const divRateColor = divAvgRate !== '-' && parseInt(divAvgRate) >= 90 ? '#22C55E' : divAvgRate !== '-' && parseInt(divAvgRate) >= 70 ? '#F59E0B' : '#303A3C';
   document.getElementById('homeSummary').innerHTML = `
     <div>
-      <h3 style="font-size:17px;font-weight:700;color:#303A3C;margin-bottom:12px;">지점 및 외주협력업체</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="apple-card" style="padding:20px;text-align:center;">
+      <h3 style="font-size:15px;font-weight:700;color:#303A3C;margin-bottom:10px;">지점 및 외주협력업체</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
-          <div style="font-size:36px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${completionRate}%</div>
-          <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${completedStations.size} / ${totalStations} 지점</div>
+          <div style="font-size:28px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${completionRate}%</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedStations.size} / ${totalStations} 지점</div>
         </div>
-        <div class="apple-card" style="padding:20px;text-align:center;">
+        <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">전체 평균</div>
-          <div style="font-size:36px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${overallAvg}</div>
-          <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
+          <div style="font-size:28px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${overallAvg}</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
         </div>
       </div>
     </div>
     <div>
-      <h3 style="font-size:17px;font-weight:700;color:#303A3C;margin-bottom:12px;">실·본부</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="apple-card" style="padding:20px;text-align:center;">
+      <h3 style="font-size:15px;font-weight:700;color:#303A3C;margin-bottom:10px;">실·본부</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
-          <div style="font-size:36px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${divCompletionRate}%</div>
-          <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${completedDivisions.size} / ${totalDivisions} 본부</div>
+          <div style="font-size:28px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${divCompletionRate}%</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedDivisions.size} / ${totalDivisions} 본부</div>
         </div>
-        <div class="apple-card" style="padding:20px;text-align:center;">
+        <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">평균 적합률</div>
-          <div style="font-size:36px;font-weight:600;color:${divRateColor};letter-spacing:-0.28px;">${divAvgRate}${divAvgRate !== '-' ? '%' : ''}</div>
-          <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
+          <div style="font-size:28px;font-weight:600;color:${divRateColor};letter-spacing:-0.28px;">${divAvgRate}${divAvgRate !== '-' ? '%' : ''}</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${currentYear}년 기준</div>
         </div>
       </div>
     </div>
