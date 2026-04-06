@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 성숙도점검 통합 플랫폼</title>
+<title>이스타항공 성숙도점검 통합 플랫폼 v9.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -446,6 +446,24 @@ select.apple-input {
   align-items: center;
 }
 .analysis-modal-body { padding: 20px; }
+
+/* Binary Scoring Buttons */
+.binary-s-btn:hover { background: rgba(34,197,94,0.15) !important; color: #22C55E !important; }
+.binary-s-btn.selected { background: #22C55E !important; color: #fff !important; border-color: #22C55E !important; }
+.binary-u-btn:hover { background: rgba(210,0,21,0.15) !important; color: #D20015 !important; }
+.binary-u-btn.selected { background: #D20015 !important; color: #fff !important; border-color: #D20015 !important; }
+
+/* Sub-tab styles */
+.sub-tab { padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+.sub-tab-active { background: #303A3C; color: #fff; }
+.sub-tab-inactive { background: rgba(158,162,161,0.12); color: #9EA2A1; }
+.sub-tab-inactive:hover { background: rgba(158,162,161,0.2); color: #565A5B; }
+
+/* Compliance rate badge */
+.compliance-badge { display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600; }
+.compliance-high { background:rgba(34,197,94,0.15);color:#22C55E; }
+.compliance-mid { background:rgba(245,158,11,0.15);color:#F59E0B; }
+.compliance-low { background:rgba(210,0,21,0.15);color:#D20015; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col" style="background:#f5f5f7;">
@@ -470,7 +488,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v1.0</span>
+      <span style="margin-left:8px;">v9.0</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -547,6 +565,29 @@ select.apple-input {
       <div class="apple-card p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
+
+    <!-- 심사 카테고리 선택 -->
+    <div class="mb-4">
+      <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
+      <div class="flex gap-2">
+        <button id="catBtnBranch" onclick="switchAuditCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">지점 심사</button>
+        <button id="catBtnDivision" onclick="switchAuditCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
+      </div>
+    </div>
+    <!-- 실/본부 선택 (hidden by default) -->
+    <div id="divisionSelectArea" class="mb-4 hidden">
+      <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">실/본부 선택</label>
+      <select id="inputDivision" class="apple-select" onchange="">
+        <option value="">선택하세요</option>
+        <option value="운항본부">운항본부</option>
+        <option value="정비본부">정비본부</option>
+        <option value="운송본부">운송본부</option>
+        <option value="객실본부">객실본부</option>
+        <option value="안전보안실">안전보안실</option>
+        <option value="종합통제실">종합통제실</option>
+        <option value="케이터링운영파트">케이터링운영파트</option>
+      </select>
+    </div>
             <label class="apple-label">연도</label>
             <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
               <option value="2025">2025</option>
@@ -719,22 +760,32 @@ select.apple-input {
 
   <!-- Tab 3: Statistics -->
   <div id="tab3" class="tab-content hidden fade-in">
-    <div class="flex items-end justify-between mb-6">
-      <div>
-        <h2 class="section-title">통계</h2>
-        <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
-      </div>
-      <select id="statsYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderStatsDashboard()">
-      </select>
+    <div class="mb-6">
+      <h2 class="section-title">통계</h2>
+      <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
+      <div id="statsYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <select id="statsYear" class="hidden"><option></option></select>
       <script>
       (function() {
         const y = new Date().getFullYear();
+        const container = document.getElementById('statsYearSegment');
         const sel = document.getElementById('statsYear');
         for (let i = y - 2; i <= y; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
           sel.appendChild(opt);
+          const btn = document.createElement('button');
+          btn.textContent = i + '년';
+          btn.dataset.year = i;
+          btn.style.cssText = 'border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;' + (i === y ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;');
+          btn.onclick = function() {
+            sel.value = i;
+            container.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = '#565A5B'; });
+            this.style.background = '#D20015'; this.style.color = '#fff';
+            renderStatsDashboard();
+          };
+          container.appendChild(btn);
         }
       })();
       </script>
@@ -770,22 +821,32 @@ select.apple-input {
 
   <!-- Tab 4: Analysis -->
   <div id="tab4" class="tab-content hidden fade-in">
-    <div class="flex items-end justify-between mb-6">
-      <div>
-        <h2 class="section-title">분석</h2>
-        <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
-      </div>
-      <select id="analysisYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderAnalysis()">
-      </select>
+    <div class="mb-6">
+      <h2 class="section-title">분석</h2>
+      <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
+      <div id="analysisYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <select id="analysisYear" class="hidden"><option></option></select>
       <script>
       (function() {
         const y = new Date().getFullYear();
+        const container = document.getElementById('analysisYearSegment');
         const sel = document.getElementById('analysisYear');
         for (let i = y - 2; i <= y; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
           sel.appendChild(opt);
+          const btn = document.createElement('button');
+          btn.textContent = i + '년';
+          btn.dataset.year = i;
+          btn.style.cssText = 'border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;' + (i === y ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;');
+          btn.onclick = function() {
+            sel.value = i;
+            container.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = '#565A5B'; });
+            this.style.background = '#D20015'; this.style.color = '#fff';
+            renderAnalysis();
+          };
+          container.appendChild(btn);
         }
       })();
       </script>
@@ -949,7 +1010,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v1.0 &middot; 2026
+  안전기획팀 &middot; v9.0 &middot; 2026
 </footer>
 
 <script>
@@ -1165,6 +1226,852 @@ const CHECKLIST_RAMP = {
     ]
   }
 };
+
+// ============================================================================
+// DIVISION (실/본부) CHECKLIST CONSTANTS - Auto-extracted from Excel
+// ============================================================================
+const CHECKLIST_QA_FLIGHT_OPS = {
+  "1. 운항승무": {
+    items: [
+      {id:"1-1",text:"1-1. 운항본부 업무 수행에 필요한 인원 및 업무 분장은 적절한가? (다음 자료를 확인)",verification:"- 조직도 \n- 인원현황(해당분야 적정 경력 인력 보임 여부)\n- 업무분장(책임/권한 포함)\n- 직책 별 직무가 개인 별로 명확히 기술되어있는가",manual:"IOSA ORG 1.6.2 ~ 1.6.3\nFOM 1.2"},
+      {id:"1-2",text:"1-2. 운항승무원의 각종 자격을 기준에 맞추어 관리하고 있는가?",verification:"- 여권 갱신\n- 비자\n- 항공무선통신\n- EPTA\n- 신체검사\n- 승무원 등록증",manual:"FOMM 2.13\nFOM 3.3.2, 3.5"},
+      {id:"1-3",text:"1-3. 안전관련 지시 내용을 직원들에게 전파 하였는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인\n- 지시내용에 대한 이행 여부 확인(이행 실적)",manual:"SMSM 1.6\nFOMM 2.7"},
+      {id:"1-4",text:"1-4. 운항 승무원 비행시간, 비행수당 관리 및 복리후생 업무지원 등 규정에 의거하여 업무가 수행 되며, 운항본부에서 확인되고 있는가?",verification:"",manual:"FOMM 2.8\nFOM 1.2.1.1"},
+      {id:"1-5",text:"1-5. 운항승무원의 운항제한 사항에 대한 절차를 수립 및 규정에 의거 관리하는가?",verification:"- 운항승무원의 등급 관리 등",manual:"OP016A\nOP320A"},
+      {id:"1-6",text:"1-6. 운항승무팀은 운항승무원 이착륙 경험/최근 비행경험을 관리하고 있는가?",verification:"",manual:"FOM 3.3.2.1"},
+      {id:"1-7",text:"1-7. 비행기록은 최소 1년간 전자시스템으로 조회 가능하도록 자료를 유지하는가?",verification:"",manual:"FOM 1.5  \nCMSG 2.1"},
+      {id:"1-8",text:"1-8. 기장승격 대상자 선발 및 승격 기준이 잘 지켜지고 있는가?",verification:"",manual:"FOMM 2.3.3, 2.5"},
+      {id:"1-9",text:"1-9. 운항승무원 자격심의위원회 중 의결사항에 대한 의결 기준이 있으며, 준수되고 있는가?",verification:"",manual:"FOMM 2.2.1"},
+      {id:"1-10",text:"1-10. 운항승무원 자격심의위원회 회의 자료가 기록 유지 보관되고 있는가?",verification:"",manual:"FOM 1.5.3.2"},
+      {id:"1-11",text:"1-11. 기종별 운항안전회의가 반기 1회 실시되고 있는가?",verification:"- 주제 및 안건이 규정과 부합하는가?\n- 미개최 시, 안전소식지를 통하여 안전 운항을 독려하는가?",manual:"FOMM 2.2.4"},
+      {id:"1-12",text:"1-12. 운항승무팀 담당자 회의록을 운항승무팀장의 결재를 득하여 보관하고 있는가?"},
+      {id:"1-13",text:"1-13. Cockpit Auth 발급 업무가 규정대로 준수되고 있는가?",verification:"",manual:"FOM 12.2.2.1"},
+      {id:"1-14",text:"1-14. 기장 방송문 개정 및 신규 작성 업무가 적정하게 이루어지고 있는가?",verification:"- 한국어 방송문 개정 현황\n- 영문 방송문 개정 현황",manual:""}
+    ]
+  },
+  "2. 운항품질": {
+    items: [
+      {id:"2-1",text:"2-1. 아래 규정의 최신화 및 본부 자체 안전, 품질 지침을 관리하고 있는가?",verification:"- 안전관리시스템규정(SMSM)\n- 품질규정(QM)\n- 운항본부 안전관리시스템 지침(FOSG) \n- 운항품질 관리 지침(FQAG)",manual:"FSDS 1.5.2.마"},
+      {id:"2-2",text:"2-2. 안전 지시에 대해서 본부 내 공유되고 있는가 ?",verification:"- 안전지시에 대한 공유 절차 확인",manual:"SMSM 5.2.2"},
+      {id:"2-3",text:"2-3. 연간 품질감사 계획을 수립하고, 계획에 의거한 심사가 이루어지고 있는가?",verification:"- 통합안전관리시스템(ESMS) 관리 여부\n - 계획 변경 사항에 대한 보고 여부",manual:"QM 3.2.나"},
+      {id:"2-4",text:"2-4. 운항품질팀장의 주관 하에 운항본부 품질지침에 의거한 품질심사가 이행되고 있는가?",verification:"- 연간 실적 확인",manual:"FQAG 2.4"},
+      {id:"2-5",text:"2-5. 품질 심사에서 위해요인을 식별하고, 위험평가에 따른 개선조치로 이어지는 절차가 수립되어있는가?",verification:"- 이행 실적\n- 본부 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:"QM 3.9"},
+      {id:"2-6",text:"2-6. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력\n- 임명 공지 확인",manual:"QM 2.5.6"}
+    ]
+  },
+  "3. 운항훈련": {
+    items: [
+      {id:"3-1",text:"3-1. 훈련 규정 및 훈련관련 매뉴얼은 정기적으로 검토 되고 있으며 검토된 내용과 자료는 기록 유지 되고 있는가?",verification:"1) 검토된 내용 및 변경 내용(필요 시 확인)\n2) 규정위원회 참석 인원 및 일자의 기록 유지\n3) 변경내용 중 변경 근거 기록 유지(필요 시)\n4) 검토 주기 내에서 실시 여부 확인",manual:"FTM 1.1.3"},
+      {id:"3-2",text:"3-2. 훈련은 인가된 프로그램에 따라 수행되며, 자료의 개정 상태는 현재 사용이 가능한 것인가?",verification:"",manual:"OP041A"},
+      {id:"3-3",text:"3-3. 교육/훈련 계획을 수립하고, 계획에 의거한 진행이 이루어지는가?",verification:"",manual:"FOMM 2.3 \nFTM 7장"},
+      {id:"3-4",text:"3-4. 각 훈련의 교관을 선발하는 기준이 준수되고 있는가?",verification:"- 교관 자격 기준\n- 교관 자격 관리 실적",manual:"FOMM 4.1"},
+      {id:"3-5",text:"3-5. 교관들의 자격 유지를 위한 교육/훈련은 규정에 부합하는가?",verification:"- 인가된 훈련 프로그램에 따라 훈련을 받았는가?",manual:"FOMM 4.1\nFTM 6장 \nOP041A"},
+      {id:"3-6",text:"3-6. 승인된 모의비행장치 및 훈련장비를 사용하는가?",verification:"- 훈련시설은 적절한가?",manual:"FTM 3.5\nOP041A"},
+      {id:"3-7",text:"3-7. 승격 프로그램 훈련의 품질",verification:"- 교관의 자격 확인",manual:"OP321A"},
+      {id:"3-8",text:"3-8. 정기 지상훈련(공통 및 기종) 대상자 관리는 규정대로 이루어지는가?",verification:"",manual:"FOMM 2.3 \nFTM 7장"},
+      {id:"3-9",text:"3-9. 전 승무원에 대해 CRM 교육이 이루어지고 있는가?",verification:"",manual:"FTM 7.8"},
+      {id:"3-10",text:"3-10. 실제 상황에 적절한 비상 훈련을 시행하는가?",verification:"",manual:"OP041A"},
+      {id:"3-11",text:"3-11. 노선적응훈련(LOFT)을 연1회 실시하며, 이를 정기 심사로 적용하는가?",verification:"",manual:"FOMM 4.2\nFTM 7.8"},
+      {id:"3-12",text:"3-12. OE 입과 전 교육 내용 및 시간이 규정대로 이루어지고 있는가?",verification:"",manual:"FOMM 4.5"},
+      {id:"3-13",text:"3-13. 운항승무원 기장 승격을 위한 (SIM/노선)훈련은 규정대로 이루어지는가?",verification:"",manual:"FOMM 2.3"},
+      {id:"3-14",text:"3-14. 각종 훈련 기록부의 원본이 관리되고 있는가?",verification:"",manual:"FTM 2.9\nFOMM 4.8\nFSR 8.4.8.47"}
+    ]
+  },
+  "4. 운항표준/평가": {
+    items: [
+      {id:"4-1",text:"4-1. 표준화 위원회가 규정에 의거하여 개최되며, 개회 및 의결 요건은 충족되고 있는가?",verification:"- 의결 조건 \n- 최근 실적 확인",manual:"FOMM 3.2"},
+      {id:"4-2",text:"4-2. 표준화 위원회 회의록은 규정대로 보관되고 있는가?",verification:"- 회의록 작성 기준 확인 \n- 기록물 확인",manual:"FOMM 3.2"},
+      {id:"4-3",text:"4-3. 시청각교육교재 제작 시, 내용 검토를 수행하고 있는가?",verification:"- 특수공항 시청각교재(A/V시스템)의 인가",manual:"FOMM 3.4 \nFSR 8.4.8.33"},
+      {id:"4-4",text:"4-4. 특수공항에 대한 공항경험 요건을 충족하기 위해 시청각교재를 이수한 경우, 당해 교육이수 기록을 유지 및 관리하고 있는가?",verification:"",manual:"FOMM 3.8\nFOM 3.4"},
+      {id:"4-5",text:"4-5. 운항승무원 자격관련 감사계획 수립 및 감사/평가 지침에 의거한 업무가 수행되며, 운항표준팀에서 확인되고 있는가?",verification:"- 감사를 실시하는 근거 확인",manual:"FOMM 3.3\nFCEM 4.2"},
+      {id:"4-6",text:"4-6. 운항승무원의 기량은 적절한 시험과 감사를 통해 평가되고 있는가?",verification:"- 기량 평가 최근 실적 확인",manual:"OP041A"},
+      {id:"4-7",text:"4-7. 평가 담당은 검열운항승무원회의를 실시하고 회의 내용을 기록/유지하고 있는가?",verification:"",manual:"FOMM 2.2.7, 3.1"},
+      {id:"4-8",text:"4-8. 평가 담당은 지식감사 문제 및 검열운항승무원 임용 관련 Profile 을 개정, 관리하고 있는가?",verification:"",manual:"FOMM 별표-6p"},
+      {id:"4-9",text:"4-9. 운항경험요원에 대한 노선감사(OE Line Check, Initial Line Check) 중 불합격 판정을 받은 경험이 있는 운항승무원에 대하여 비행 임무 시작 후에 추가로 수시감사를 실시하고 있는가?",verification:"- 수시 감사 기준 확인 \n- 최근 내역 확인",manual:"FCEM 4.2.8.4"},
+      {id:"4-10",text:"4-10. 지식감사(Oral Test)는 관련 규정에 따라 실시되고 있는가?",verification:"- 노선감사 이전에 1시간 이상 실시한다.\n- 위촉감사관은 지식감사항목과 관련된 \n각종 비행 관련 자료에 대한 숙지 상태 \n및 활용 여부를 점검한다.\n- 지식감사 후 위촉감사관은 채점 결과에 따라\n 감사표를 작성한다. (기량감사표에 포함)",manual:"FCEM 2.3.1.1"},
+      {id:"4-11",text:"4-11. 유효기간 내에 CAT-Ⅱ&Ⅲ 감사를 정기적으로 수행하고 있는가?",verification:"- 기상 최저치에 적합한 경력\n - 철저한 접근 검토\n - 실패 접근 절차의 수립 여부와 숙지 확인",manual:"FOM 6.11 서식 및 참고\nOP330A"},
+      {id:"4-12",text:"4-12. 검열운항승무원(위촉감사완) 정기감사가 규정대로 준수되고 있는가?",verification:"- 지식감사 / 노선감사 연 1회 (검열운항승무원)\n- 1 Flight: 우측석 이착륙\n- 1 Flight: 검열 또는 LCP 행위\n- 지식감사 년1회 / 노선감사 2년 1회 (위촉감사완)\n* 최초 임명 2년 후부터 매년 재임용감사",manual:"FCEM 2.3 \nFOMM 3.3\nFTM 4.2"},
+      {id:"4-13",text:"4-13. 검열운항승무원 선발을 위한 자격심의위원회에서의사정족수와 의결정족수가 규정대로 이루어지는가?",verification:"",manual:"FOMM 2.2.7, 3.1"},
+      {id:"4-14",text:"4-14. 검열운항승무원 임용훈련 시 Training Guide Record를 기록 유지하고 있는가? 규정에 의거한 요구량을 충족 하였는가?",verification:"- 검열운항승무원의 비행경험 및 자격유지 여부",manual:"FCEM 2.3, 2.5"},
+      {id:"4-15",text:"4-15. 검열운항승무원 우측석 자격유지(Right seat Currency) 훈련이 규정대로 준수되고 있는가?",verification:"- 훈련 과목\n- 훈련 기록부 작성 및 관리\n- Simulator 연 1회\n* 화재/연기/조종장애 등의 가능성에 대한 비정상 훈련",manual:"FSR 8.4.8.15\nFTM 3.6.5.5\nOP045A"}
+    ]
+  },
+  "5. 운항기술": {
+    items: [
+      {id:"5-1",text:"5-1. 회사의  인가 및 신고 문서에 대해서 열람 가능하며 열람방법을 알고 있는가?",verification:"- 통합안전관리시스템 사용 방법",manual:"FSDS 1.5.2.마"},
+      {id:"5-2",text:"5-2. Operation Manual(Master)의 유지 관리 상태",verification:"- 전자교범",manual:"FOMM 5.3\nOP030A"},
+      {id:"5-3",text:"5-3. Quick Reference Handbook 제/개정절차",verification:"",manual:"FOMM 5.3.4"},
+      {id:"5-4",text:"5-4. 운항기술관련 사내규정은 최신판을 유지하고 있는가?",verification:"- 매뉴얼의 추가 및 개정이 있을 때 해당 내용을 공고하는가?\n - 상위 규정 및 다른 사내 규정에 부합하는가?",manual:"FOMM 5.3\nOP030A"},
+      {id:"5-5",text:"5-5. 항공기 탑재도서 관리",verification:"- 비치 장소 및 관리 절차 확인\n - 업무 수행 중 매뉴얼에 쉽게 접근할 수 있는가?",manual:"FOM 1.3.4\nOP030A"},
+      {id:"5-6",text:"5-6. 국토교통부 발행 Opspec이 유효 페이지 목록에 의하여 최신의 상태로 유지되고 있는가?"},
+      {id:"5-7",text:"5-7. Opspec에 인가된 시스템 사양에 따라 비행에 운용하는가?",verification:"",manual:"OP017A"},
+      {id:"5-8",text:"5-8. 운항기술공지 발행 및 운영 절차",verification:"- 운항기술 성능담당자는 기술공시 발행 후, 미열람자를 모니터링하여 전원이 읽을 수 있도록 정보 제공\n - 공시의 원본은 전자 File 및 hardcopy 본으로 운항기술공시철에 철하여 지정보관함에 보관하여 유지",manual:"FOMM 5.12"},
+      {id:"5-9",text:"5-9. 운항기술 성능 담당은 Jeppesen 에서 제공한 공항 자료를 최신의 상태로 유지하고 있는가?",verification:"- 공항/기종 별 CAT Ⅱ&Ⅲ 제한 확인\n - 접근 및 착륙 최저치\n - 탑재/지상 장비 확인\n - 공항 활주로 길이 확인",manual:"FOMM 5.4\nOP330A"},
+      {id:"5-10",text:"5-10. Navigator 또는 특수항행장비를 운용하는가?",verification:"",manual:"OP320A"},
+      {id:"5-11",text:"5-11. W&B 관련 개정 사항(항공기의 SOW등의 변경) 발생 시 최신의 데이터로 유지 관리하며, 관련 부서에 통보하여 실제 비행에 적용되도록 하는가?",verification:"",manual:"WBCS 1.1, 1.5"},
+      {id:"5-12",text:"5-12. 운항 검토 점검사항 중 아래와 같은 공항 일반에 대한 정보가 확보되며, 그 내용이 타당한가?",verification:"- 안전운항체계 변경 검사 여부\n- 군기지 사용허가 여부\n- 생지공항 여부\n- ICAO 소방서비스 등급\n- 관제시설\n- T/O DATA & JPSN CHART\n- 주요 제한사항(NOTAM 포함)",manual:"FOMM 5.11"},
+      {id:"5-13",text:"5-13. 부정기 운항 지원을 절차대로 수행하는가?",verification:"",manual:"FOMM 5.13"},
+      {id:"5-14",text:"5-14. 신규 교체 공항 지정 시, 최소 운항 게시 단계까지 FOM, Opspec-C070 및 Station 정보에 해당 공항을 등재하는가?",verification:"",manual:"FOMM 5.10"},
+      {id:"5-15",text:"5-15. 다음의 경우 안전운항체계변경 검사를 수행하는가?",verification:"가. 운항증명 발급 이후 새로운 노선의 개설 등으로 안전운항체계에 변경이 있을 경우 (항공법 제 115조의2 제⑤항 및 동 법 시행규칙 제281조 제①항)\n나. 운영기준(Operations Specifications) 내 C070(허가된 공항)에 공항이 추가 등재되는 경우 \n※ 운영기준은 운항증명(Air Operator Certificate)과 함께 발급되었으며, 운항증명 소지자는 발급된 운영기준 및 관련된 모든 항공법규의 인가사항, 제한사항 및 절차에 따라 운항하여야 함\n다. 운영기준에 기 허가된 공항의 운항 기종에 변경이 있을 경우\n라. 운영기준에 공항 별로 허가된 모든 기종의 항공기가 6개월 이상 운항을 중지한 후 운항을 재개하고자 하는 경우\n마. 운영기준에 정규공항으로 허가 받지 않은 공항에 노선과 시간을 정하여 다음과 같이 부정기 항공편을 운항하고자 하는 경우\n 1) 동일한 구간에 주1회 이상의 회수로 8편 이상, 1개월 미만의 기간 동안 운항\n 2) 동일한 구간에 주1회 이상의 횟수로 1개월 이상의 기간 동안 운항",manual:"FOMM 5.10"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_FLIGHT_QUALITY = {
+  "1.운항품질팀": {
+    items: [
+      {id:"1-1",text:"1-1. 아래 규정의 최신화 및 본부 자체 안전, 품질 지침을 관리하고 있는가?",verification:"- 안전관리시스템규정(SMSM)\n- 품질규정(QM)\n- 운항본부 안전관리시스템 지침(FOSG) \n- 운항품질 관리 지침(FQAG)",manual:"FSDS 1.5.2.마"},
+      {id:"1-2",text:"1-2. 안전 지시에 대해서 본부 내 공유되고 있는가 ?",verification:"- 안전지시에 대한 공유 절차 확인",manual:"SMSM 5.3.2.나"},
+      {id:"1-3",text:"1-3. 연간 품질감사 계획을 수립하고, 계획에 의거한 심사가 이루어지고 있는가?",verification:"- 통합안전관리시스템(ESMS) 관리 여부\n - 계획 변경 사항에 대한 보고 여부",manual:""},
+      {id:"1-4",text:"1-4. 운항품질팀장의 주관 하에 운항본부 품질지침에 의거한 품질심사가 이행되고 있는가?",verification:"- 연간 실적 확인",manual:"FQAG 2.4"},
+      {id:"1-5",text:"1-5. 품질 심사에서 위해요인을 식별하고, 위험평가에 따른 개선조치로 이어지는 절차가 수립되어있는가?",verification:"- 이행 실적\n- 본부 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:""},
+      {id:"1-6",text:"1-6. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력\n- 임명 공지 확인",manual:""}
+    ]
+  }
+};
+
+const CHECKLIST_QA_MAINTENANCE = {
+  "1. 조직관리": {
+    items: [
+      {id:"1-1",text:"1-1. 항공기 정비 수행에 필요한 인원 및 업무 분장은 적절한가? (다음 자료를 확인)",verification:"- 정비본부 조직도\n- 인원현황(해당분야 적정 경력 인력 보임 여부)\n- 업무분장(책임/권한 포함)",manual:"MCM 2.1, 2.2"}
+    ]
+  },
+  "2. 규정/지침/매뉴얼 및 지시문서 관리(안전)": {
+    items: [
+      {id:"2-1",text:"2-1. 회사에서 발행하는 다음의 규정/매뉴얼을 통한 접근,\n열람 가능하며 열람방법을 알고 있는가?",verification:"- 안전관리시스템규정(SMSM)\n- 사고절차교범(ERP)\n- 제방빙프로그램 매뉴얼\n- FOM(Flight Operations Manual)\n- 정비규정 (MCM)\n- 정비운영절차 (MOP)\n- 정비조직절차교범 (AMOPM)\n- 교육훈련프로그램(Maintenance Training Program)\n- 운영기준",manual:"DCM 1.3.13,\nFSDS 1.5.2.마"},
+      {id:"2-2",text:"2-2. 해당년도 안전 지시에 대해 모든 실, 본부 인원들이 확인하고 숙지하고 있는가? (ESMS 기록 확인)",verification:"",manual:"SMSM 5.2.2"},
+      {id:"2-3",text:"2-3. 지시 내용을 직원들에게 전파 하였는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인\n- 지시내용에 대한 이행 여부 확인(이행 실적)",manual:"SMSM 1.6"}
+    ]
+  },
+  "3. 정비관리체계": {
+    items: [
+      {id:"3-1",text:"3-1. 정비 업무 관련 지점 자체 업무절차교범(SOP)의 제정 여부를 확인, 점검하고 있는가?",verification:"- SOP 관리 담당 부서\n- 지점별 SOP 의 현황과 적합성 확인",manual:""},
+      {id:"3-2",text:"3-2. 취항 항공기의 정비 지원에 필요한 인원이 확보되어 있는가? (운항 SKD/근무 SKD)",verification:"",manual:"ICAO Anx 6:  8.8,\n항공안전법26조, 28조\nMCM 2.3.2"},
+      {id:"3-3",text:"3-3. 정비 업무를 수행하는 종사자는 적합한 자격을 갖추었는가?",verification:"- 확인(주재/탑승)정비사는 취항 기종의 Rating을 갖추고 있는지 확인",manual:"ICAO Anx 1:  4.2, 6: 8.1.3\n항공안전법 22조, 26조, 28조\nFSR 2.4.4, 5.6.1.4, 9.4.1.15\nMCM 2.3.5"},
+      {id:"3-4",text:"3-4. 정비사의 휴가, 휴무 시의 대체 업무 지원은 적절하게 이루어지고 있는가?",verification:"",manual:"FSR 9.4.1.16\nMCM 2.7.1"},
+      {id:"3-5",text:"3-5. 정비 작업 및 각종 관련 업무에 대한 업무 분장은 명확히 구분되어 있는가?",verification:"",manual:"MCM 2장\nMOP_GA201"},
+      {id:"3-6",text:"3-6. 정비 업무 관련 연락처, 담당자 목록을 최신의 상태로 유지하고 있는가? (위탁정비업체, POOLING PARTNER, TECH REP 포함)",verification:"",manual:"MOP_GA103"},
+      {id:"3-7",text:"3-7. 항공기 고장/사고 발생 시 업무 절차를 숙지하고 있는가?"},
+      {id:"3-8",text:"3-8. 이전 안전평가 시, 개선조치 요구사항에 대한 시정조치는 효과적이며 지속적으로 이행되고 있는가?",verification:"",manual:"QM 3.4"}
+    ]
+  },
+  "4. 기술자료 관리": {
+    items: [
+      {id:"4-1",text:"4-1. 기술 자료의 관리 책임자는 MOP에 기록되어 있는가?",verification:"",manual:"MOP_GA201"},
+      {id:"4-2",text:"4-2. 정비 문서를 M&E기술자료 관리 시스템(eMES)을 이용하여 검색 및 출력이 가능한가?",verification:"",manual:"MOP_MP701"},
+      {id:"4-3",text:"4-3. 문서는 종류 별로 구분하고, 기종이나 ATA구분이 있는 문서는 기종 및/또는 ATA별로 구분하여 철입하여 관리하고 있는가?",verification:"",manual:"MCM 10장"}
+    ]
+  },
+  "5. 기술도서 관리": {
+    items: [
+      {id:"5-1",text:"5-1. 기술 도서의 관리 책임자는 MOP에 기록되어 있는가?",verification:"",manual:"MOP_GA201"},
+      {id:"5-2",text:"5-2. 기술 도서를 정비기술팀에서 발행한 기술 도서 배포 현황(MITS)에 맞게 최신판으로 유지하고 있는가?",verification:"(Boeing Toolbox 사용으로 인한 기술 도서 배포\n-자료접근 계정 관리 내역 확인)",manual:"MCM 3장\nMOP_ME201"},
+      {id:"5-3",text:"5-3. 유효한 ZE 규정의 원본 파일(전자교범)을 보관하고 있는가 (Notebook 또는 Desktop)",verification:"",manual:"MCM 10.2"}
+    ]
+  },
+  "6. 작업문서 기록 및 관리": {
+    items: [
+      {id:"6-1",text:"6-1. 작업문서의 관리 책임자는 MOP에 기록되어 있는가?",verification:"",manual:"MOP_MP304"},
+      {id:"6-2",text:"6-2. 사용 중인 각종 작업문서는 최신판이 사용되고 있는가?",verification:"- 작업문서(T/R, PR/PO, A/C Security Checklist) 보유현황(문서종류/Rev. Date/Rev. No.)",manual:""},
+      {id:"6-3",text:"6-3. TR, PR/PO, FLT&MNT Log, A/C Security Checklist 등 작업문서는 정확히 기록 후 확인(서명, Stamping)하고 있으며, FLT&MNT Log의 White Copy를 보관하고 있는가?",verification:"- 항공기 별 정비 이력부의 관리 절차에 맞는 운영이 이루어지고 있는가?",manual:"MCM 10장"},
+      {id:"6-4",text:"6-4. 정비 작업 후 수행본 작업문서(TR, PR/PO Sheet 등)는 종류 별로 분류하여 보관하고 있는가?",verification:"",manual:"MCM 10장"},
+      {id:"6-5",text:"6-5. 정비 이월에 대한 기록 유지 및 관련 Placard를 보관하고 있는가?",verification:"# Aircraft Placard (MOP_QA101-01) 보유 여부 확인",manual:"MOP_MQ201"},
+      {id:"6-6",text:"6-6. 항공기 지연, 결항 및 회항에 대한 기록 또는 보고서를 별도로 철입하여 관리하고 있는가?",verification:"",manual:"MCM 4.2.4"}
+    ]
+  },
+  "7. 정비 작업": {
+    items: [
+      {id:"7-1",text:"7-1. 항공기 도착 전 작업대, 장비/공구, Step Car, 작업자 등 사전 준비가 이루어지고 있는가?",verification:"",manual:"MCM 6.5.1.4"},
+      {id:"7-2",text:"7-2. 항공기 도착 후/출발 전에 항공기 상태를 점검하고 있는가?",verification:"- 항공기 Damage 여부 점검 및 조치 확인\n- 항공기 이동, 시동 및 착륙 지점에서 발견된 FOD 제거",manual:"MCM 3.2.6"},
+      {id:"7-3",text:"7-3. 항공기 점검 시 정비사는 해당 TR 또는 PR/PO Checklist를 소지하고 그 내용에 따라 점검 후 확인 서명을 하고 있는가?",verification:"",manual:"MCM 3.2.6\nMOP_MC101"},
+      {id:"7-4",text:"7-4. 작업 후 각종 Fluid, 작업대, 장비, 공구 등을 정리/정돈하고 있는가?",verification:"",manual:"MCM 9.2.3"}
+    ]
+  },
+  "8. 통신 및 정보 교환": {
+    items: [
+      {id:"8-1",text:"8-1. 정비 업무에 필요한 통신 수단(PC, 휴대전화기, Company Radio, Telex, FAX 등)을 보유하고 있고, 장비는 정상적으로 작동되고 있는가?",verification:"",manual:"MCM 9.2"},
+      {id:"8-2",text:"8-2. 항공기 도착 후 및 출발 전에 운항승무원과 정비사간에 항공기 상태에 대한 정보 교환이 이루어지고 있는가?",verification:"",manual:"MOP_MC101"},
+      {id:"8-3",text:"8-3. 정비 또는 정비 이외의 사유로 IRRE(지연, 결항 등) 발생 시, 관계 부서와 연락이 원활히 이루어지고 있는가?",verification:"",manual:"MCM 3.4\nMOP_MQ303"}
+    ]
+  },
+  "9. 항공기 부품 관리": {
+    items: [
+      {id:"9-1",text:"9-1. 항공기 부품의 관리 책임자는 MOP에 기록되어 있는가?",verification:"",manual:"MOP_GA201"},
+      {id:"9-2",text:"9-2. 수리 대기 및 폐기 대상 부품 등 사용 불가한 부품은 사용 가능한 부품과 분리하여 보관하고 있는가?",verification:"",manual:"MCM 12.1.5"},
+      {id:"9-3",text:"9-3. 보유 부품은 종류 별로 시건 장치가 있는 장소에 보관되어 있는가?",verification:"",manual:"MCM 12.1.5"},
+      {id:"9-4",text:"9-4. 부품 창고에는 규격에 맞는 소화기가 비치되어 있고, 정기 점검 실시 및 그 기록이 유지되고 있는가?",verification:"",manual:"MCM 12.1.5"},
+      {id:"9-5",text:"9-5. 인화성 또는 유독성 화학 제품은 일반 자재나 부품과 격리시켜 보관하고 있는가?",verification:"",manual:"MCM 12.1.5"},
+      {id:"9-6",text:"9-6. Station Allocation Item List를 최신 상태로 유지하며, 실제 부품명/Part No/수량면에서 일치하는가?",verification:"",manual:"MOP_MS301"},
+      {id:"9-7",text:"9-7. 저장 한계 품목에는 유효기간을 기록한 라벨을 부착하여 관리하고 있는가?",verification:"",manual:"MCM 12.2"},
+      {id:"9-8",text:"9-8. 저장 중인 항공기 부품은 Traceable Tag등(관련 문서)을 이용하여 Traceability 확인이 가능한가?",verification:"",manual:"MCM 12.2"},
+      {id:"9-9",text:"9-9. Wheel & Tire Assembly는 Storage Rack을 이용하여 수직 보관하는가?",verification:"",manual:"MOP_ME803"},
+      {id:"9-10",text:"9-10. ESDS 부품은 절차대로 관리되고 있는가?",verification:"- 포장 및 보관 상태 확인\n- ESDS 부품 취급 시 필요한 Wrist Strap 보유 여부",manual:"MOP_MS501"}
+    ]
+  },
+  "10. 장비/공구/시설관리": {
+    items: [
+      {id:"10-1",text:"10-1. 장비/공구/시설의 관리 책임자는 MOP에 기록되어 있는가?",verification:"",manual:"MOP_MP601"},
+      {id:"10-2",text:"10-2. 보유 기종의 정비에 필요한 장비가 확보되어 있는가?",verification:"",manual:"MOP_MP601"},
+      {id:"10-3",text:"10-3. 장비에 대한 일일 점검 및 정기 점검이 실시되고, 그 기록 및 정비 이력이 유지되고 있는가?",verification:"",manual:"MOP_MP601"},
+      {id:"10-4",text:"10-4. 보유 공구에 대한 목록을 유지하고, 정기적인 점검을 실시하고 있는가?",verification:"- 점검 실시 내역 확인",manual:"MOP_MP601"},
+      {id:"10-5",text:"10-5. 정밀 측정기는 검/교정 유효기간을 초과하지 않았는가?",verification:"- 검/교정 내역 확인",manual:"MOP_MQ104"}
+    ]
+  },
+  "11. 교육/훈련/평가 관리": {
+    items: [
+      {id:"11-1",text:"11-1. 주재정비사에 대한 교육 기록이 유지되고 있는가?",verification:"",manual:"MTP 별표 3.21"},
+      {id:"11-2",text:"11-2. 정비 작업에 관한 각종 지시, 정보, 회보 등 발행 문서에 대한 자체 교육 또는 전달 교육 기록이 유지되고 있는가?"},
+      {id:"11-3",text:"11-3. 주재정비사에게 추가로 요구되는 교육이 있을 경우, 이에 대한 조치가 이루어지는가?",verification:"",manual:"MTP 11장"}
+    ]
+  },
+  "12. 연료 품질관리": {
+    items: [
+      {id:"12-1",text:"12-1. 급유조업사 급유 시, 절차대로 수행하고 있는지를 확인하는가? (급유STN 해당)",verification:"- 접지(Electric Bonding)여부\n- 급유 시 급유원의 위치 및 조작 상태\n- 소화기가 비치되어 있고 정기 점검 실시 및 그 기록이 유지 확인",manual:"FM 13장"},
+      {id:"12-2",text:"12-2. 급유조업사 급유 시, 항공유 품질검사(외양, 수분 점검)를 실시하며 사용하는 수분점검 Kit는 유효기간 내에 있는지를 확인하는가? (급유STN 해당)",verification:"- 담당정비사는 항공유 품질검사 기록의 유지여부 확인\n# 급유조업사 제공 Fuel Receipt 상에 항공유 품질검사 기록이 있는 경우, Fuel receipt 보관으로 대체 가능",manual:"FM 8.4.3"},
+      {id:"12-3",text:"12-3. 급유조업사는 당사 제공 Fueling Manual(CD-ROM)을 보유하고 있는가? (급유STN 해당)",verification:"",manual:"FM 1.5"},
+      {id:"12-4",text:"12-4. 급유조업사의 자체 내부 품질심사 시, 각종시스템(인원/장비/시설/교육현황 등) 의 품질이 적절한지 확인 하는가? (급유STN 해당)\n# “ Fuel Vendor Audit checklist “ 수행",verification:"",manual:"FM 13장"}
+    ]
+  },
+  "13. 조업사 관리/감독": {
+    items: [
+      {id:"13-1",text:"13-1. 규정에 의거한 조업사를 선정하고, 조업사의 품질을 확인하고 있는가?",verification:"",manual:"MCM 7.2, 7.2.4"},
+      {id:"13-2",text:"13-2. 조업사 직원에 대하여 안전지시/정보 전파여부를 확인하고 있는가?",verification:"- 그 방법과 입증 기록 확인",manual:"SMSM 5.2.2"},
+      {id:"13-3",text:"13-3. 조업계약서 사본 보유 및 계약서에 조업사의 서비스 및 품질을 모니터링할 수 있는 내용이 포함되어 있는가? 또한 이 내용에는 측정 가능한 항목이 포함되는가?",verification:"-  조업계약 현황은?",manual:"MCM 7.2"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_GROUND_OPS = {
+  "1. 조직관리 (Safety Organization)": {
+    items: [
+      {id:"1-1",text:"1-1. 운송지원 업무 수행에 필요한 인원 및 업무 분장은 적절한가?",verification:"- 본부 내 인원현황(해당분야 적정 경력 인력 확인)\n- 업무분장 문서화 여부(책임/권한 포함)",manual:"IOSA ORG 1.1.1"},
+      {id:"1-2",text:"1-2. 업무수행에 필요한 제반 시설 및 장비는 보유하고 있는가?",verification:"- 통신수단(TEL, FAX, TELEX, W/T 등)\n- OA기기(PC, Printer, 복사기)\n- 기타 운송장비 등",manual:"IOSA ORG 1.6.1"}
+    ]
+  },
+  "2. 안전 규정/지침/매뉴얼 및 지시문서 관리 (Safety Manual)": {
+    items: [
+      {id:"2-1",text:"2-1. 다음의 규정/매뉴얼을 최신판으로 유지하고, 운송부문 관리 규정은 적기에 개정하고 배포하고 있는가?",verification:"- 안전관리시스템규정(SMSM)\n- 비행안전문서시스템(FSDS)\n- 품질규정(QM)\n- 항공기사고절차교범(ERP)\n- 항공기 탑재 및 처리 교범(AHM)\n- 제방빙프로그램 매뉴얼(DIPM)\n- 예방 지상 안전관리 지침\n- 비상구열좌석절차\n- 위험물교범",manual:"FSDS 1.5.2.마"},
+      {id:"2-",text:"2- 2 해당년도 안전 지시에 대해서 모든 실, 본부 인원들이 확인하고 숙지하고 있는가? (ESMS 기록 확인)",verification:"",manual:"SMSM 5.2.2"},
+      {id:"2-3",text:"2-3. 운송지침에 대한 전파 및 이행 실적을 관리하고 있는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인",manual:""}
+    ]
+  },
+  "3. 비상대응 운영절차 (ERP)": {
+    items: [
+      {id:"3-1",text:"3-1. 공항별 비상대응계획(LERAP)의 내용과 각자의 역할에 대하여 확인하고 모니터링하는 절차가 있는가?",verification:"- 심사 실적 존재 시 LERAP 내용 확인",manual:"ERP 4.2"},
+      {id:"3-2",text:"3-2. 운송본부 비상연락망을 최신의 상태로 유지하고 있는가?",verification:"- 비치 상태 확인\n- 직원들은 비상시 대처 요령을 숙지상태 확인",manual:"ERP 4.2"},
+      {id:"3-3",text:"3-3. 운송본부 직원은 개인 임무카드를 항상 패용하여, 유사 시를 대비 하고 있는가?",verification:"- 직원들은 비상시 대처 요령을 숙지상태 확인",manual:""}
+    ]
+  },
+  "4. 교육/훈련/평가 관리": {
+    items: [
+      {id:"4-1",text:"4-1. 운송 본부 자체 교육/훈련 프로그램을 갖추고 있는가?'",verification:"- 법정 교육 (위험물/W&B/SMS/보안)\n- 운송 실무 교육",manual:"AHM 11.10"},
+      {id:"4-2",text:"4-2. 교육/훈련 이행 여부 점검을 위한 절차를 수립하고 있는가?",verification:"- 훈련 기록 관리 내역 확인",manual:"AHM 11.4, 11.8\nOP044A"},
+      {id:"4-3",text:"4-3. 지점원들이 필요한 법정 교육을 초기/정기 이수하였는지 관리하는가?",verification:"- 위험물\n- W&B\n- SMS\n- 보안\n훈련 기록 관리 내역 확인",manual:"AHM 11.11\nOP044A"}
+    ]
+  },
+  "5. 조업사 관리/감독": {
+    items: [
+      {id:"5-1",text:"5-1. 규정에 의거하여 조업사를 선정하고 조업사의 품질을 확인하고 있는가?",verification:"",manual:"AHM 2.11, 2.12, 2.15"},
+      {id:"5-2",text:"5-2. 조업계약서 사본 보유 및 계약서에 조업사의서비스 및 품질을 모니터링할 수 있는 내용이 포함되어 있는가? 또한 이 내용에는 측정 가능한 항목이 포함되는가?",verification:"？ 부문별 조업계약 현황은?\n- 여객운송 조업사:\n- 화물운송(W/H) 조업사:\n- 운항관리 조업사:\n- 여객기 지상 조업사:",manual:"IOSA ORG\n3.5.1 ~ 3.5.4"},
+      {id:"5-3",text:"5-3. 조업사 교육/훈련, 업무 등에 대하여 지속적인 모니터링을 수행하고 있는가?",verification:"- 조업사와의 소통 채널 수립 여부",manual:"AHM 11.14"}
+    ]
+  },
+  "6. 사건/사고 사례 및 안전장애보고": {
+    items: [
+      {id:"6-1",text:"6-1. 지점에서 발생된 지상 사건, 사고 사례를 보고하도록 장려하고, 접수 시 위험관리 절차에 맞게 관리하고 있는가?",verification:"- 안전보고 독려 실적\n- 통합안전관리시스템 위험관리 실적",manual:"SMSM 3.6"},
+      {id:"6-2",text:"6-2. 발견된 안전 및 품질에 관한 사항들을 보고하는 절차를 수립하고 있는가?",verification:"- 보고절차 수립 여부",manual:"SMSM 3.6"}
+    ]
+  },
+  "7. 대내외 각종 점검 기타 안전예방활동": {
+    items: [
+      {id:"7-1",text:"7-1. 국내 대외기관(국토부)의 안전 점검 혹은 해당 국가 항공당국의 점검을 받은 실적을 관리하고 있는가?",verification:"- 지적 사항에 대한 개선조치는 완료되었는가?\n- 본부 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:"SMSM 4.2"},
+      {id:"7-2",text:"7-2. 사내 안전 점검 (안전평가 또는 부문별 자체 점검)을 받은 실적을 관리, 유지하고 있는가?",verification:"- 지적 사항에 대한 개선조치는 완료되었는가?\n- 본부 자체적으로 조치 완료 사항에 대한\n모니터링을 하고 있는가?",manual:"SMSM 4.2"}
+    ]
+  },
+  "8. 품질보증 (Safety Assurance)": {
+    items: [
+      {id:"8-1",text:"8-1. 품질보증 업무 수행을 위한 프로그램을 수립 및 운영하고 있는가?",verification:"",manual:"QM 2.6\nGQAG 1.1"},
+      {id:"8-2",text:"8-2. 품질보증 프로그램은 주기적인 품질 심사를 포함하고 있는가?",verification:"- 심사 대상\n- 심사 주기\n- 심사 절차",manual:"QM 3.2\nGQAG 3.1"},
+      {id:"8-3",text:"8-3. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력\n- 임명 공지 확인",manual:"QM 2.5.6\nGQAG 2.2"},
+      {id:"8-4",text:"8-4. 지점과 조업사간의 정기적인 회의(안전 및 품질 관련) 또는 지점이 조업사에 대한 품질 평가를 실시하고 있는지 확인하고 있는가?",verification:"- 관리 및 감독 사항\n조업사 월례회의 회의록 보고\nSurveillance Check 실적",manual:"IOSA ORG 3.5.2\nAHM 2.14.1.2"},
+      {id:"8-5",text:"8-5. 위탁 품질 심사 대상 별 Checklist를 제정 운영하고 주기적으로 Update 하고 있는가?",verification:"",manual:"GQAG 4.3"},
+      {id:"8-6",text:"8-6. 품질 심사에서 발견된 각종 미 준수 사항에 대하여 근본원인이 파악되고, 개선조치로 이어지는 절차가 수립되어있는가?",verification:"- 이행 실적\n- 본부 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:"QM 3.9\nGQAG 4.1"}
+    ]
+  },
+  "9. 불만 고객 및 피해 구제 접수": {
+    items: [
+      {id:"9-1",text:"9-1. 운송관련 불만 사례가 체계적으로 관리가 되고 고객 불만 저감을 위한 대책을 수립하고 있는가?",verification:"- 실적 및 조치 사항 확인",manual:"AHM 3.9.1.4, 3.9.1.5"},
+      {id:"9-2",text:"9-2. 피해 구제 접수에 대한 공항지점의 운영 실태를 확인하고 관리하고 있는가?",verification:"",manual:"AHM 3.10"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_CABIN = {
+  "1. 규정 및 문서 관리": {
+    items: [
+      {id:"1-1",text:"1-1. 객실 승무원 업무 수행을 위한 업무교범을 제공하며 최신의 정보/기준을 포함하고 있는가?",verification:"",manual:"FSR 9.3.3.6\nCCOM 1.1.3, 1.2.2"},
+      {id:"1-2",text:"1-2. 업무교범의 유지, 개정, 배포 절차가 수립되어 있는가?",verification:"- 개정 검토 주기\n- 배포/ 폐기 절차 수립여부\n- 배포 절차 이행 여부 (배포 수령중)",manual:"IOSA CAB 1.5.1\nCCOM 1.2.2\nCSOP 8.2, 10.1.1\nCSOP 8.2, 10.1.1\nOPSEC A025"},
+      {id:"1-3",text:"1-3. 업무교범의 제/개정 시 관련 당국에 제출/인가를 받고 있는가?",verification:"",manual:"FSR 9.3.1.2"},
+      {id:"1-4",text:"1-4. 업무교범의 배포 및 관리는 적절이 이루어지고 있는가?",verification:"- 배포용, 항공기 탑재용 업무교범을 구분하여 관리하는가?",manual:"FSR 9.3.1.7"},
+      {id:"1-5",text:"1-5. 항공 기내에서 업무교범은 객실 승무원이 항상 사용 가능하게 운영되는가?",verification:"- 기내 구비 업무교범(최소 1부)\n- 승무원 업무교범 휴대 필수\n* 전자교범에의 접근 방법이 하나 이상인가?",manual:""},
+      {id:"1-7",text:"1-7. 업무교범/절차/기준은 아래 조건을 충족하며, 업무에 필요한 최신의 정보를 포함하고 있는가?",verification:"- ICAO Annex, 항공안전법/운항기술\n- FAA Manual, IOSA CAB\n- 객실승무원의 책임과 역할, 지휘 체계 명시",manual:"IOSA CAB 1.2.4, 1.5.1, 1.5.3, 1.6.1\nCCOM 1.1.1, 1.9.2, 3.9"},
+      {id:"1-8",text:"1-8. 기타 점검 사항",verification:"- 매뉴얼 제작 시 공용어를 사용하고 있는가?\n- 사용자가 근무 중 쉽게 접근할 수 있는가?\n- 휴대용 교범과 Hard Copy본이 일치하는가?\n- 표준 용어에 관한 규정되어 있는가?\n- 매뉴얼 간 용어 차이는 없는가?\n  (만약 있다면 FOM 내용을 우선 함)\n- 개정면 발행 시 유관 인원에 배포, 현장 승무원 매뉴얼 점검 실시\n- 문서의 유효성이 지속적으로 점검되고 있는가?",manual:"IOSA CAB 1.6.6"}
+    ]
+  },
+  "2. 안전 업무 절차": {
+    items: [
+      {id:"2-1",text:"2-1. 최대 비행시간, 최대 근무시간, 최소 휴식시간이 규정되어 있는가?",verification:"- 이를 보증하는 절차가 있는가?\n- 기록 보존 및 Back up 내역 확인",manual:"FSR 8.4.9.3\nCCOM 3.5.1.4, 3.5.2"},
+      {id:"2-2",text:"2-2. 운항/객실승무원 간 효율적인 의사소통 절차가 수립되어 있는가?",verification:"- 합동브리핑 시 필수 정보를 공유하는가?\n- 비행 중요 단계에도 안전 관련 사항 발생 시 운항승무원과 공유하는가?\n- 비행 단계 별 표준신호에 의한 통보 절차\n- 안전정보 전달, 항공기 지상이동, 이/착륙, Door handling, Turbulence, 환자 발생,\n  비상 및 비정상 사태 발생시 보고 등 승무원 간 협의 절차 확인\n- 업무 중 공용어를 사용하는가?",manual:"FSR 8.4.3.3\nCCOM 2.3, 3.6.2.5"},
+      {id:"2-3",text:"2-3. 기내 표준신호 및 절차가 규정되어 있는가?",verification:"- 항공기 이륙/착륙/강하 등의 고지 절차가 있는가?\n- Turbulence 발생 시, 의사소통 절차가 수립되어 있는가?",manual:"CCOM 3.8, 3.13"},
+      {id:"2-4",text:"2-4. 유아/비동반소아, 환자/거동불편자 등에 대한 탑승 허용 또는 거절 관련 절차가 수립되어 있는가?",verification:"",manual:"FSR 8.4.7.2\nCCOM 3.17"},
+      {id:"2-5",text:"2-5. 기내 감압 시 승객/승무원을 위한 산소 장비(Emergency, supplemental, first aid)가 규정대로 장착/탑재되어 있고 사용 절차를 승무원들이 이해하고 있는가?",verification:"- 소아에게 산소 공급을 보장하는 절차를 수행하는가?",manual:"CCOM 4.6.3, 7.2.1, 7.10.1"},
+      {id:"2-6",text:"2-6. 응급 처치를 위한 휴대용 산소 장비 및 의료용 산소 장비에 대한 규정/절차가 수립되어 있는가?",verification:"",manual:"CCOM 7.2.1"},
+      {id:"2-7",text:"2-7. 비상구 좌석 착석 승객의 관련 규정 충족여부를 확인하는 절차가 있는가?",verification:"- 비상구 좌석 착석 승객에 대해 비상 탈출 시 협조 의사를 확인하는가?",manual:"FSR 8.4.7.9\nOP032A\nCCOM 3.18"},
+      {id:"2-8",text:"2-8. 승객의 좌석벨트 규정 준수를 확인하는 절차가 있는가?",verification:"- 이/착륙, Taxing, Turbulence, 비상사태",manual:"FSR 8.4.7.11\nCCOM 2.3, 3.12, 3.13"},
+      {id:"2-9",text:"2-9. 승객 탑승 중 연료를 보급할 경우 자격 있는 객실 승무원에 의해  가장 실제적이고 신속하게 신속히 탈출을 지시할 수 있도록 하는 절차가 있는가?",verification:"",manual:"FSR 8.1.12.2\nCCOM 3.15"},
+      {id:"2-10",text:"2-10. Door Arming/Disarming 절차가 있는가?",verification:"",manual:"CCOM 7.13.2"},
+      {id:"2-11",text:"2-11 안전하고 신속한 탈출을 위한 장착 좌석 기준 혹은 탑승 승객 기준의 최소 탑승 인원을 규정하고 있는가?",verification:"- 최소 탑승 승무원 탑승을 보장하는가?\n- 매 비행에 사무장을 지정하는 절차가 있는가?",manual:"FSR 9.3.3.3\nCCOM 1.9.2.13, 3.7"},
+      {id:"2-12",text:"2-12. 항공기별 비상 사태 및 비상 탈출이 필요한 비상 상황에 필요한 임무를 배정하고 있는가?",verification:"",manual:"CCOM 7.16, 7.19"},
+      {id:"2-13",text:"2-13. 이륙 및 착륙 준비 절차가 있는가?",verification:"- 빈 컵 회수, 좌석벨트 점검, 좌석 등받이, Tray Tables, 화장실 비 점유 상태 점검\n- 승객안전브리핑의 실시\n- Galleys 점검 및 객실 조명 조절\n- 운항 승무원과 이륙 준비 확인 절차 수행\n- 표준 신호체계에 의해\nApproaching/Landing 신호 준수",manual:"CCOM 2.3"},
+      {id:"2-14",text:"2-14. 승객안전 브리핑이 절차가 아래의 사항을 포함하여 규정되어 있는가?",verification:"- 좌석벨트, 구명복, 비상구, 산소마스크, 기타 비상 장비 에 대하여 안전브리핑을 실시하는가",manual:"FSR 8.1.12.4\nCCOM 2.3.5.2"},
+      {id:"2-15",text:"2-15. 휴대용 전자 기기 사용과 관련한 안내 절차가 있는가?",verification:"",manual:"FSR 8.1.8.19\nCCOM 3.22"},
+      {id:"2-16",text:"2-16. 승객의 금연 표시등 준수 여부를 점검하는 절차가 있는가?",verification:"",manual:"CCOM 3.15.2, 3.19.10"},
+      {id:"2-17",text:"2-17. 안전 관련, Turbulence, 비정상/비상 사태 발생 시 운항/객실승무원이 방송하는 절차가 규정되어 있는가?",verification:"- COM/IN-FLT ANN",manual:"CCOM 3.3, 3.13, 4.4"},
+      {id:"2-18",text:"2-18. 모든 Cart Brake 유무 및 이상 여부를 점검하고, 고장 발생 시 처리하는 절차가 있는가?",verification:"- 정상작동 상태 확인(제동 장치)\n- 이/착륙 시, 비상사태 발생 시, Turbulence 시 보관 절차\n- Unattended Cart의 운영 절차",manual:"CCOM 7.11.1.5, 3.21.7.1"},
+      {id:"2-19",text:"2-19. 객실 승무원이 약물의 영향 하에서 근무하는 것을 금지하는 문서화된 정책이 있는가?",verification:"",manual:"항공안전법 57조\nCCOM 3.5.4"},
+      {id:"2-20",text:"2-20. 비행 전 장비의 고장을 보고하는 절차가 있는가?",verification:"",manual:"CCOM 7.1"},
+      {id:"2-21",text:"2-21. 모든 휴대 수하물의 적절하고 안전한 보관을 보장하는 절차가 있는가?",verification:"- 비상구열 착석 승객의 수하물이 비상구 접근을 방해하지 않도록 보관 상태를 확인하는가?",manual:"CCOM 3.21.1.1, 3.21.3"},
+      {id:"2-22",text:"2-22. 조종실 출입 절차가 있는가?",verification:"",manual:"FSR 8.4.3.2\nCCOM 6.5.2"},
+      {id:"2-23",text:"2-23. 승객 부상/질병에 대한 기내 Handling(Care) 절차가 있는가?",verification:"- 임산부 또는 기타 감염성 질병 대상 탑승 거절 및 허용 절차",manual:"CCOM 3.17, 5.4"},
+      {id:"2-24",text:"2-24. 안전관련 이슈가 발생한 경우, 절차에 따라 보고 및 처리되고 있는가?",verification:"- 본부 내 확인 심사 절차를 갖고 잇는가?\n- 명확한 기준 및 절차에 의해 F/U되고 있는가?\n- 안전보안실에 보고 및 전파되고 있는가?",manual:"CCOM 3.2"}
+    ]
+  },
+  "3. 교육/훈련/평가 관리": {
+    items: [
+      {id:"3-1",text:"3-1. 국토교통부로부터 인가 받은 훈련 프로그램을 수립하여 실시하고 있는가?",verification:"- 비행 투입 전 OE 훈련 / CRM 교육\n- 훈련 기록 확인",manual:"OP5101PA\nCCTM 1.1.5\nCCTM 2.16.3\nCCTM 3.5, 3.10, 3.22"},
+      {id:"3-2",text:"3-2. 훈련에 필요한 설비 및 장비를 갖추고 있는가?",verification:"",manual:"OP042A\nCCTM 부록 Ⅱ"},
+      {id:"3-3",text:"3-3. 교관의 자격 조건은 무엇이며, 해당 조건에 부합하는가?",verification:"- 근무 환경/비행기 형식에 대한 적절한 교육 과정을 이수하였으며, 그 기록을 유지하고 있는가?",manual:"OP042A\nCCTM 1.2.4, 2.16.3.4"},
+      {id:"3-4",text:"3-4. 비상안전훈련에는 객실승무원 각자에게 부여된 의무와 항공기 특성이 반영 되어 있는가?",verification:"- 정기 비상안전 훈련과정 실습을 실시하는가?",manual:"OP042A\nCCTM 3.11.2.3, 부록 Ⅰ"},
+      {id:"3-5",text:"3-5. 이론 및 실습(훈련)에 대한 평가를 실시하는가?",verification:"- 평가 기록 확인",manual:"OP042A\nCCTM 2.15.5, 2.15.6"}
+    ]
+  },
+  "4. 품질 관리": {
+    items: [
+      {id:"4-1",text:"4-1. 품질보증 업무 수행을 위한 프로그램을 수립 및 운영하고 있는가?",verification:"",manual:"CQP 1.1"},
+      {id:"4-2",text:"4-2. 품질보증 프로그램은 주기적인 품질 심사를 포함하고 있는가?",verification:"- 심사 대상\n- 심사 주기\n- 심사 절차",manual:"CQP 2.10"},
+      {id:"4-3",text:"4-3. 품질심사 계획에 의거하여 심사가 이루어지고 있는가?",verification:"- 연간 실적 확인",manual:"CQP 2.10.4"},
+      {id:"4-4",text:"4-4. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력",manual:"CQP 2.6"},
+      {id:"4-5",text:"4-5. 품질심사 대상 별 Checklist를 제정 및 운영하고 주기적으로 Update 하고 있는가?",verification:"- 점검표의 내용은 심사의 효과적인 수행에 적합한가?",manual:"QM 2.11.2"},
+      {id:"4-6",text:"4-6. 품질 심사에서 발견된 각종 미 준수 사항에 대하여 근본원인이 파악되고, 개선조치로 이어지는 절차가 수립되어 있는가?",verification:"- 이행 실적",manual:"CQP 3.10"},
+      {id:"4-7",text:"4-7. 개선 조치 완료 사항에 대해 지속 모니터링을 하고 있는가?",verification:"",manual:"CQP 3.10"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_SAFETY_SECURITY = {
+  "1. 조직관리 (Safety Organization)": {
+    items: [
+      {id:"1-1",text:"1-1. 안전 및 보안 업무 수행에 필요한 인원 및 분장은 적절한가? \n(다음 자료를 확인)",verification:"- 실 내 인원현황(해당분야 적정 경력 인력 보임)\n- 업무분장 문서화 여부(책임/권한 포함)",manual:"IOSA ORG 1.1.1"},
+      {id:"1-2",text:"1-2. 업무수행에 필요한 제반 시설 및 장비는 보유하고 있는가?",verification:"- 국토부 감독관 점검 업무 수행 공간 확보 여부\n- 통신수단(TEL, FAX, TELEX, W/T 등)\n- OA기기(PC, Printer, 복사기)\n- 기타 교육장 등",manual:""}
+    ]
+  },
+  "2. 안전 규정/지침/매뉴얼 및 지시문서 관리 (Safety Manual)": {
+    items: [
+      {id:"2-1",text:"2-1. 다음의 매뉴얼을 주기에 맞추어 개정 및 개정 검토를 하고 있는가?",verification:"- 안전관리시스템규정(SMSM)\n- 비행안전문서시스템 운영매뉴얼(FSDS)\n- 품질규정(QM)\n- 사고처리절차교범(ERP)\n- 약물 및 주정음료 통제절차(DAC)\n- 예방 지상안전 관리지침\n- 안전 조사 지침\n- 비행자료분석프로그램 운영지침\n- 자체 보안계획\n- 보안관리시스템(SeMS)",manual:"FSDS 3.3, 3.5"},
+      {id:"2-2",text:"2-2. 각 매뉴얼은 문서의 기본 구성 및 문서 작성 체계를 준수하고 있는가?",verification:"- 표지 및 표제, 안전정책, 개정기록표, 유효페이지 목록, 목차\n- 머리글, 바닥글, 본문 작업 방법, 작업 도구의 사용",manual:"FSDS Ch 2\nDCM Ch 2"},
+      {id:"2-3",text:"2-3. 안전 및 보안 업무에 대해 전 임직원에게 관련 내용을 공지하며 관리하고 있는가?",verification:"",manual:"SMSM 5.2\nSeMS 3.1"},
+      {id:"2-4",text:"2-4. 안전/보안 지시 내용을 적절하게 전파하고 관련 기록 및 실적이 는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인\n- 지시내용에 대한 이행 여부 확인(이행 실적)",manual:"SMSM 5.2.1\nSeMS 별표 6"}
+    ]
+  },
+  "3. Safety Policy and Objectives": {
+    items: [
+      {id:"3-1",text:"3-1. 항공안전관리시스템(SMS)의 구성요소(4 Pillars)에 대한 정의가 구축되어있으며, 각 구성에 대한 이행 방안이 마련되어 있는가?",verification:"",manual:"SMSM 1.5\nIOSA ORG 2.5.4"},
+      {id:"3-2",text:"3-2. 항공안전관리시스템이 조직 규모 및 대외/대내적 상호 관계 등을 고려하여 적절하게 구축되어 있으며, 이는 전 부문에 걸쳐 통합적으로 운영되고 있는가?"},
+      {id:"3-3",text:"3-3. 다음의 내용을 담은 안전정책(Safety Policy)을 가지고 있는가?",verification:"- 안전에 대한 책임과 역할\n- 안전 정책의 이행을 위한 자원의 제공\n- 보고시스템, 안전 의사소통 등\n긍정적인 안전문화 증진을 위한 정책\n* 배포 및 게시 여부",manual:"SMSM 2.1\nIOSA ORG 1.2.1, 1.2.3\nOP035A"},
+      {id:"3-4",text:"3-4. 안전정책은 회사의 안전 방향성을 담고 있으며, 최고경영관리자(AE)에 의하여 승인되었는가?",verification:"",manual:"SMSM 2.1\nIOSA ORG 1.2.3\nOP035A"},
+      {id:"3-5",text:"3-5. 안전 정책이 주기적으로 검토 되고 있는가?",verification:"- 1년 1회 이상 (검토 및 결과 확인)",manual:"SMSM 2.1.다\nIOSA ORG 1.2.3\nOP035A"},
+      {id:"3-6",text:"3-6. 조직의 항공안전관리시스템은 안전정책에 기초하고 있는가?",verification:"",manual:"SMSM 2.3"},
+      {id:"3-7",text:"3-7. 전사적 안전목표는 수립되어 공표되었는가?",verification:"- 안전목표 수립 절차 확인",manual:"SMSM 2.2, 4.3\nIOSA ORG 1.4.1"},
+      {id:"3-8",text:"3-8. 안전관리시스템 이행에 있어 연간 SMS 추진 계획을 세우고 이행하는가?",verification:"",manual:"SMSM 1.7\nIOSA ORG 1.5.1"},
+      {id:"3-9",text:"3-9. 안전성과지표(SPI) 및 안전성과목표(SPT)를 설정하고 유지하기 위한 절차가 존재하는가?",verification:"",manual:"SMSM 4.3\nIOSA ORG 1.4.2"},
+      {id:"3-10",text:"3-10. 경향 분석을 포함한 안전성과 모니터링 프로세스가 존재하는가?",verification:"-  안전목표 달성 여부\n- 안전 위험관리의 효과성 검증 등",manual:"SMSM 4.3.1, 4.3.3, 4.3.4\nIOSA ORG 1.4.2"},
+      {id:"3-11",text:"3-11. 직원들이 안전결함, 안전위해요소, 안전사건 (Occurrences)등을 자유롭게 보고할 수 있도록 보고자 보호 및 비처벌 정책을 운영하고 있는가?",verification:"- 비처벌 대상이 아닌 경우를 명시하고 있는가?",manual:"SMSM 3.6.3"},
+      {id:"3-12",text:"3-12. 회사 SMS담당자는 항공안전관리시스템(SMS) 활동 이행 및 유지 관리 자격 요건에 충족하는가?",verification:"- 훈련 및 교육\n- 직무 및 책임 이해",manual:"SMS 2.3.3.5, 5.1.2.3\nIOSA ORG 4.3.1"},
+      {id:"3-13",text:"3-13. 조직 내 임직원들의 안전에 대한 책임과 권한, 의무 등은 정의되고 문서화 되어 있는가?",verification:"- 안전관리자 및 안전업무담당자의 책임 및 업무범위",manual:"SMSM 1.3, 2.3\nIOSA ORG 1.3.1\nOP035A\nIOSA ORG 1.3.1"},
+      {id:"3-14",text:"3-14. 모든 임직원들은 안전관리 절차, 결정, 활동 등과 관련하여 자신의 책임과 권한, 의무를 이해하고 있는가?",verification:"- Operation 내 규정 준수의 책임",manual:"SMSM 1.3, 2.3"}
+    ]
+  },
+  "4. 위험 관리 (Risk Management)": {
+    items: [
+      {id:"4-1",text:"4-1. 사후적 및 선제적 방법을 포함한 위험 식별 프로그램을 갖추고 있는가?",verification:"- 위해요인 식별 프로세스",manual:"SMSM 3.1.3, 3.2\nIOSA ORG 3.1.1"},
+      {id:"4-2",text:"4-2. 항공안전정보의 수집, 분석, 활용을 통한 항공기 사고의 예방을 위하여 안전보고 시스템을 운영하고 있으며, 접수 시 위험관리 절차에 맞게 관리하고 있는가?",verification:"- 의무보고제도, 자율보고제도(SCR) 운영\n- 보고 접수 담당자\n- 사고/준사고/항공안전장애 등의 보고 시스템을 통한 안전 이슈 공유\n- 위험 분석 및 관리 조치 시스템",manual:"SMSM 3.2, 3.6\nIOSA ORG 3.1.2\n\nOP035A\nOP310A"},
+      {id:"4-3",text:"4-3. 보고받은 자료에 대한 조사 및 분석 등의 절차 등 안전 정보 관리 절차가 수립 및 운영되고 있는가?",verification:"- 사고/준사고/항공안전장애에 대한 F/U 조사",manual:"OP035A\nOP310A\nIOSA ORG 3.1.2"},
+      {id:"4-6",text:"4-6. 식별된 안전 문제는 해당 부서에 전달하여 사례 공유가 되는가?",verification:"",manual:"OP310A"},
+      {id:"4-7",text:"4-7. 최근 3년 내에 FOD, BIRD STRIKE에 의한 당사 항공기의 Irregularity 사례 등을 보고 받은 이력이 있는가?",verification:"- 재발방지대책을 수립하고, 관계 기관에 공유하는가?",manual:""}
+    ]
+  },
+  "4. 위험 관리(Risk Management)": {
+    items: [
+      {id:"4-4",text:"4-4. 항공기 운영과 관련된 변화들을 식별하고, 발생하거나 영향을 미칠 수 있는 위험을 관리하는 프로세스가 있는가?",verification:"- 변화관리 수행 절차 및 실적\n- 지속 모니터링 여부",manual:"SMSM 4.5\nIOSA ORG 3.1.5"},
+      {id:"4-5",text:"4-5. 보고/조사/변화 등을 통해 발굴된 위해요소의 식별, 분석 및 평가를 통해 수용 가능한 안전 수준을 유지하기 위한 위험관리절차를 수립하고 운영하고 있는가?",verification:"- 위험 경감 조치 수립 및 이행\n- 조치 사항에 대한 효과성 검토\n- 관련 기록을 보관하고, 지속적으로 모니터링 하는가?\n- 실시 기록 확인",manual:"SMSM 3.1.3, 3.2, 3.3, 3.4\nIOSA ORG 3.2.1\nOP035A\nOP310A"}
+    ]
+  },
+  "5. 비행자료분석 프로그램(Flight Data Analysis Program)": {
+    items: [
+      {id:"5-1",text:"5-1. 비행자료 분석 업무 수행에 필요한 인원 및 업무분장은 적절한가?",verification:"- 비행자료 분석 업무 담당 인원 현황\n- 자격 요건 확인(해당분야 적정 경력 인력 보임)\n- 업무분장 문서화 여부(책임/권한 포함)",manual:"IOSA ORG 1.1.1"},
+      {id:"5-2",text:"5-2. 비행자료 분석 업무 수행에 필요한 교육 프로그램이 수립되어 있으며 적절한 교육을 이수하였는가?",verification:"- 교육 및 훈련프로그램\n- 자격 요건\n- 교육기록 확인",manual:"IOSA ORG 3.3.3"},
+      {id:"5-3",text:"5-3. 비행자료를 분석할 수 있는 제반 시설 및 장비를 보유하고 있는가?",verification:"- 비행자료 수집 장치\n- 비행자료 지상분석 장비",manual:"IOSA ORG 3.3.1, 3.3.2"},
+      {id:"5-4",text:"5-4. 비행자료분석프로그램 운영 절차가 수립 및 이행되고 있는가?",verification:"- 아래의 항목들이 프로그램 상 포함되는가?\n a. 분석 결과 보호 (비공개)\n b. 분석 결과의 활용 (비행안전을 확보할 목적)\n c. 비처벌",manual:"IOSA ORG 3.3.1, 3.3.4"},
+      {id:"5-5",text:"5-5. 비행자료 분석을 통해 항공기 운항과 관련한 위해요인이 식별되고 위험관리 활동이 이뤄지고 있는가?",verification:"- 위해요인 등록부 및 위험도 대장 확인\n- 경감조치/후속조치 관리 실적",manual:"OP035A\nIOSA ORG 3.3.5"},
+      {id:"5-6",text:"5-6. 비행자료 분석을 통해 식별된 위해요인에 대해 지속 모니터링 하고 있는가?",verification:"",manual:"IOSA ORG 3.3.5"},
+      {id:"5-7",text:"5-7. 비행자료 분석 데이터 및 정보 관리와 보호에 대한 기준을 갖추고 있으며, 관련 기록은 누락없이 보관 및 관리하고 있는가?",verification:"- Flight Raw Data의 경우 24개월\n- 사고/준사고의 경우 영구 보관",manual:"IOSA ORG 3.3.4"}
+    ]
+  },
+  "6. 품질 보증 프로그램 (Safety Assurance)": {
+    items: [
+      {id:"6-1",text:"6-1. 품질 보증 프로그램을 수립 및 운영하고 있는가?",verification:"- 절차, 프로세스, 문서, 훈련 및 기록에 대한 주기적인 심사를 포함하는가?\n- 항공기 운항 안전에 영향을 미치는 장비에 대한 사용 전 품질 체크, 주기적인 점검을 포함하는가?",manual:"QM 2.6\nIOSA ORG 2.1.1"},
+      {id:"6-2",text:"6-2. 부문 품질 보증프로그램 운영을 관리하는 책임자가 임명되어 있는가?",verification:"- 자격 요건을 충족하는가?\n- Line management 활동으로부터 독립적인가?",manual:"QM 2.5.2\nIOSA ORG 2.1.2"},
+      {id:"6-3",text:"6-3. 부문 품질 보증 기능이 사내 업무 분장에 명시되어 있는가?",verification:"",manual:"JDM 1.1.2.7"},
+      {id:"6-4",text:"6-4. 안전정책 및 안전목표에 대한 성과 모니터링의 일환으로 절차/이행 여부 및 안전시스템의 효과성 확보를 위한 내부 심사를 이행하고 있는가?",verification:"- 정기/특별/확인 품질심사 등으로 구분하여 실시하는가?",manual:"OP035A"},
+      {id:"6-5",text:"6-5. 품질심사에 대한 연간 계획을 수립하며, 품질심사 활동은 항공 당국 이나 사내 요건에 따라 설정된 주기대로 수행되고 있는가?",verification:"",manual:"QM 3.2.나\nIOSA ORG 2.1.5"},
+      {id:"6-6",text:"6-6. 년간 계획된 품질심사(Quality Audit)를 기한 내에 수행할 수 있을 정도로 적정한 수의 품질심사원(Auditor)들이 임명되어 있는가?",verification:"",manual:"QM 2.4"},
+      {id:"6-7",text:"6-7. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격요건을 충족하는가?",verification:"- 심사원 자격 요건 (업무 경력)\n- 훈련 및 교육 프로그램\n- 기록카드",manual:"QM 2.5.6\nIOSA ORG 2.19"},
+      {id:"6-8",text:"6-8. 품질심사원의 품질 심사 활동은 Audit process의 효과성, 객관성, 통합성 및 공정성을 보증하며, 품질 심사원들은 피심사 부문으로부터 독립적(impartial and functionally independent)인가?",verification:"",manual:"QM 2.5.6\nIOSA ORG 2.1.8"},
+      {id:"6-9",text:"6-9. 개조치의 이행 및 효과성을 포함하는 이전 품질심사의 결과가 보증 프로그램의 Scope에 포함되어 있는가?",verification:"",manual:"QM 3.2.가, 3.3.1\nIOSA ORG 2.1.6"},
+      {id:"6-10",text:"6-10. 품질심사 대상에, 부문별 사외 기준/사내 규정과의연관을 보여주는 근거(문서), 이행 유지 여부를 확인하는 절차가 포함되어 있는가?",verification:"",manual:"QM 3.2\nIOSA ORG 2.1.6"},
+      {id:"6-11",text:"6-11. 품질심사 대상 별 Checklist를 제정 및 운영하고 주기적으로 Update 하고 있는가?",verification:"- 점검표의 내용은 심사의 효과적인 수행에 적합한가?",manual:"QM 2.11.2, 3.2.라"},
+      {id:"6-12",text:"6-12. 항공안전법/규정 미 준수 사항과, 품질 보증 프로그램을 통해 발견된 안전 및 품질에 관한 주요 안건을 정기적으로 최고경영관리자에게 보고하고 있는가?",verification:"",manual:"QM 2.6.2.나, 2.13\nIOSA ORG 4.1.2"},
+      {id:"6-13",text:"6-13. 품질심사 중 발견된 사실에 대한 개선조치 절차를 수행하고 있는가?",verification:"- 심사 결과에 대하여 개선 조치 담당 책임자의 지정\n- 발견사실의 원인 분석\n- 적절한 개선조치 계획, 이행\n- 개선조치의 확인 및 평가",manual:"QM 3.2.자\nIOSA ORG 3.4.3\nQM 3.9"},
+      {id:"6-14",text:"6-14. 품질심사의 개선조치이행 완료 시점(종결)이 구제적인 기한으로 설정되어 있으며 준수되고 있는가?",verification:"",manual:"QM 3.2.자, 3.9\nIOSA ORG 2.1.7"},
+      {id:"6-15",text:"6-15. 기한 내에 개선 조치가 곤란한 사항에 대해서는 해당 부문 책임자 보고를 통한 조치 또는 시한 연장 요구 등을 통하여 종결까지 Follow-up 되고 있는가?",verification:"",manual:"QM 3.9.1"},
+      {id:"6-16",text:"6-16. 품질심사 수행 후 다음의 관련 문서를 정해진 기한까지 보관하고 있는가?",verification:"- 품질 심사 결과 보고서\n- Follow-up Action 자료(CAR ？RCA/CAP등)\n- Completed Audit checklist",manual:"QM 2.11"},
+      {id:"6-17",text:"6-17. 개선조치 또는 예방조치에 대한 위험분석이 이루어지는가?",verification:"",manual:"QM 3.9.4.라"}
+    ]
+  },
+  "7. 안전증진활동 (Safety Promotion)": {
+    items: [
+      {id:"7-1",text:"7-1. 항공안전관리시스템(SMS)의 효과적인 기능을 위한 상호 의사소통 프로세스가 존재하며, 이는 조직의 규모 및 업무 범위에 적절히 구성되어 있는가?",verification:"- 회의체\n- 그룹웨어 SMS 게시판\n- 그룹웨어 QMS 게시판",manual:"SMSM 5.2\nIOSA ORG 1.4.1, 1.4.2"},
+      {id:"7-2",text:"7-2. 안전지시/안전정보의 전사공지 및 숙지를 위한 프로세스가 존재하는가? 이에 대한 효과성을 모니터링 할 수 있는 방법이 있는가?",verification:"",manual:"SMSM 5.2"},
+      {id:"7-3",text:"7-3. 회사 SMS담당자는 안전담당자 회의를 통해 변화에 대한 지속적인 관리를 하고 있는가?",verification:"",manual:"SMSM 2.4\nIOSA ORG 3.2.2"},
+      {id:"7-4",text:"7-4. 임직원의 담당업무 자격 충족을 위한 교육 프로그램이 수립되어있으며, 문서화 되어있는가?",verification:"- 교육/훈련의 효과성 모니터링 프로세스\n- 안전관리시스템 교육 프로그램\n- 법정 의무 교육 프로그램\n- 교육 기록 확인",manual:"SMSM 5.1\nOP035A"}
+    ]
+  },
+  "8. 비상대응 운영절차 (ERP)": {
+    items: [
+      {id:"8-1",text:"8-1. 조직의 규모, 업무의 특성 및 복잡성 등을 고려한 비상대응계획이 조직 내에 수립되어 있는가?",verification:"- 비상대응계획의 통제 부서 및 담당자 지정\n- 안전관리자의 역할과 책임을 부여하며  최고경영관리자(AE)와 직접 소통할 수 있는 체계를 갖추었는가?",manual:"SMSM 2.5.6\nOP035A\nOP310A"},
+      {id:"8-2",text:"8-2. 비상대응절차는 문서화되어 이행되고 있으며 이에 대한 책임 있는 관리자가 선임되어 관리되고 있는가?",verification:"",manual:"ERP 1.4\nIOSA ORG 1.7.2"},
+      {id:"8-3",text:"8-3. 비상대응절차는 항공안전관리시스템 관리자 검토의 일환으로 정기적으로 검토되고 또한 주요 직원의 변경이나 조직 내 변경사항이 있는 경우에도 검토되는가?",verification:"",manual:"ERP 1.3"},
+      {id:"8-4",text:"8-4. 조직은 비상대응절차를 배포하고 모든 직원이 해당 내용을 상호 이해할 수 있도록 하는 절차를 갖추고 있는가?",verification:"",manual:"ERP Ch2\nIOSA ORG 1.7.12"},
+      {id:"8-5",text:"8-5. 조직은 주요 직원에 대한 비상대응 훈련 및 연습을 특정 주기로 적절하게 수행하고 있는가?",verification:"- 임원 대상 비상대응 훈련 기록 확인\n- 임직원 개인 임무카드 패용 여부 및\n비상 시 대처 요령을 숙지상태 확인",manual:"ERP Ch8\nIOSA ORG 1.7.7, 1.7.8"},
+      {id:"8-6",text:"8-6. 지점 자체 비상대응실천계획(LERAP: Local Emergency Response Action Plan )를 보유하고 있는지 확인하였는가?",verification:"- 지점 자체절차 유무, 적합성 확인\n- 개정유지 상태 확인\n- 지점원에게 LERAP의 내용과 각자의 역할에 대하여 교육을 실시하였는지 확인하였는가? (교육기록)",manual:"ERP 5.1.1\nIOSA ORG 1.7.3"},
+      {id:"8-7",text:"8-7. 비상연락망을 최신의 상태로 유지하고 있는가?",verification:"- 비치 상태 확인",manual:"ERP 5.1.2"},
+      {id:"8-8",text:"8-8. Go Bag 내 포함되는 장비 및 물품에 대해 정기적으로 점검 및 관리하고 있는가?",verification:"",manual:"ERP 2.5.3 바."}
+    ]
+  },
+  "9. 약물 및 주정음료 통제절차 (DAC)": {
+    items: [
+      {id:"9-1",text:"9-1. 약물 및 주정음료 업무 수행에 필요한 인원 및 분장은 적절한가?",verification:"- 약물 및 주정음료 업무 담당 인원 현황\n- 자격 요건 확인(해당분야 적정 경력 인력 보임)",manual:"DAC 1.5"},
+      {id:"9-2",text:"9-2. 약물 및 주정음료 검사에 대한 연간 계획이 수립되어 있으며, 설정된 주기대로 수행되고 있는가?",verification:"- 연간 계획 및 대비 실적 확인",manual:"DAC 2.3.가, 2.6"},
+      {id:"9-3",text:"9-3. 약물 및 주정음료 검사 및 결과 처리에 대한 절차가 마련되어 있으며, 관련 실적을 확인할 수 있는가?",verification:"",manual:"DAC 2.3, 2.6, 2.8"},
+      {id:"9-4",text:"9-4. 위반 및 적발 시에 대한 재발방지대책이 마련되어 있는가?",verification:"- 관련 실적 확인\n- 지속 모니터링 수행 여부",manual:"DAC 2.8"},
+      {id:"9-5",text:"9-5. 검사 장비에 대해 주기적으로 적정성을 검토하고 있으며, 검？교정 계획을 수립하고 있는가?",verification:"",manual:"DAC 2.9"}
+    ]
+  },
+  "10. 항공 보안 관리(Security)": {
+    items: [
+      {id:"10-1",text:"10-1. 항공 보안 업무 수행에 필요한 인원 및 분장은 적절한가?",verification:"- 항공 보안 업무 담당 인원 현황\n- 자격 요건 확인(해당분야 적정 경력 인력 보임)",manual:"자체보안계획\nSeMS Ch 5"},
+      {id:"10-2",text:"10-2. 항공 보안 업무 수행에 필요한 교육 프로그램이 수립되어 있으며, 감독자 및 담당자는 적절한 교육을 이수하였는가?",verification:"- 교육 및 훈련프로그램\n- 자격 요건\n- 교육기록 확인",manual:"자체보안계획 Ch 13\nSeMS 7.6\nIOSA SEC 2.1.1, 2.1.2"},
+      {id:"10-3",text:"10-3. 자체 보안점검에 대한 연간 계획을 수립하며, 설정된 주기대로 수행하고 있는가?",verification:"",manual:"자체보안계획 14.2\nSeMS 8.2.1\nIOSA SEC 1.10.3B"},
+      {id:"10-4",text:"10-4. 자체 보안 운영 및 수준관리 일환으로 내부 점검을 이행하고 있는가?",verification:"- 정기/불시 점검 등으로 구분하여 실시하는가?",manual:"SeMS 8.2"},
+      {id:"10-5",text:"10-5. 자체 보안 점검을 통해 도출된 발견사항을 처리하기 위한 절차가 마련되어 있으며, 관련 실적이 있는가?",verification:"- 항공보안 점검결과 보고서\na. 근본원인 식별(Root Cause)\nb.개선조치 요구서 발행 여부",manual:"SeMS 8.2.4, 8.2.5\nIOSA SEC 1.10.2"},
+      {id:"10-6",text:"10-6. 보안점검 및 평가를 통해 개선조치요구서를 발행한 경우 이행 여부에 대해 지속 모니터링 하고 있는가?",verification:"- 항공보안 점검결과 보고서\n- 개선조치 요구서 발행 및 시정조치 이행 여부",manual:"SeMS 8.2.6\nIOSA SEC 1.10.2"},
+      {id:"10-7",text:"10-7. 항공보안위규 및 사고 발생 시 관련 보고체계(보고시스템)가 마련되어 있는가?",verification:"- 보고 절차(프로세스) 및 관련 실적",manual:"자체보안계획 6.2\nSeMS 3.2\nIOSA SEC 1.12.1"},
+      {id:"10-8",text:"10-8. 보안 사고의 예방을 위하여 보고 시스템을 운영하고 있으며, 접수 시 관련 내용이 검토되도록 보장하는 절차가 있는가?",verification:"- 의무보고 및 자율보고 운영\n- 보안 위험 평가 수행\n- 시정조치 발행 여부, 지속 모니터링",manual:"SeMS 3.3\nIOSA SEC 1.12.2"}
+    ]
+  },
+  "11. 외주협력업체 관리/감독 (ESP)": {
+    items: [
+      {id:"11-1",text:"11-1. 외주협력업체에 안전 및 운영 정보에 대해 효과적으로 전달하고 있는가?",verification:"- 안전관리시스템(SMS) 교육\n- 안전관리시스템(SMS) 매뉴얼 배포\n- 안전지시 전파 등",manual:"SMSM 2.3.3.8\nIOSA ORG 4.2.1"},
+      {id:"11-2",text:"11-2. 외주협력업체 임직원의 안전관리시스템 교육 이수에 대한 모니터링을 수행하고 있는가?",verification:"",manual:"SMSM 5.1.2.6 IOSA ORG 4.3.2"},
+      {id:"11-3",text:"11-3. 외주협력업체 임직원의 안전지시 전파 및 숙지 여부에 대한 모니터링을 수행하고 있는가?",verification:"",manual:"SMSM 2.3.3.8, 5.1.2.6"},
+      {id:"11-4",text:"11-4. 외주협력업체의 안전 및 품질에 대해 평가를 실시하고 있음을 확인하는가?",verification:"- 실시 주기\n- 외주협력업체 품질 모니터링 실적\n- 측정 가능한 항목(기준)을 가지고 안전 품질을 보증하는가?",manual:"SMSM 4.2.6, 4.2.7\nQM 2.6.2 마, 3.2 나\nIOSA ORG 2.2.1, 2.2.2"}
+    ]
+  },
+  "12. 대내외 각종 점검 기타 안전예방활동": {
+    items: [
+      {id:"12-1",text:"12-1. 국내 대외기관(국토부)의 안전점검을 받은 실적이 있으며, 관련 기록을 관리하고 있는가?",verification:"- 지적 사항에 대한 개선조치는 완료되었는가?\n- 자체적으로 조치 완료 사항에 대한\n모니터링을 하고 있는가?",manual:"SMSM 4.3.5"},
+      {id:"12-2",text:"12-2. 사내 안전점검 (안전 감사 또는 부문별 자체 점검)을 받은 실적이 있는가?",verification:"- 지적 사항에 대한 개선조치는 완료되었는가?\n- 자체적으로 조치 완료 사항에 대한\n모니터링을 하고 있는가?",manual:"SMSM 4.2\nQM 2.9.2.1. 가"},
+      {id:"12-3",text:"12-3. 국내 대외기관(국토부)에서 발행한 안전 관련 규정/지침(Safety Regulation 등)을 보유 및 당사 직원들은 내용을 알고 있는가?",verification:"- 공문 수신 게시판 및 보관 여부 확인\n- 교육 또는 회람 기록 확인",manual:"SMSM 1.6, 5.2"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_OCC = {
+  "1. 조직관리": {
+    items: [
+      {id:"1-1",text:"1-1. 운항관리 수행에 필요한 인원 및 업무 분장은 적절한가? (다음 자료를 확인)",verification:"- 본부/팀 내 인원현황(해당분야 적정 경력 인력 보임)\n- 업무분장 문서화 여부(책임/권한 포함)",manual:"OCM 1.5, 1.6"}
+    ]
+  },
+  "2. 규정/지침/매뉴얼 및 지시문서 관리(안전)": {
+    items: [
+      {id:"2-1",text:"2-1. 비행안전문서(인가/신고)에 해당하는 문서들을 적기에 개정하고 배포하고 있는가?",verification:"- 비행안전문서 목록표 확인",manual:"OCM 1.1, 11.8"},
+      {id:"2-2",text:"2-2. 해당년도 안전 지시에 대해서 모든 실, 본부 인원들이 확인하고 숙지하고 있는가? (ESMS 기록 확인)",verification:"",manual:"SMSM 5.2.2"},
+      {id:"2-3",text:"2-3. 지시 내용을 직원들에게 전파 하였는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인\n- 지시내용에 대한 이행 여부 확인(이행 실적)",manual:"SMSM 1.6"}
+    ]
+  },
+  "3. Management": {
+    items: [
+      {id:"3-1",text:"3-1. 현재의 운항관리사, 운항담당자의 근무 SKD은 현재의 운항 SKD을 지원 할 수 있는가?",verification:"",manual:"OCM 14.2"},
+      {id:"3-2",text:"3-2. 일일 근무 시간 및 인원의 배분은 적합한가?",verification:"",manual:"OCM 14.2"},
+      {id:"3-3",text:"3-3. 운항관리사 근무 및 휴식시간에 대한 절차를 수립 및 규정에 의거하여 관리하고 있는가?",verification:"",manual:"OCM 14\nFOM 5.1.3\nOP013A"}
+    ]
+  },
+  "4. 기록물/자료 유지 관리": {
+    items: [
+      {id:"4-1",text:"4-1. CFPL 및 운항 관련 문서는 적절히 보관되고 있는가? (문서 항목별 분류 기준에 의거)",verification:"",manual:"OCM 11.1, 11.2"},
+      {id:"4-2",text:"4-2. Co. Radio가 설치 되어 있는가?",verification:"- 있다면, Co. Radio를 사용하여 교환되는 정보의 기록/보관 확인",manual:"OCM 3.3.9"},
+      {id:"4-3",text:"4-3. 운항 관리 서류에 아래와 같은 내용이 포함되는가?",verification:"- 항공기의 식별번호\n- 운항 편명\n- 출발 공항, 중간 기착지, 목적지공항 및 대체 공항\n- 운항 방식의 상태(ex: IFR, VFR)\n- 최소 연료 공급\n* EDTO 비행의 경우, (해당하는 경우) EDTO 전환 시점\n* 기장과 운항관리사가 최종 서명한 비행계획에 명기된 목적지공항, 항로적합공항, 교체공항에 대한 현천과 예보 등",manual:"FOM 16.3\nOP017A"},
+      {id:"4-4",text:"4-4. 비행서류에 아래와 같은 내용이 포함되는가?",verification:"- 회사 또는 국가 이름\n- 제작사, 모델명 및 사용되고 있는 항공기의 등록번호\n- 각 비행 승무원 및 조종사의 이름\n- 출발 공항, 도착지 공항, 대체/교체공항 및 항로\n- 최소 연료 필요치(gallon 또는 pound)\n- 운항종류의 상태(ex : IFR, VFR)",manual:"FOM 16.3\nOP017A"},
+      {id:"4-5",text:"4-5. 운항관리/비행허가에 대한 절차를 수립 및 규정에 의거하여 관리하는가?",verification:"",manual:"FOM 5.4\nOP017A"}
+    ]
+  },
+  "5. 품질관리": {
+    items: [
+      {id:"5-1",text:"5-1. 운항관리 및 운항통제를 위한 자체 품질보증 프로그램을 수립 및 운영하고 있는가?",verification:"",manual:"QM 2.4\nOCQM 5장"},
+      {id:"5-2",text:"5-2. 품질보증 프로그램은 주기적인 품질 심사를 포함하고 있는가?",verification:"- 심사 대상\n- 심사 주기\n- 심사 절차",manual:"QM 3.2"},
+      {id:"5-3",text:"5-3. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력\n- 임명 공지 확인",manual:"QM 2.5.6\nOCQM 7장"},
+      {id:"5-4",text:"5-4. 위탁조업사에 대한 운영 절차를 수립하여, 이에 대한 관리가 이행되고 있는가?",verification:"",manual:"OCM 9장\nOCQM 별표 A-30"},
+      {id:"5-5",text:"5-5. 최근 품질심사, 안전평가, (순회)지도검열 혹은 국토교통부 안전점검의 수검이력이 있는가?",verification:"- 발견된 각종 미 준수 사항에 대하여근본원인이 파악되고, 개선조치로 이어지는 절차가 수립되어있는가?\n- 이행 실적\n- 본부 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:""},
+      {id:"5-6",text:"5-6. 생지공항에 대한 정보 파악과 운항 절차가 수립되어있으며, 이에 대한 관리가 이행되고 있는가?",verification:"",manual:"OCM 10장"}
+    ]
+  },
+  "6. 교육/훈련/평가(자격) 관리": {
+    items: [
+      {id:"6-1",text:"6-1. 운항관리사, 운항담당자는 필요한 기본 교육 및 보수교육을 이수하였는가?",verification:"- 공항 기상 제한치\n- 특수공항 운항 절차 등의 숙지\n- 기상정보 이해 능력 등\n- 교육 기록 확인",manual:"FDTM 2.4, 4장, 7장\nOCM 8.6\nOP043A"},
+      {id:"6-2",text:"6-2. 운항관리사 훈련 프로그램 중 항공기 형식 및 항공기 차이 (보완 훈련 포함)에 대한 현행 자료를 교육 자료로써 사용하는가?",verification:"",manual:"FDTM 6장\nOP043A"},
+      {id:"6-3",text:"6-3. 비행허가 또는 비행감시 임무를 하는 운항관리사는 정기 실무자격심사 및 관숙 비행을 연 1회 시행하고 있는가?",verification:"",manual:"FDTM 8.3"},
+      {id:"6-4",text:"6-4. 운항관리사의 모든 교육 및 심사는 적격 기간 내에 수행되는가?",verification:"- 역량평가는 교관/검열 운항관리사에 의해 실시되는가?\n- 업무 숙달 정도는 시험과 점검을 통해 평가되는가?",manual:"FDTM 1.2.9, 1.3\nOP043A"},
+      {id:"6-5",text:"6-5. 운항관리사들은 자격증명을 소지하고 있는가?",verification:"- 적격기간 내 자격심사를 받았는가?",manual:"OP020A"},
+      {id:"6-6",text:"6-6. 교관/검역 운항관리사의 자격 조건은 무엇이며, 해당 조건에 부합하는가?",verification:"- 인가된 훈련 프로그램에 따라 훈련을 받았는가?",manual:"FDTM 11장, 12장\nOP043A"},
+      {id:"6-7",text:"6-7. Shift Manager의 자격 조건은 무엇이며, 해당 조건에 부합하는가?",verification:"- 자격 조건 및 임명 절차를 수립하고 있는가?",manual:"OCM 1.6.3.2"}
+    ]
+  },
+  "7. Line Operation": {
+    items: [
+      {id:"7-1",text:"7-1. 운항관리 업무를 수행하는 위치 및 공간이 적합한가?",verification:"",manual:"Annex 6 4.3\nOCM 1.5.10.3"},
+      {id:"7-2",text:"7-2. 업무수행에 필요한 장비는 구비, 유지하고 있는가?",verification:"- CO.RDO\n- ATC MONITOR\n- 기타 통신장비(back-up)(MSG/AFTN/FAX/TEL/W.T 등)\n- 시스템 구동을 위한 전력 및 네트워크 시설\n- 사무기기 및 조명 시설",manual:"Annex 6 4.3\nOCM 1.5.10.2"},
+      {id:"7-3",text:"7-3. 운항관리사가 운항통제 업무 중 자리 이석 시, 권한 및 책임 이양에 대한 절차가 수립되어 있는가?",verification:"",manual:"OCM 1.6.6"},
+      {id:"7-4",text:"7-4. 비행 중 비행계획 변경 시, 기장과 운항관리사간의 절차와 책임이 명확히 규정되고 관제기관 보고절차가 수립되어 있는가?",verification:"- 변경 기록을 유지하는가?",manual:"OCM 3.3.6\nPO017A"},
+      {id:"7-5",text:"7-5. 국제선을 운영하는 해외 공항에 대한 공항 별 표준업무절차(Local SOP)가 수립되어 있으며, 절차에 따라 이행하고 있는가?",verification:"",manual:"OCM 별표 7"},
+      {id:"7-6",text:"7-6. 운항승무원 에게 제공되는 FLT DOC는 적합한가?",verification:"- 기상 자료 (WX CHART, TAF, MET, SIG WX INFO)\n- NOTAM (DEST,DEP,ALTN,ENROUTE, DEP RWY COND)\n- CFPL (PRINT상태, C.C.R.P표기)\n- ICAO ATS FPL 사본\n- 기타 특기사항 혹은 필요한 정보전달 여부",manual:"FOM 1.3.1"},
+      {id:"7-7",text:"7-7. 운항 브리핑을 위한 최소한의 내용이 정해져 있고, 적절한가?",verification:"- 비행 전후 브리핑을 철저히 수행하는가",manual:"OCM 별표 10"},
+      {id:"7-8",text:"7-8. 운항통제 업무 담당 운항관리사는 비행 진행사항을 감시하는가?",verification:"",manual:"OCM 3.4.2"},
+      {id:"7-9",text:"7-9. 비행계획서에 기장과 운항관리사 두 사람의 서명이 되어 있는가?",verification:"- 매 비행편은 항공기 운항관리사에 의해 승인되었는가?",manual:"FOM 5.4.1.2\nOP017A"},
+      {id:"7-10",text:"7-10. 비상에 대비한 비상조치 절차와 점검표가 제정되어 있고 쉽게 사용할 수 있는가?",verification:"- 비행 중 비상사태\n- 항공기 추락 사고\n- 연착 또는 행방불명\n- 폭파 위협\n- 공중납치\n각 사고의 발생 시, 초동 조치 요령을 숙지하고 있으며, 정기적으로 훈련을 이행하고 있는가?",manual:"OCM 4.10, 별표 10"},
+      {id:"7-11",text:"7-11. 비상시 비정상상황 체크리스트를 구비하고 있는가?",verification:"- 비상 연락망을 최신으로 유지하고 있으며, 항공정보 통신망을 정상적으로 운영하고 있는가?",manual:"OCM 별표 10"},
+      {id:"7-12",text:"7-12. 교체공항 선정을 위한 지침이 설정되어 있는가?",verification:"- 정규공항, 교체공항, 연료보급공항 등에 대한 목록을 운영하는가?",manual:"OCM 3.1.6.2\nFOM 5.4.5\nOP017A\nOP020A"},
+      {id:"7-13",text:"7-13. 이륙 공항이 착륙 최저치 이하인 상태에서 비행이 인가되었을 때 이륙교체공항이 FLIGHT PLAN에 표시되는가?",verification:"",manual:"FOM 5.4.5"},
+      {id:"7-14",text:"7-14. 필요한 항공고시보(NOTAM)가 조종사에게 제공되는가?",verification:"",manual:"FOM 1.3.4.1, 6.1.1"},
+      {id:"7-15",text:"7-15. 운항관리사가 각 비행편의 안전운항과 관련된 정보(항공 정보, 항공기 이착륙 장소에 대한 정보 및 기상 정보 등)를 입수하였을 때, 모든 정보는 지체 없이 적시에 운항승무원에게 제공되는가?",verification:"",manual:"FOM 5.9.4"},
+      {id:"7-16",text:"7-16. 근무 교대 시, 구두가 아닌 문서로 된 자료로 상황을 설명하고 교대 하는가?",verification:"",manual:"OCM 3.5, 14.2.7"}
+    ]
+  },
+  "8. 운항, 객실스케줄(편조) 업무": {
+    items: [
+      {id:"8-1",text:"8-1. 승무원에 대한 비행/근무/휴식시간 기록을 유지하는가?",verification:"",manual:"OP011A"},
+      {id:"8-2",text:"8-2. 편조 업무 수행에 필요한 직원이 충분히 확보되어 있는가?"},
+      {id:"8-3",text:"8-3. 업무 참조용 매뉴얼 및 SOP 는 최신의 개정상태로 유지되는가?",verification:"",manual:"PSOP 1.2\nCSOP 1.2"},
+      {id:"8-4",text:"8-4. 종합통제실의 각종 업무 지시를 충실히 이행하며, 실 내 유관업무 담당자간의 적극적 의사 교환 및 협의를 통한 업무를 수행하는가?"},
+      {id:"8-5",text:"8-5. 스케줄 매뉴얼에 규정된 최대 승무시간을 준수하고 있는가?",verification:"",manual:"OP011A\nPSOP 5.3.1\nCSOP 5.1.1.5"},
+      {id:"8-6",text:"8-6. 승무원 SKD 조정 시 항공법/회사정책/계약 조건 등을 고려하며, 변경 관련 정보를 필요 부서에 제공하는가?"},
+      {id:"8-7",text:"8-7. 비정상 상황 발생 시 승무원 부족, 교체 등에 대한 문제점을 편조 담당 책임자(팀장)에게 보고 하며, 승무원 운용 관련 대책을 마련하는가?",verification:"- 비정상 상황 대응 능력 및 문제 해결 능력을 갖추고 있는가? \n- 대규모 비정상 운항 발생 시, 신속한 SKD 정상화를 위한 능력과 자질을 갖추고 있는가?",manual:"PSOP 2.3.4\nCSOP 3.4"},
+      {id:"8-8",text:"8-8. 비정상 상황 발생 시, 승무원의 숙박/Meal/이동 등 지원을 위하여 유관부서 및 지점과 업무 협조를 요청하는가?",verification:"",manual:"PSOP 2.3.4\nCSOP 3.4"},
+      {id:"8-9",text:"8-9. 비정상 운항 상황 발생 시 처리 절차를 숙지하고 있는가?",verification:"- 운항 결정 시, 승무원 확보 가능성 확인\n- 결항, 항공기 교체 등에 따른 예비 승무원 활용, 가능성 정보 등을 파악하여 이를 제공",manual:"PSOP 2.3.4\nCSOP 3.4"},
+      {id:"8-10",text:"8-10. 운항 검토 점검 사항 중 아래와 같은 운항승무원 스케줄에 대한 정보가 확보되며, 그 내용이 타당한가?",verification:"- 지원 능력\n- 승무 편조 패턴\n- 숙소 예약",manual:"PSOP 2.3.2.바, 4.2"},
+      {id:"8-11",text:"8-11. High Minimum Captain 정보를 관련자에게 제공하는가?",verification:"",manual:"PSOP 5.2.2"}
+    ]
+  }
+};
+
+const CHECKLIST_QA_CATERING = {
+  "1. 조직관리": {
+    items: [
+      {id:"1-1",text:"1-1. 케이터링 업무 수행에 필요한 인원 및 업무 분장은 적절한가?",verification:"- 인원현황(해당분야 적정 경력 인력 보임)\n- 업무분장 문서화 여부(책임/권한 포함)",manual:"IOSA ORG 1.1.1"},
+      {id:"1-2",text:"1-2. 업무수행에 필요한 제반 시설 및 장비는 보유하고 있는가?",verification:"- 시설 업무 수행 공간 확보 여부\n- 통신수단(TEL, FAX, TELEX, W/T 등)\n\n- OA기기(PC, Printer, 복사기)\n- 기타 업무 장비 등",manual:"IOSA ORG 1.6.1"},
+      {id:"1-3",text:"1-3. 안전정책(Safety Policy)포스터 (배포용)을 비치하고 있는가?"}
+    ]
+  },
+  "2. 안전 규정/지침/매뉴얼 및 지시문서 관리": {
+    items: [
+      {id:"2-1",text:"2-1. 다음의 규정/매뉴얼을 최신판으로 유지하고, 접근 및 열람이 가능토록 관리하고 있는가?",verification:"-안전관리시스템규정(SMSM)\n-품질규정(QM)\n-항공기사고절차교범(ERP)",manual:"FSDS 1.5.2.마"},
+      {id:"2-2",text:"2-2. 안전 지시/정보를 Hard-copy로 철입하여 유지하고 있는가? (관련 서류철 확인)",verification:"",manual:"SMSM 5.2.2"},
+      {id:"2-3",text:"2-3. 지시 내용을 직원들에게 전파 하였는가?",verification:"- 전파 기록(직원 서명 등) 유지여부 확인\n- 지시내용에 대한 이행 여부 확인(이행 실적)",manual:"SMSM 1.6"}
+    ]
+  },
+  "3. 품질 관리": {
+    items: [
+      {id:"3-1",text:"3-1. 자체 심사 프로그램을 수립하고 있는가?",verification:"- 심사 대상\n- 심사 주기\n- 심사 절차",manual:"QM 2.6"},
+      {id:"3-2",text:"3-2. 품질심사원에 대한 임명 자격 요건은 수립되어 있고, 임명된 품질심사원은 자격 요건을 충족하는가?",verification:"- 훈련 및 교육\n- 업무 경력\n- 임명 공지 확인",manual:"QM 2.5.6"},
+      {id:"3-3",text:"3-3. 심사 시 활용되는Checklist를 제정 및 운영하고 주기적으로 Update 하고 있는가?",verification:"- 품질 점검표\n- 조업 및 안전 점검표",manual:""},
+      {id:"3-4",text:"3-4. 심사에서 발견된 각종 미 준수 사항에 대하여 근본원인이 파악되고, 개선조치로 이어지는 절차가 수립되어있는가?",verification:"- 이행 실적\n- 자체적으로 조치 완료 사항에 대한 모니터링을 하고 있는가?",manual:"QM 3.9"}
+    ]
+  },
+  "4. Operation 점검": {
+    items: [
+      {id:"4-1",text:"4-1. Loading Manual이 최신으로 유지되고 있는가?",verification:"- OCC에 무게를 통보하는 전산담당자 확인\n- 신규 도입 기체/탑재물품 전면 변경 등 변경 이력",manual:"FSR 9.1.18.11"},
+      {id:"4-2",text:"4-2. 당사 스케줄에 맞게 오전/오후 Supervisor가 배정되며, 근무조를 최소 2명으로 구성하고 있는가?",verification:"- Supervisor은 출입통제 및 근무 상황을 보고하며 이슈를 유관 인원에 전파하는가?",manual:""},
+      {id:"4-3",text:"4-3. 탑재 담당자가 탑재 정보를 쉽게 확인할 수 있는가?"},
+      {id:"4-4",text:"4-4. (신설) 지게차 사용 전 안전작업계획서를 작성하는가?\n(지게차 보유 ‘인천파트’만 해당)"},
+      {id:"4-5",text:"4-5. Catering Truck 은 항공기로의 출발 전, 체크가 잘 되었는가?",verification:"* 차량(장비) 이용 전/후 안전 점검\n* 보관시설에서 Catering Truck 으로 이동하는 절차 확인",manual:"AHM 7.6"},
+      {id:"4-6",text:"4-6. 차량 내 고임목, 이동지역 지도 (Grid map), 소화기, 유도봉이 비치되어 있는가?",verification:"- 소화기 점검 주기 확인",manual:""},
+      {id:"4-7",text:"4-7. Catering Truck 내, 기물(Cart)이 잘 고정되어 있는가?",verification:"- Compart Box 적재 상태 확인",manual:""},
+      {id:"4-8",text:"4-8. 탑재 담당 직원은 업무 시 안전화, 귀마개, 안전조끼, 장갑 등의 보호장비를 착용하고 있는가?",verification:"",manual:"PGSG 2.2.1"},
+      {id:"4-9",text:"4-9. Catering Truck 의 항공기 접근 절차가 수립되어 있는가?",verification:"- 항공기 접현 장비의 접근에 대한 감독\n- 접현 시, 3단계로 비행기에 접근하는가?\n- 유도자의 유도 하에 서행으로 접근하는가?",manual:"PGSG 2.3.3"},
+      {id:"4-10",text:"4-10. Catering Truck 을 정확히 항공기에 접현하였는가?",verification:"- 항공기와 장비 간의 안전 거리는 확보되었는가? (최소 2~5cm)",manual:"PGSG 2.3.3"},
+      {id:"4-11",text:"4-11. 고임목(Chock)을 바르게 설치하였는가?",verification:"- Parking Brake를 Set한 후, 설치하였는가?",manual:"PGSG 2.3.3"},
+      {id:"4-12",text:"4-12. 탑재 담당자는 제공받은 탑재 정보에 의거하여 탑재를 수행하였는가?",verification:"",manual:"AHM 6.2.5"}
+    ]
+  },
+  "5. 교육/훈련(자격) 관리": {
+    items: [
+      {id:"5-1",text:"5-1. 차량은 유자격자에 의해 조작되는가?",verification:"- 자격 사항 확인",manual:"AHM 7.7.6"},
+      {id:"5-2",text:"5-2. 탑재 유관 인원은 아래의 법정 교육을 초기/정기 기한에 맞게 이수하였는가?",verification:"(1)위험물 교육\n(2)SMS\n(3)보안 책임자/관리자 교육\n(4)탑재 관리 교육 (Load controller)\n* 해당 교육/훈련 기록 확인",manual:"AHM 11.13.8"}
+    ]
+  }
+};
+
+const CHECKLIST_SAFETY_DIVISION = {
+  "1. SMS 일반사항": {
+    items: [
+      {id:"1)",text:"1) 안전이란? (안전에 대한 개념)"},
+      {id:"2)",text:"2) 안전문화(Safety Culture)란?"}
+    ]
+  },
+  "2. 안전정책과 목적": {
+    items: [
+      {id:"1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?"},
+      {id:"2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한이 잘 정의되어 있는가?"},
+      {id:"3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?"},
+      {id:"4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?"},
+      {id:"5)",text:"5) 회사 안전목표체계(안전성과목표 및 지표)에 대해 숙지하고 있는가?"},
+      {id:"6)",text:"6) 해당 본부/팀 안전성과 지표를 숙지하고 있는가?"},
+      {id:"7)",text:"7) 년간 SMS 추진계획을 수립하였는가?"},
+      {id:"8)",text:"8) 년간 SMS 추진계획이 이행되고 있는가?"}
+    ]
+  },
+  "3. 위험 관리": {
+    items: [
+      {id:"1)",text:"1) 위해요인 식별 방법에 대한 절차가 있는가?"},
+      {id:"2)",text:"2) 안전활동과정에서 위해요인과 위험을 식별, 평가하고 있는가?"},
+      {id:"3)",text:"3) 근본적인 원인과 잠재 위험요소를 확인하기 위한 조사가 이루어지는가?"},
+      {id:"4)",text:"4) 조사를 통해 식별된 위해요인이 적절히 처리되고 전체에 전파되는가?"},
+      {id:"5)",text:"5) 식별된 위해요인과 관련된 위험을 평가하는 프로세스가 있는가?"},
+      {id:"6)",text:"6) 조직이 수용할 수 있는 위험수준 평가기준이 있는가?"},
+      {id:"7)",text:"7) 위험은 실용적으로 허용가능한 수준(ALARP)으로 관리되고 있는가?"},
+      {id:"8)",text:"8) 평가 및 분석에 의해 적절한 위험 경감 및 예방조치가 수행되는가?"}
+    ]
+  },
+  "4. 안전 보증": {
+    items: [
+      {id:"1)",text:"1) 안전성과지표가 설정되고 공표되며 모니터링과 분석이 되고 있는가?"},
+      {id:"2)",text:"2) 안전문화 진단을 위한 조사 등이 이루어지고 있는가?"},
+      {id:"3)",text:"3) 변화관리로 식별된 위해요인과 위험경감조치에 관한 기록이 있는가?"},
+      {id:"4)",text:"4) 기준 성과목표보다 낮은 결과의 원인을 감지, 조사하고 조치를 취하는가?"}
+    ]
+  },
+  "5. 안전 증진": {
+    items: [
+      {id:"1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?"},
+      {id:"2)",text:"2) 안전관리리스템(SMS) 교육 계획은 수립되어 있는가?"},
+      {id:"3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?"},
+      {id:"4)",text:"4) 정기적인 안전관리시스템(SMS) 교육 훈련이 진행되고 있는가?"},
+      {id:"5)",text:"5) 관리계층에 대한 안전 교육은 이루어지고 있는가?"},
+      {id:"6)",text:"6) 안전 소통이 장려되고 조직의 안전문화를 향상시키고 있는가?"},
+      {id:"7)",text:"7) 안전정보 및 지시가 정확히 전파되고, 효과가 모니터링 되고 있는가?"},
+      {id:"8)",text:"8) 안전정보 및 지시에 대한 서명 기록이 유지되고 있는가?"},
+      {id:"9)",text:"9) 보고체계에 대한 보고자 보호 및 비처벌 정책을 명확히 공표하고 있는가?"},
+      {id:"10)",text:"10) 팀/지점 내 종사자에게 보고자 보호 및 비처벌 정책이 인식되어 있는가?"}
+    ]
+  },
+  "6. 운항안전": {
+    items: [
+      {id:"1)",text:"1) 각 임무에 대한 지침, 기준 및 절차가 수립되어 있는가?"},
+      {id:"2)",text:"2) 항공기에 비치된  소화기 점검 및 관리상태가 양호한가?"},
+      {id:"3)",text:"3) 관련규정을 비치하고 있으며, 최신판을 유지하고 있는가?"},
+      {id:"4)",text:"4) 비행 전/후 브리핑을 철저히 수행하는가?"},
+      {id:"5)",text:"5) 항공기 피랍 또는 통신두절 시, 행동요령을 숙지하고 있는가?"}
+    ]
+  },
+  "7. 종합통제 안전": {
+    items: [
+      {id:"1)",text:"1) 비정상운항상황대비 비상연락망은 최신으로 유지되고 있는가?"},
+      {id:"2)",text:"2) 항공정보통신망은 정상적으로 운영되고 있는가?"},
+      {id:"3)",text:"3) 항공정보 및 기상은 적시에 접수하여 전파하고 있는가?"},
+      {id:"4)",text:"4) 항공기 이/착륙장소에 대한 정보를 적시에 접수하여 전파하고 있는가?"},
+      {id:"5)",text:"5) 항공기 이륙허용중량을 준수하고 있는가?"},
+      {id:"6)",text:"6) 사고 발생 시 초동 조치 요령을 숙지하고 있는가?"}
+    ]
+  },
+  "8. 정비 안전": {
+    items: [
+      {id:"1)",text:"1) 정비규정, 기술자료 등이 완전하고 명확하며 최신내용으로 개정되었는가?"},
+      {id:"2)",text:"2) AD/SB 등 기술회보는 최신 내용까지 수신되고 검토되었는가?"},
+      {id:"3)",text:"3) 주기적으로 기술회보 및 정비매뉴얼 개정판의 발행을 확인하고 있는가?"},
+      {id:"4)",text:"4) 개정판 도착 후 정해진 기간 내에 개정을 하고 있는가?"},
+      {id:"5)",text:"5) 보유 기술매뉴얼 자체점검을 규칙대로 실시하고 현황을 유지하고 있는가?"},
+      {id:"6)",text:"6) 항공기별 정비 이력부 등의 관리는 절차에 맞게 운용되고 있는가?"},
+      {id:"7)",text:"7) 항공기 정비 시, 안전 절차가 있으며 이를 준수하고 있는가?"},
+      {id:"8)",text:"8) 인화성 및 폭발성 물질의 격리는 정상적으로 이루어지고 있는가?"},
+      {id:"9)",text:"9) 항공기 Towing 시 지정된 경로와 속도를 유지하는가?"},
+      {id:"10)",text:"10) 항공기 이동, 시동 및 착륙지점에 이물질 제거는 이루어지는가?"}
+    ]
+  },
+  "9. 객실 안전": {
+    items: [
+      {id:"1)",text:"1) 객실승무원 업무 교범의 최신판을 유지하고 있는가?"},
+      {id:"2)",text:"2) 객실승무원의 자격을 유지하기 위한 교육을 이수하였는가?"},
+      {id:"3)",text:"3) 비행 전후 브리핑을 실시하는가?"},
+      {id:"4)",text:"4) 객실승무원 최소 탑승 인원을 유지하는가?"},
+      {id:"5)",text:"5) 항공기 내 비인가자 출입 시(청소/케이터링/정비사등) 출입증 확인하는가?"},
+      {id:"6)",text:"6) 항공기 door의 arming/disarming 절차를 준수하는가?"},
+      {id:"7)",text:"7) Passenger Safety Demonstration 을 절차에 맞게 시연하는가?"},
+      {id:"8)",text:"8) 항공기 이륙 전 객실과 Galley의 최종 점검을 실시하는가?"},
+      {id:"9)",text:"9) 항공기 지상 이동 간 Jump seat착석시 좌석벨트, 어깨 끈을 착용하는가?"},
+      {id:"10)",text:"10) 비행 중요단계 규정을 준수하는가?"},
+      {id:"11)",text:"11) 비행 중 사용하지 않는 유동물질을 확실히 고정하는가?"},
+      {id:"12)",text:"12) 운항 중 조종실 출입절차를 숙지하고 이행하는가?"},
+      {id:"13)",text:"13) 터뷸런스 시 즉각적인 방송을 실시하고 객실 안전 점검을 실시하는가?"},
+      {id:"14)",text:"14) 운항승무원과의 표준 신호 체계를 숙지하고 있는가?"},
+      {id:"15)",text:"15) 비상 시 대응절차를 숙지하고 있는가?"},
+      {id:"16)",text:"16) 승객 하기 후 Left Behind Item Check 를 실시하는가?"}
+    ]
+  }
+};
+
+const CHECKLIST_SAFETY_BRANCH = {
+  "1. SMS 일반사항": {
+    items: [
+      {id:"1)",text:"1) 안전이란? (안전에 대한 개념)",verification:"- 인터뷰",manual:"- SMS 1.8"},
+      {id:"2)",text:"2) 안전문화(Safty Culture)란?",verification:"",manual:"- SMS 1.8"}
+    ]
+  },
+  "2. 안전정책과 목적": {
+    items: [
+      {id:"1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?",verification:"- 지점 사무실 내 비치 여부 확인",manual:"- SMS 2.1"},
+      {id:"2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 2.3.3"},
+      {id:"3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"",manual:"- SMS 2.3.3"},
+      {id:"4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?",verification:"- 안전관리시스템(SMS) 교육 이수 현황 확인\n- 인터뷰",manual:"- SMS 2.3.3.4, 2.3.3.6"},
+      {id:"5)",text:"5) 국가 및 회사 안전목표체계에 대해 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3"},
+      {id:"6)",text:"6) 부문별 지표에 대해 이해하고 안전성과 지표를 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3.2"},
+      {id:"7)",text:"7) 지점 자체 회의 및 조업사 월례회의를 통하여 안전관리를 실시하고 있는가?",verification:"- 회의 증빙자료 확인(회의록, 안건 내용, 참석자, 서명 등)",manual:""}
+    ]
+  },
+  "3. 위험 관리": {
+    items: [
+      {id:"1)",text:"1) 선제적/사후적 방법으로 위해요인을 식별하는 활동이 있는가?",verification:"",manual:"- SMS 3.2"},
+      {id:"2)",text:"2) 위해요인에 대해 위험평가를 실시하고 있는가?",verification:"- 위험 평가 기록지, 통합안전관리시스템(ESMS) 내 위험 평가 기록 등 확인",manual:"- SMS 3.2, 3.4"},
+      {id:"3)",text:"3) 위험평가 시 경감조치가 필요하다고 평가된 위해요인에 대해 위험 경감조치를 실시하고 있는가?",verification:"",manual:"- SMS 3.4"},
+      {id:"4)",text:"4) 위험요인 발견 시, 안전보고(의무/자율보고)를 실시하고 있는가?",verification:"- 통합안전관리시스템(ESMS), 안전 보고서 양식 내 기록 확인",manual:"- SMS 3.6"},
+      {id:"5)",text:"5) 자율보고를 통하여 위해요인 식별 및 경감조치를 수행하고 있는가?",verification:"",manual:"- SMS 3.6"},
+      {id:"6)",text:"6) 지점 내 종사자에게 보고자 보호 및 비 처벌 정책이 인식되어 있는가?",verification:"- 인터뷰",manual:"- SMS 3.6.3"}
+    ]
+  },
+  "4. 안전 보증": {
+    items: [
+      {id:"1)",text:"1) 지점 안전 점검표를 바탕으로 주간 안전 점검을 실시하고 있는가?",verification:"- 지점 안전 점검표 기록 확인",manual:""},
+      {id:"2)",text:"2) Ground Handling Service Quality Check List(Surveillance Check List)를 바탕으로 외부 협력업체 안전관리를 하고 있는가?",verification:"- CHK List 확인",manual:""},
+      {id:"3)",text:"3) 점검결과 안전위해요소 발견 시 구두 개선권고 또는 자체 시정조치요구서를 발행한 실적이 있는가?",verification:"- 지점 안전 점검표, CHK List 등 기록 확인",manual:""},
+      {id:"4)",text:"4) 현장지시 및 시정조치요구서 발행 시 조치사항에 대해 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.1.1"},
+      {id:"5)",text:"5) 항공기 도입, 노선 증편, 절차 도입 등 관련 변화관리를 실시하고 있는가?",verification:"",manual:"- SMS 4.5"},
+      {id:"6)",text:"6) 변화관리 수행 후 관련 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.5"}
+    ]
+  },
+  "5. 안전 증진": {
+    items: [
+      {id:"1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.4, 5.1.2.5"},
+      {id:"2)",text:"2) SMS 교관이 안전관리시스템(SMS) 교육을 실시하고 있는가?",verification:"- 개인기록카드, 교육일지 등 확인",manual:"- SMS 5.1"},
+      {id:"3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.7"},
+      {id:"4)",text:"4) SMS 교관은 적합한 교육 자료를 바탕으로 교육을 진행하고 있는가?",verification:"",manual:"- SMS 5.1"},
+      {id:"5)",text:"5) 정기적인 안전관리시스템(SMS) 교육훈련이 진행되고 있는가?",verification:"- 교육기록 전산화 파일, 교육 계획 등 확인",manual:""},
+      {id:"6)",text:"6) 안전지시 및 정보를 전파하고, 이행 여부에 대해 모니터링을 실시하고 있는가?",verification:"- 브리핑일지 확인\n- 인터뷰",manual:"- SMS 5.2.2, 5.2.3"},
+      {id:"7)",text:"7) 안전지시 및 정보에 대한 서명 기록이 유지되고 있는가?",verification:"- 통합안전관리시스템(ESMS) 기록 확인",manual:"- SMS 5.2.2, 5.2.3"}
+    ]
+  }
+};
+
+const CHECKLIST_FSDS = {
+  "1. 문서작성요소": {
+    items: [
+      {id:"1-1",text:"1-1 회사의 동일한 구성의 번호 체계를 사용하여 구성되어 있는가?",verification:"부문별 비행안전문서(인가/신고) 확인",manual:"FSDS 2.1.1"},
+      {id:"1-2",text:"1-2 작성방식 및 체계에 따라 제정 및 개정이 되고 있는가?",verification:"부문별 비행안전문서(인가/신고) 확인",manual:"FSDS 2.1.1"}
+    ]
+  },
+  "2. 문서의 요소": {
+    items: [
+      {id:"2.1",text:"2.1 문서의 요소 중 표제, 차례, 개정 기록표, 유효 페이지 목록, 배포기록부가  구성되어있는가?",verification:"구성 양식, 문서의 위치 및 순서 등 확인",manual:"FSDS 2.2"},
+      {id:"2.2",text:"2.2 용어 및 약어 정의가 구성되어 있는가?",verification:"",manual:"FSDS 2.2.6"},
+      {id:"2.3",text:"2.3 개정 및 배포 등의 관리를 용이하게 할 수 있도록 작성방식을 구성하였는가?",verification:"",manual:"FSDS 3.5"},
+      {id:"2.4",text:"2.4 정보의 그룹화, 정보의 관리 및 적용 관련 내용이 문서 내에 포함되어 있는가?",verification:"",manual:"FSDS 2.3.1"},
+      {id:"2.5",text:"2.5 문서 형태 (머리글, 바닥글, 본문 작업방법, 작업 도구의 사용)가 비행안전문서시스템에 의거하여 적절히 구성되어있는가?",verification:"부문별 비행안전문서(인가/신고) 확인",manual:"FSDS 2.4"},
+      {id:"2.6",text:"2.6 문서 내 용어의 사용이 ‘운항기술기준’의 용어를 표준으로 사용하며 일관성을\n유지하고 있는가?",verification:"",manual:"FSDS 2.4.2.3"}
+    ]
+  },
+  "3. 관리 및 운영": {
+    items: [
+      {id:"3.1",text:"3.1 개정 검토를 주기적으로 시행하고 있는가?",verification:"개정기록표 OR 검토 기안서",manual:"FSDS 3.3"},
+      {id:"3.2",text:"3.2 검토 내용이 최신 정보를 포함하고 있는가?",verification:"",manual:"FSDS 3.3"},
+      {id:"3.3",text:"3.3 개정 시 관련 절차에 따라 운영되고 있는가?",verification:"",manual:"FSDS 3.5"},
+      {id:"3.4",text:"3.4 배포방법, 기준, 배포처 등을 수립하여 배포가 이루어지고 있는가?",verification:"",manual:"FSDS 3.6"},
+      {id:"3.5",text:"3.5 보존 연한이 명시되어 있는가?",verification:"",manual:"FSDS 3.7.1"},
+      {id:"3.6",text:"3.6 보존 방법에 대해 명시되어 있는가?",verification:"",manual:"FSDS 3.7.2"},
+      {id:"3.7",text:"3.7 비행안전문서에 대한 자체 심사 기준이 있는가?",verification:"부문별 자체 규정 확인",manual:"FSDS 3.8"},
+      {id:"3.8",text:"3.8 비행안전문서에 대한 자체 기록물 관리(예: 교육일지 작성 등)를 하고 있는가?",verification:"부문별 직원 열람 기록",manual:"FSDS 3.6.2"}
+    ]
+  }
+};
+
+
+// ============================================================================
+// DIVISIONS REGISTRY & CHECKLIST REGISTRY
+// ============================================================================
+const DIVISIONS = {
+  "운항본부": { id: "flight_ops", checklists: ["qa_flight_ops", "qa_flight_quality", "safety_division", "fsds"] },
+  "정비본부": { id: "maintenance", checklists: ["qa_maintenance", "safety_division", "fsds"] },
+  "운송본부": { id: "ground_ops", checklists: ["qa_ground_ops", "safety_division", "fsds"] },
+  "객실본부": { id: "cabin", checklists: ["qa_cabin", "safety_division", "fsds"] },
+  "안전보안실": { id: "safety_security", checklists: ["qa_safety_security", "safety_division", "fsds"] },
+  "종합통제실": { id: "occ", checklists: ["qa_occ", "safety_division", "fsds"] },
+  "케이터링운영파트": { id: "catering", checklists: ["qa_catering", "safety_division", "fsds"] }
+};
+
+const DIVISION_NAMES = Object.keys(DIVISIONS);
+
+const CHECKLIST_REGISTRY = {
+  // 지점 성숙도 (기존, 1-4등급)
+  branch: { name:"지점 품질심사", checklist: CHECKLIST_BRANCH, scoring:"grade", category:"branch" },
+  pax: { name:"여객협력사 품질심사", checklist: CHECKLIST_PAX, scoring:"grade", category:"branch" },
+  ramp: { name:"램프협력사 품질심사", checklist: CHECKLIST_RAMP, scoring:"grade", category:"branch" },
+  // 지점 안전감사 (S/U/NA)
+  safety_branch: { name:"지점 안전감사", checklist: CHECKLIST_SAFETY_BRANCH, scoring:"binary", category:"branch" },
+  // 실/본부 품질심사 (S/U/NA)
+  qa_flight_ops: { name:"운항본부 품질심사", checklist: CHECKLIST_QA_FLIGHT_OPS, scoring:"binary", category:"division" },
+  qa_flight_quality: { name:"운항품질팀 품질심사", checklist: CHECKLIST_QA_FLIGHT_QUALITY, scoring:"binary", category:"division" },
+  qa_maintenance: { name:"정비본부 품질심사", checklist: CHECKLIST_QA_MAINTENANCE, scoring:"binary", category:"division" },
+  qa_ground_ops: { name:"운송본부 품질심사", checklist: CHECKLIST_QA_GROUND_OPS, scoring:"binary", category:"division" },
+  qa_cabin: { name:"객실본부 품질심사", checklist: CHECKLIST_QA_CABIN, scoring:"binary", category:"division" },
+  qa_safety_security: { name:"안전보안실 품질심사", checklist: CHECKLIST_QA_SAFETY_SECURITY, scoring:"binary", category:"division" },
+  qa_occ: { name:"종합통제실 품질심사", checklist: CHECKLIST_QA_OCC, scoring:"binary", category:"division" },
+  qa_catering: { name:"케이터링운영파트 품질심사", checklist: CHECKLIST_QA_CATERING, scoring:"binary", category:"division" },
+  // 실/본부 안전감사 (S/U/NA)
+  safety_division: { name:"실/본부 안전감사", checklist: CHECKLIST_SAFETY_DIVISION, scoring:"binary", category:"division" },
+  // 비행안전문서시스템 (S/U/NA) - 실/본부 전용
+  fsds: { name:"비행안전문서시스템", checklist: CHECKLIST_FSDS, scoring:"binary", category:"division" }
+};
+
+let selectedAuditCategory = 'branch'; // 'branch' or 'division'
+let selectedDivision = '';
+let currentRemarks = {};
+
 
 const REGIONS = {
   "국내": { type: "국내", stations: ["김포", "제주", "인천", "청주", "김해"] },
@@ -1602,13 +2509,24 @@ function hideLoading() {
 }
 
 function getChecklist(type) {
-  if (type === 'branch') return CHECKLIST_BRANCH;
-  if (type === 'pax') return CHECKLIST_PAX;
-  if (type === 'ramp') return CHECKLIST_RAMP;
+  const reg = CHECKLIST_REGISTRY[type];
+  if (reg) return reg.checklist;
   return CHECKLIST_BRANCH;
 }
 
+function getScoringMethod(type) {
+  const reg = CHECKLIST_REGISTRY[type];
+  return reg ? reg.scoring : 'grade';
+}
+
+function getChecklistName(type) {
+  const reg = CHECKLIST_REGISTRY[type];
+  return reg ? reg.name : type;
+}
+
 function getTypeLabel(type) {
+  const reg = CHECKLIST_REGISTRY[type];
+  if (reg) return reg.name;
   const labels = { branch: '지점', pax: '여객협력사', ramp: '램프협력사' };
   return labels[type] || type;
 }
@@ -1675,6 +2593,42 @@ function calculateScores(scores, checklist) {
   };
 }
 
+
+function calculateBinaryScores(scores, checklist) {
+  let yesCount = 0, noCount = 0, naCount = 0;
+  const categoryResults = {};
+  for (const [catName, catData] of Object.entries(checklist)) {
+    let catYes = 0, catNo = 0, catNA = 0;
+    for (const item of catData.items) {
+      const val = scores[item.id];
+      if (val === 'S' || val === 'YES' || val === 'Y') { catYes++; yesCount++; }
+      else if (val === 'U' || val === 'NO' || val === 'N') { catNo++; noCount++; }
+      else if (val === 'NA' || val === 'N/A') { catNA++; naCount++; }
+    }
+    const catTotal = catYes + catNo;
+    categoryResults[catName] = {
+      yesCount: catYes, noCount: catNo, naCount: catNA,
+      total: catData.items.length,
+      complianceRate: catTotal > 0 ? (catYes / catTotal * 100) : 0
+    };
+  }
+  const totalApplicable = yesCount + noCount;
+  return {
+    yesCount, noCount, naCount,
+    totalApplicable,
+    totalItems: yesCount + noCount + naCount,
+    complianceRate: totalApplicable > 0 ? (yesCount / totalApplicable * 100) : 0,
+    categoryResults
+  };
+}
+
+function getScoreResult(scores, type) {
+  const checklist = getChecklist(type);
+  const method = getScoringMethod(type);
+  if (method === 'binary') return calculateBinaryScores(scores, checklist);
+  return calculateScores(scores, checklist);
+}
+
 function makeKey(year, station, type, company) {
   let key = `${year}_${station}_${type}`;
   if (company) key += `_${company}`;
@@ -1703,8 +2657,10 @@ function loadAllData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       allData = JSON.parse(stored);
+      allData = allData.map(d => { if(!d.auditCategory){d.auditCategory="branch";d.scoringMethod="grade"} if(!d.remarks)d.remarks={}; return d; });
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
+      allData = allData.map(d => { if(!d.auditCategory){d.auditCategory="branch";d.scoringMethod="grade"} if(!d.remarks)d.remarks={}; return d; });
       saveAllData();
     }
   } catch (e) {
@@ -1836,9 +2792,37 @@ function inputGoHome() {
   setInputPhase(1);
 }
 
+
+function switchAuditCategory(cat) {
+  selectedAuditCategory = cat;
+  const branchBtn = document.getElementById('catBtnBranch');
+  const divBtn = document.getElementById('catBtnDivision');
+  const stationArea = document.getElementById('stationSelectArea') || document.getElementById('inputStation')?.parentElement;
+  const divArea = document.getElementById('divisionSelectArea');
+
+  if (cat === 'branch') {
+    branchBtn.style.cssText = 'background:#D20015;color:#fff;';
+    divBtn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+    if (stationArea) stationArea.classList.remove('hidden');
+    if (divArea) divArea.classList.add('hidden');
+  } else {
+    divBtn.style.cssText = 'background:#6366F1;color:#fff;';
+    branchBtn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
+    if (stationArea) stationArea.classList.add('hidden');
+    if (divArea) divArea.classList.remove('hidden');
+  }
+}
+
 function inputSearch() {
   selectedYear = parseInt(document.getElementById('inputYear').value);
-  selectedStation = document.getElementById('inputStation').value;
+  if (selectedAuditCategory === 'division') {
+    selectedDivision = document.getElementById('inputDivision').value;
+    if (!selectedDivision) { showToast('실/본부를 선택해주세요.', 'warning'); return; }
+    selectedStation = selectedDivision; // Use division name as station for compatibility
+  } else {
+    selectedStation = document.getElementById('inputStation').value;
+    if (!selectedStation) { showToast('지점을 선택해주세요.', 'warning'); return; }
+  }
   if (!selectedStation) { showToast('지점을 선택해주세요.', 'warning'); return; }
 
   document.getElementById('phase2StationTitle').textContent = `${selectedStation} — ${selectedYear}년`;
@@ -1904,11 +2888,23 @@ function renderTypeStatusCards() {
 
 function inputShowTypes() {
   document.getElementById('phase3Subtitle').textContent = `${selectedStation} — 작성할 점검표를 선택합니다`;
-  const types = [
-    { key: 'branch', label: '지점 점검표', desc: '공항 지점 운영 점검' },
-    { key: 'pax', label: '여객협력사 점검표', desc: '여객 조업 협력사 점검' },
-    { key: 'ramp', label: '램프협력사 점검표', desc: '램프 조업 협력사 점검' }
-  ];
+  let types;
+  if (selectedAuditCategory === 'division' && selectedDivision) {
+    const divInfo = DIVISIONS[selectedDivision];
+    types = divInfo.checklists.map(key => ({
+      key,
+      label: CHECKLIST_REGISTRY[key].name,
+      desc: getScoringMethod(key) === 'binary' ? 'S(적합) / U(부적합) / N/A 방식' : '1~4등급 채점',
+      scoring: getScoringMethod(key)
+    }));
+  } else {
+    types = [
+      { key: 'branch', label: '지점 품질심사 점검표', desc: '공항 지점 운영 점검 (1~4등급)', scoring: 'grade' },
+      { key: 'pax', label: '여객협력사 품질심사 점검표', desc: '여객 조업 협력사 점검 (1~4등급)', scoring: 'grade' },
+      { key: 'ramp', label: '램프협력사 품질심사 점검표', desc: '램프 조업 협력사 점검 (1~4등급)', scoring: 'grade' },
+      { key: 'safety_branch', label: '지점 안전감사 점검표', desc: 'S(적합) / U(부적합) / N/A 방식', scoring: 'binary' }
+    ];
+  }
 
   let html = '';
   types.forEach(t => {
@@ -1946,6 +2942,7 @@ function selectChecklistType(type) {
   currentChecklist = getChecklist(type);
   if (record) {
     currentScores = { ...record.scores };
+    currentRemarks = record.remarks ? { ...record.remarks } : {};
     const auditorInput = document.getElementById('inputAuditor');
     if (record.auditor && auditorInput && !auditorInput.value) {
       auditorInput.value = record.auditor;
@@ -1960,6 +2957,7 @@ function selectChecklistType(type) {
     }
   } else {
     currentScores = {};
+    currentRemarks = {};
   }
 
   document.getElementById('phase4TypeBadge').textContent = getTypeLabel(type);
@@ -1982,10 +2980,10 @@ function renderChecklist() {
     html += `<div class="accordion-header open flex items-center justify-between px-5 py-4 cursor-pointer" style="background:#ffffff;" onclick="toggleAccordion('${catId}', this)">`;
     html += `<div class="cat-header flex items-center gap-3">`;
     html += `<span style="font-size:14px;font-weight:600;color:#303A3C;letter-spacing:-0.224px;">${catName}</span>`;
-    html += `<span style="font-size:12px;color:#9EA2A1;font-weight:400;">최대 ${catData.maxPoints}점</span>`;
+    html += `<span style="font-size:12px;color:#9EA2A1;font-weight:400;">${catData.maxPoints ? "최대 " + catData.maxPoints + "점" : catData.items.length + "항목"}</span>`;
     html += `</div>`;
     html += `<div class="flex items-center gap-3">`;
-    html += `<span style="font-size:13px;font-weight:600;color:#D20015;" id="catScore_${catIdx}">0 / ${catData.maxPoints}</span>`;
+    html += `<span style="font-size:13px;font-weight:600;color:#D20015;" id="catScore_${catIdx}">${catData.maxPoints ? "0 / " + catData.maxPoints : "0 / " + catData.items.length}</span>`;
     html += `<svg class="arrow w-4 h-4 transform rotate-180" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
     html += `</div></div>`;
     html += `<div class="accordion-content open" id="${catId}" style="background:#f5f5f7;">`;
@@ -1996,14 +2994,45 @@ function renderChecklist() {
       html += `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:6px;background:#303A3C;color:#fff;font-size:11px;font-weight:600;letter-spacing:-0.224px;flex-shrink:0;margin-top:2px;">${item.id}</span>`;
       html += `<span style="font-size:14px;color:#303A3C;font-weight:400;letter-spacing:-0.374px;line-height:1.47;">${item.text}</span>`;
       html += `</div>`;
-      html += `<div class="flex gap-2" style="margin-left:44px;">`;
-      for (const v of [1, 2, 3, 4]) {
-        const isSelected = selected === v;
-        html += `<button class="score-btn flex-1 ${isSelected ? 'selected' : ''}" onclick="setScore('${item.id}', ${v}, this, ${catIdx})">${v}</button>`;
+      const scoring = getScoringMethod(selectedType);
+      if (scoring === 'binary') {
+        // Binary scoring: S / U / N/A buttons
+        html += '<div class="flex flex-wrap gap-2" style="margin-left:44px;">';
+        const sSelected = selected === 'S' ? 'selected' : '';
+        const uSelected = selected === 'U' ? 'selected' : '';
+        const naSelected2 = (selected === 'NA' || selected === 'N/A') ? 'selected' : '';
+        html += `<button class="score-btn binary-s-btn ${sSelected}" style="flex:1;min-width:60px;${sSelected ? 'background:#22C55E;color:#fff;border-color:#22C55E;' : ''}" onclick="setBinaryScore('${item.id}', 'S', this, ${catIdx})">S (적합)</button>`;
+        html += `<button class="score-btn binary-u-btn ${uSelected}" style="flex:1;min-width:60px;${uSelected ? 'background:#D20015;color:#fff;border-color:#D20015;' : ''}" onclick="setBinaryScore('${item.id}', 'U', this, ${catIdx})">U (부적합)</button>`;
+        html += `<button class="score-btn na-btn ${naSelected2}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="setBinaryScore('${item.id}', 'NA', this, ${catIdx})">N/A</button>`;
+        html += '</div>';
+        // Show verification & manual info for binary checklists
+        if (item.verification || item.manual) {
+          html += '<div style="margin-left:44px;margin-top:6px;">';
+          if (item.verification) {
+            html += `<details style="margin-bottom:4px;"><summary style="font-size:12px;color:#9EA2A1;cursor:pointer;">확인내용 보기</summary><div style="font-size:12px;color:#565A5B;padding:8px 12px;background:rgba(192,206,209,0.15);border-radius:8px;margin-top:4px;white-space:pre-line;">${item.verification}</div></details>`;
+          }
+          if (item.manual) {
+            html += `<div style="font-size:11px;color:#987B37;margin-top:2px;">📋 ${item.manual}</div>`;
+          }
+          html += '</div>';
+        }
+      } else {
+        // Grade scoring: 1-2-3-4-N/A buttons (existing)
+        html += `<div class="flex gap-2" style="margin-left:44px;">`;
+        for (const v of [1, 2, 3, 4]) {
+          const isSelected = selected === v;
+          html += `<button class="score-btn flex-1 ${isSelected ? 'selected' : ''}" onclick="setScore('${item.id}', ${v}, this, ${catIdx})">${v}</button>`;
+        }
+        const naSelected = selected === 'N/A';
+        html += `<button class="score-btn na-btn ${naSelected ? 'selected' : ''}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="setScoreNA('${item.id}', this, ${catIdx})">N/A</button>`;
+        html += `</div>`;
       }
-      const naSelected = selected === 'N/A';
-      html += `<button class="score-btn na-btn ${naSelected ? 'selected' : ''}" style="flex:0 0 auto;padding:0 16px;font-size:13px;" onclick="setScoreNA('${item.id}', this, ${catIdx})">N/A</button>`;
-      html += `</div></div>`;
+      // ��고란 (모든 점검표 공통)
+      const remarkVal = currentRemarks[item.id] || '';
+      html += `<div style="margin-left:44px;margin-top:8px;">`;
+      html += `<input type="text" class="w-full" style="font-size:13px;padding:8px 12px;border:1px solid rgba(192,206,209,0.4);border-radius:8px;background:#fff;color:#303A3C;outline:none;" placeholder="비고 / 의견 입력" value="${remarkVal.replace(/"/g, '&quot;')}" onchange="setRemark('${item.id}', this.value)">`;
+      html += `</div>`;
+      html += `</div>`;
     }
     html += `</div></div>`;
     catIdx++;
@@ -2023,6 +3052,30 @@ function toggleAccordion(id, header) {
   const el = document.getElementById(id);
   el.classList.toggle('open');
   header.classList.toggle('open');
+}
+
+
+function setBinaryScore(itemId, value, btn, catIdx) {
+  currentScores[itemId] = value;
+  unsavedChanges = true;
+  const row = btn.parentElement;
+  row.querySelectorAll('.score-btn').forEach(b => {
+    b.classList.remove('selected');
+    b.style.background = '';
+    b.style.color = '';
+    b.style.borderColor = '';
+  });
+  btn.classList.add('selected');
+  if (value === 'S') { btn.style.background = '#22C55E'; btn.style.color = '#fff'; btn.style.borderColor = '#22C55E'; }
+  else if (value === 'U') { btn.style.background = '#D20015'; btn.style.color = '#fff'; btn.style.borderColor = '#D20015'; }
+  else { btn.style.background = '#565A5B'; btn.style.color = '#fff'; btn.style.borderColor = '#565A5B'; }
+  updateCategoryScore(catIdx);
+  updateTotalDisplay();
+}
+
+function setRemark(itemId, value) {
+  currentRemarks[itemId] = value;
+  unsavedChanges = true;
 }
 
 function setScore(itemId, value, btn, catIdx) {
@@ -2051,25 +3104,57 @@ function setScoreNA(itemId, btn, catIdx) {
 }
 
 function updateCategoryScore(catIdx) {
-  const cats = Object.entries(currentChecklist);
-  if (catIdx >= cats.length) return;
-  const [catName, catData] = cats[catIdx];
-  let sum = 0;
-  for (const item of catData.items) {
-    const s = currentScores[item.id];
-    if (s !== undefined && s !== null && s !== 'N/A') sum += Number(s);
-  }
+  const catEntries = Object.entries(currentChecklist);
+  if (catIdx >= catEntries.length) return;
+  const [catName, catData] = catEntries[catIdx];
   const el = document.getElementById(`catScore_${catIdx}`);
-  if (el) el.textContent = `${sum} / ${catData.maxPoints}`;
+  if (!el) return;
+
+  const scoring = getScoringMethod(selectedType);
+  if (scoring === 'binary') {
+    let sCount = 0, uCount = 0, naCount = 0;
+    for (const item of catData.items) {
+      const val = currentScores[item.id];
+      if (val === 'S') sCount++;
+      else if (val === 'U') uCount++;
+      else if (val === 'NA' || val === 'N/A') naCount++;
+    }
+    const total = sCount + uCount;
+    const rate = total > 0 ? (sCount / total * 100).toFixed(0) : '-';
+    el.textContent = `S:${sCount} U:${uCount} (${rate}%)`;
+    el.style.color = uCount > 0 ? '#D20015' : '#22C55E';
+  } else {
+    let sum = 0, count = 0;
+    for (const item of catData.items) {
+      const score = currentScores[item.id];
+      if (score !== null && score !== undefined && score !== 'N/A') {
+        sum += Number(score);
+        count++;
+      }
+    }
+    el.textContent = `${sum} / ${catData.maxPoints}`;
+  }
 }
 
 function updateTotalDisplay() {
-  if (!currentChecklist) return;
-  const result = calculateScores(currentScores, currentChecklist);
-  document.getElementById('totalScoreDisplay').textContent = result.totalScore;
-  document.getElementById('maxScoreDisplay').textContent = result.maxScore;
-  document.getElementById('avgScoreDisplay').textContent = result.overallAverage.toFixed(2);
-  document.getElementById('achieveRateDisplay').textContent = result.achievementRate.toFixed(1) + '%';
+  const scoring = getScoringMethod(selectedType);
+  if (scoring === 'binary') {
+    const result = calculateBinaryScores(currentScores, currentChecklist);
+    const totalEl = document.getElementById('bottomTotal');
+    const avgEl = document.getElementById('bottomAvg');
+    const rateEl = document.getElementById('bottomRate');
+    if (totalEl) totalEl.textContent = `S: ${result.yesCount} / U: ${result.noCount} / NA: ${result.naCount}`;
+    if (avgEl) avgEl.textContent = `적합률`;
+    if (rateEl) rateEl.textContent = `${result.complianceRate.toFixed(1)}%`;
+  } else {
+    const result = calculateScores(currentScores, currentChecklist);
+    const totalEl = document.getElementById('bottomTotal');
+    const avgEl = document.getElementById('bottomAvg');
+    const rateEl = document.getElementById('bottomRate');
+    if (totalEl) totalEl.textContent = `${result.totalScore} / ${result.maxScore}`;
+    if (avgEl) avgEl.textContent = result.overallAverage.toFixed(2);
+    if (rateEl) rateEl.textContent = `${result.achievementRate.toFixed(1)}%`;
+  }
 }
 
 function saveAssessment() {
@@ -2107,9 +3192,14 @@ function saveAssessment() {
   );
 
   const record = {
-    year, station, type, region, auditor, auditDate, auditDateStart, auditDateEnd, scores: { ...currentScores }
+    year, station, type, region, auditor, auditDate, auditDateStart, auditDateEnd,
+    auditCategory: selectedAuditCategory,
+    scoringMethod: getScoringMethod(selectedType),
+    scores: { ...currentScores },
+    remarks: { ...currentRemarks }
   };
   if (company) record.company = company;
+  if (selectedAuditCategory === 'division') record.division = selectedDivision;
 
   if (existIdx >= 0) {
     allData[existIdx] = record;
@@ -2965,6 +4055,30 @@ function navigateToInput(year, station, type) {
 // TAB 3: STATISTICS DASHBOARD
 // ============================================================================
 function renderStatsDashboard() {
+
+  // Sub-tab rendering
+  const statsArea = document.getElementById('tab-content-3') || document.querySelector('[data-tab="3"]');
+  if (!statsArea) return;
+
+  // Check if sub-tabs exist, if not create them
+  let subTabBar = document.getElementById('statsSubTabBar');
+  if (!subTabBar) {
+    const bar = document.createElement('div');
+    bar.id = 'statsSubTabBar';
+    bar.className = 'flex gap-2 mb-4 px-1';
+    bar.innerHTML = `
+      <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
+      <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
+    `;
+    // Insert at the beginning of the stats tab
+    const firstChild = statsArea.querySelector('.apple-card, div');
+    if (firstChild) statsArea.insertBefore(bar, firstChild);
+    else statsArea.prepend(bar);
+  }
+
+  if (typeof statsSubTab === 'undefined') window.statsSubTab = 'branch';
+  if (statsSubTab === 'division') { renderDivisionStats(); return; }
+  // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
   const yearData = allData.filter(d => d.year == year);
 
@@ -3359,6 +4473,116 @@ function renderStatsDashboard() {
   }
 }
 
+function switchStatsSubTab(tab) {
+  window.statsSubTab = tab;
+  document.getElementById('statsSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  document.getElementById('statsSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  renderStatsDashboard();
+}
+
+function renderDivisionStats() {
+  const year = parseInt(document.getElementById('statsYear')?.value || new Date().getFullYear());
+  const divData = allData.filter(d => d.auditCategory === 'division' && d.year == year);
+
+  // Build stats container
+  const container = document.getElementById('tab-content-3') || document.querySelector('[data-tab="3"]');
+  // Keep sub-tab bar, replace rest
+  const subBar = document.getElementById('statsSubTabBar');
+
+  let html = '';
+
+  // Year selector
+  const thisYear = new Date().getFullYear();
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<select id="divStatsYear" class="apple-select" style="width:auto;" onchange="window.statsSubTab='division';renderStatsDashboard()">`;
+  for (let y = thisYear; y >= thisYear - 2; y--) {
+    html += `<option value="${y}" ${y == year ? 'selected' : ''}>${y}년</option>`;
+  }
+  html += `</select>`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">실/본부 심사 ${divData.length}건</span>`;
+  html += `</div>`;
+
+  if (divData.length === 0) {
+    html += `<div class="apple-card" style="padding:40px;text-align:center;">`;
+    html += `<div style="font-size:15px;color:#9EA2A1;">${year}년 실/본부 심사 데이터가 없습니다</div>`;
+    html += `</div>`;
+  } else {
+    // Division compliance summary
+    html += `<div class="apple-card mb-4" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 적합률 현황</div>`;
+    html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+
+    const divGroups = {};
+    divData.forEach(d => {
+      const div = d.division || d.station;
+      if (!divGroups[div]) divGroups[div] = [];
+      divGroups[div].push(d);
+    });
+
+    for (const [divName, records] of Object.entries(divGroups)) {
+      let totalS = 0, totalU = 0, totalNA = 0;
+      records.forEach(r => {
+        const result = calculateBinaryScores(r.scores, getChecklist(r.type));
+        totalS += result.yesCount;
+        totalU += result.noCount;
+        totalNA += result.naCount;
+      });
+      const totalApp = totalS + totalU;
+      const rate = totalApp > 0 ? (totalS / totalApp * 100) : 0;
+      const rateClass = rate >= 90 ? 'compliance-high' : rate >= 70 ? 'compliance-mid' : 'compliance-low';
+
+      html += `<div style="padding:16px;background:rgba(245,245,247,0.8);border-radius:12px;">`;
+      html += `<div style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:8px;">${divName}</div>`;
+      html += `<div class="flex items-center gap-3">`;
+      html += `<span class="compliance-badge ${rateClass}">${rate.toFixed(1)}%</span>`;
+      html += `<span style="font-size:12px;color:#9EA2A1;">S:${totalS} U:${totalU} NA:${totalNA}</span>`;
+      html += `</div>`;
+      html += `<div style="margin-top:8px;font-size:12px;color:#9EA2A1;">${records.length}건 심사</div>`;
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+
+    // U (Unsatisfactory) items list
+    html += `<div class="apple-card mb-4" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부적합(U) 항목 목록</div>`;
+    let hasU = false;
+    divData.forEach(d => {
+      const checklist = getChecklist(d.type);
+      for (const [catName, catData] of Object.entries(checklist)) {
+        for (const item of catData.items) {
+          if (d.scores[item.id] === 'U') {
+            if (!hasU) {
+              html += `<div style="overflow-x:auto;"><table class="w-full" style="font-size:13px;">`;
+              html += `<thead><tr style="border-bottom:2px solid rgba(192,206,209,0.3);"><th style="text-align:left;padding:8px;">부서</th><th style="text-align:left;padding:8px;">점검표</th><th style="text-align:left;padding:8px;">항목</th><th style="text-align:left;padding:8px;">내용</th></tr></thead><tbody>`;
+              hasU = true;
+            }
+            html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.2);">`;
+            html += `<td style="padding:8px;color:#303A3C;">${d.division || d.station}</td>`;
+            html += `<td style="padding:8px;color:#565A5B;">${getChecklistName(d.type)}</td>`;
+            html += `<td style="padding:8px;"><span style="background:#D20015;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;">${item.id}</span></td>`;
+            html += `<td style="padding:8px;color:#565A5B;">${item.text.substring(0, 80)}${item.text.length > 80 ? '...' : ''}</td>`;
+            html += `</tr>`;
+          }
+        }
+      }
+    });
+    if (hasU) html += `</tbody></table></div>`;
+    else html += `<div style="font-size:13px;color:#22C55E;text-align:center;padding:20px;">부적합 항목이 없습니다</div>`;
+    html += `</div>`;
+  }
+
+  // Remove existing content except sub-tab bar
+  const children = Array.from(container.children);
+  children.forEach(c => { if (c.id !== 'statsSubTabBar') c.remove(); });
+
+  const contentDiv = document.createElement('div');
+  contentDiv.id = 'divisionStatsContent';
+  contentDiv.innerHTML = html;
+  container.appendChild(contentDiv);
+}
+
+
 function toggleWeakDetail(id, header) {
   const el = document.getElementById(id);
   el.classList.toggle('hidden');
@@ -3383,6 +4607,27 @@ function destroyChart(id) {
 }
 
 function renderAnalysis() {
+
+  // Sub-tab rendering for analysis
+  const analysisArea = document.getElementById('tab-content-4') || document.querySelector('[data-tab="4"]');
+  if (!analysisArea) return;
+
+  let analysisSubBar = document.getElementById('analysisSubTabBar');
+  if (!analysisSubBar) {
+    const bar = document.createElement('div');
+    bar.id = 'analysisSubTabBar';
+    bar.className = 'flex gap-2 mb-4 px-1';
+    bar.innerHTML = `
+      <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
+      <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
+    `;
+    const firstChild = analysisArea.querySelector('.apple-card, div');
+    if (firstChild) analysisArea.insertBefore(bar, firstChild);
+    else analysisArea.prepend(bar);
+  }
+
+  if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
+  if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
   const yearData = allData.filter(d => d.year == year);
   const prevYearData = allData.filter(d => d.year == year - 1);
@@ -3978,6 +5223,162 @@ function renderAnalysis() {
   // Store data for chart rendering when detail sections are opened
   window._analysisData = { year, yearData, comparisons, riskItems, typeAvgs, stationGroups, heatmapData, consistencyData, priorityItems, regionCatAvgs, stationsTwoYearsAgo };
 }
+
+function switchAnalysisSubTab(tab) {
+  window.analysisSubTab = tab;
+  document.getElementById('analysisSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  document.getElementById('analysisSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  renderAnalysis();
+}
+
+function renderDivisionAnalysis() {
+  const year = parseInt(document.getElementById('analysisYear')?.value || new Date().getFullYear());
+  const divData = allData.filter(d => d.auditCategory === 'division');
+
+  const container = document.getElementById('tab-content-4') || document.querySelector('[data-tab="4"]');
+  const children = Array.from(container.children);
+  children.forEach(c => { if (c.id !== 'analysisSubTabBar') c.remove(); });
+
+  let html = '';
+
+  // Year selector
+  const thisYear = new Date().getFullYear();
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<select id="divAnalysisYear" class="apple-select" style="width:auto;" onchange="window.analysisSubTab='division';renderAnalysis()">`;
+  for (let y = thisYear; y >= thisYear - 2; y--) {
+    html += `<option value="${y}" ${y == year ? 'selected' : ''}>${y}년</option>`;
+  }
+  html += `</select></div>`;
+
+  const yearData = divData.filter(d => d.year == year);
+
+  if (yearData.length === 0) {
+    html += `<div class="apple-card" style="padding:40px;text-align:center;"><div style="font-size:15px;color:#9EA2A1;">${year}년 실/본부 심사 데이터가 없습니다</div></div>`;
+  } else {
+    // Compliance trend by division (multi-year)
+    html += `<div class="apple-card mb-4" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 적합률 ���렌드</div>`;
+    html += `<canvas id="divTrendChart" height="200"></canvas>`;
+    html += `</div>`;
+
+    // Risk analysis - divisions with most U items
+    html += `<div class="apple-card mb-4" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">부서별 부적합 분석</div>`;
+    html += `<canvas id="divRiskChart" height="200"></canvas>`;
+    html += `</div>`;
+
+    // Checklist type comparison
+    html += `<div class="apple-card mb-4" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">품질심사 vs 안전감사 vs FSDS 비교</div>`;
+    html += `<div class="overflow-x-auto"><table class="w-full" style="font-size:13px;">`;
+    html += `<thead><tr style="border-bottom:2px solid rgba(192,206,209,0.3);">`;
+    html += `<th style="text-align:left;padding:8px;">부서</th>`;
+    html += `<th style="text-align:center;padding:8px;">품질심사</th>`;
+    html += `<th style="text-align:center;padding:8px;">안전감사</th>`;
+    html += `<th style="text-align:center;padding:8px;">FSDS</th>`;
+    html += `</tr></thead><tbody>`;
+
+    const divGroups = {};
+    yearData.forEach(d => {
+      const div = d.division || d.station;
+      if (!divGroups[div]) divGroups[div] = {};
+      const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+      if (d.type.startsWith('qa_')) divGroups[div].qa = result.complianceRate;
+      else if (d.type.includes('safety')) divGroups[div].safety = result.complianceRate;
+      else if (d.type === 'fsds') divGroups[div].fsds = result.complianceRate;
+    });
+
+    for (const [div, rates] of Object.entries(divGroups)) {
+      html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.2);">`;
+      html += `<td style="padding:8px;font-weight:600;color:#303A3C;">${div}</td>`;
+      for (const key of ['qa', 'safety', 'fsds']) {
+        const rate = rates[key];
+        if (rate !== undefined) {
+          const cls = rate >= 90 ? 'compliance-high' : rate >= 70 ? 'compliance-mid' : 'compliance-low';
+          html += `<td style="text-align:center;padding:8px;"><span class="compliance-badge ${cls}">${rate.toFixed(1)}%</span></td>`;
+        } else {
+          html += `<td style="text-align:center;padding:8px;color:#C0CED1;">-</td>`;
+        }
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody></table></div></div>`;
+  }
+
+  const contentDiv = document.createElement('div');
+  contentDiv.id = 'divisionAnalysisContent';
+  contentDiv.innerHTML = html;
+  container.appendChild(contentDiv);
+
+  // Render charts if data exists
+  if (yearData.length > 0) {
+    setTimeout(() => {
+      renderDivisionTrendChart(divData, year);
+      renderDivisionRiskChart(yearData);
+    }, 100);
+  }
+}
+
+function renderDivisionTrendChart(allDivData, currentYear) {
+  const ctx = document.getElementById('divTrendChart');
+  if (!ctx) return;
+
+  const years = [currentYear - 2, currentYear - 1, currentYear];
+  const divisions = [...new Set(allDivData.map(d => d.division || d.station))];
+  const colors = ['#D20015', '#6366F1', '#22C55E', '#F59E0B', '#565A5B', '#987B37', '#3B82F6'];
+
+  const datasets = divisions.map((div, i) => ({
+    label: div,
+    data: years.map(y => {
+      const records = allDivData.filter(d => (d.division || d.station) === div && d.year == y);
+      if (records.length === 0) return null;
+      let totalS = 0, totalU = 0;
+      records.forEach(r => {
+        const result = calculateBinaryScores(r.scores, getChecklist(r.type));
+        totalS += result.yesCount;
+        totalU += result.noCount;
+      });
+      return totalS + totalU > 0 ? (totalS / (totalS + totalU) * 100) : null;
+    }),
+    borderColor: colors[i % colors.length],
+    backgroundColor: colors[i % colors.length] + '20',
+    tension: 0.3,
+    spanGaps: true
+  }));
+
+  if (window._divTrendChart) window._divTrendChart.destroy();
+  window._divTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: years.map(y => y + '년'), datasets },
+    options: { responsive: true, scales: { y: { min: 0, max: 100, title: { display: true, text: '적합률 (%)' } } }, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderDivisionRiskChart(yearData) {
+  const ctx = document.getElementById('divRiskChart');
+  if (!ctx) return;
+
+  const divU = {};
+  yearData.forEach(d => {
+    const div = d.division || d.station;
+    if (!divU[div]) divU[div] = 0;
+    const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+    divU[div] += result.noCount;
+  });
+
+  const sorted = Object.entries(divU).sort((a, b) => b[1] - a[1]);
+
+  if (window._divRiskChart) window._divRiskChart.destroy();
+  window._divRiskChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => s[0]),
+      datasets: [{ label: '부적합(U) 건수', data: sorted.map(s => s[1]), backgroundColor: '#D2001540', borderColor: '#D20015', borderWidth: 1 }]
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+  });
+}
+
 
 function toggleAnalysisDetail(id) {
   // Close all other details
@@ -5559,8 +6960,15 @@ function renderHome() {
     </div>
   `;
 
-  // Recent audits (last 3 completed stations)
-  const recentStations = [...completedStations].slice(-3).reverse();
+  // Recent audits — 심사일 기준 최신순 정렬
+  const stationDates = {};
+  yearData.forEach(d => {
+    const date = d.auditDateStart || d.auditDate || '';
+    if (!stationDates[d.station] || date > stationDates[d.station]) stationDates[d.station] = date;
+  });
+  const recentStations = [...completedStations]
+    .sort((a, b) => (stationDates[b] || '').localeCompare(stationDates[a] || ''))
+    .slice(0, 3);
   let recentHtml = '';
   if (recentStations.length === 0) {
     recentHtml = '<div style="color:#9EA2A1;font-size:14px;text-align:center;padding:20px;">완료된 심사가 없습니다.</div>';
@@ -5570,9 +6978,9 @@ function renderHome() {
       const avg = stationRecords.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stationRecords.length;
       const dateDisplay = stationRecords[0]?.auditDateStart || stationRecords[0]?.auditDate || '-';
       const types = stationRecords.map(d => getTypeLabel(d.type)).join(', ');
-      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);">`;
+      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
-      recentHtml += `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
+      recentHtml += `<div style="display:flex;align-items:center;gap:6px;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span><svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
     });
   }
