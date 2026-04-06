@@ -691,7 +691,15 @@ select.apple-input {
         <p class="section-subtitle mt-1">조건을 선택하여 심사 결과를 조회합니다</p>
       </div>
       <div class="apple-card p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+          <div>
+            <label class="apple-label">심사 유형</label>
+            <select id="viewCategoryFilter" class="apple-input" onchange="toggleViewCategoryUI()">
+              <option value="all">전체</option>
+              <option value="branch">지점 심사</option>
+              <option value="division">실/본부 심사</option>
+            </select>
+          </div>
           <div>
             <label class="apple-label">연도</label>
             <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
@@ -699,7 +707,7 @@ select.apple-input {
               <option value="2026" selected>2026</option>
             </select>
           </div>
-          <div>
+          <div id="viewRegionArea">
             <label class="apple-label">지역</label>
             <select id="viewRegion" class="apple-input">
               <option value="전체">전체</option>
@@ -764,6 +772,10 @@ select.apple-input {
       <h2 class="section-title">통계</h2>
       <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
       <div id="statsYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <div id="statsSubTabBar" class="flex gap-2 mt-3">
+        <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
+      </div>
       <select id="statsYear" class="hidden"><option></option></select>
       <script>
       (function() {
@@ -790,6 +802,7 @@ select.apple-input {
       })();
       </script>
     </div>
+    <div id="branchStatsContent">
     <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
     <div class="apple-card p-6 mb-6">
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">지역별 평균</h3>
@@ -817,6 +830,8 @@ select.apple-input {
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">3개년 비교</h3>
       <div id="threeYearComparison"></div>
     </div>
+    </div><!-- end branchStatsContent -->
+    <div id="divisionStatsContent" class="hidden"></div>
   </div>
 
   <!-- Tab 4: Analysis -->
@@ -825,6 +840,10 @@ select.apple-input {
       <h2 class="section-title">분석</h2>
       <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
       <div id="analysisYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <div id="analysisSubTabBar" class="flex gap-2 mt-3">
+        <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
+      </div>
       <select id="analysisYear" class="hidden"><option></option></select>
       <script>
       (function() {
@@ -851,7 +870,8 @@ select.apple-input {
       })();
       </script>
     </div>
-    <div id="analysisContainer"></div>
+    <div id="branchAnalysisContent"><div id="analysisContainer"></div></div>
+    <div id="divisionAnalysisContent" class="hidden"></div>
   </div>
 
   <!-- Tab 5: Audit Schedule -->
@@ -3264,8 +3284,19 @@ function populateViewStationDropdown() {
   }
 }
 
+function toggleViewCategoryUI() {
+  const cat = document.getElementById('viewCategoryFilter').value;
+  const regionArea = document.getElementById('viewRegionArea');
+  if (cat === 'division') {
+    if (regionArea) regionArea.classList.add('hidden');
+  } else {
+    if (regionArea) regionArea.classList.remove('hidden');
+  }
+}
+
 function viewSearch() {
   const year = parseInt(document.getElementById('viewYear').value);
+  const catFilter = document.getElementById('viewCategoryFilter')?.value || 'all';
   const region = document.getElementById('viewRegion').value;
   const type = document.getElementById('viewType').value;
   const searchText = document.getElementById('viewStationSearch').value.trim();
@@ -3274,19 +3305,47 @@ function viewSearch() {
 
   // Build entries
   viewEntries = [];
-  const regionsToShow = region === '전체' ? Object.keys(REGIONS) : (REGIONS[region] ? [region] : []);
 
-  for (const reg of regionsToShow) {
-    for (const station of REGIONS[reg].stations) {
-      // 지점명 필터링
-      if (selectedStationFilter && station !== selectedStationFilter) continue;
-      if (searchText && !station.includes(searchText)) continue;
+  // 실/본부 데이터 추가
+  if (catFilter === 'all' || catFilter === 'division') {
+    const divRecords = allData.filter(d => d.auditCategory === 'division' && d.year == year);
+    // Group by division
+    const divNames = [...new Set(divRecords.map(d => d.division || d.station))];
+    for (const divName of divNames) {
+      if (searchText && !divName.includes(searchText)) continue;
+      const records = divRecords.filter(d => (d.division || d.station) === divName);
+      records.forEach(r => {
+        viewEntries.push({ station: divName, type: r.type, company: '', region: '실/본부', year, record: r, auditCategory: 'division' });
+      });
+    }
+    // Also add divisions without records
+    if (catFilter === 'division') {
+      for (const divName of DIVISION_NAMES) {
+        if (searchText && !divName.includes(searchText)) continue;
+        const divInfo = DIVISIONS[divName];
+        for (const checkType of divInfo.checklists) {
+          const existing = viewEntries.find(e => e.station === divName && e.type === checkType);
+          if (!existing) {
+            viewEntries.push({ station: divName, type: checkType, company: '', region: '실/본부', year, record: null, auditCategory: 'division' });
+          }
+        }
+      }
+    }
+  }
 
-      const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp'] : [type];
-      for (const t of typesToShow) {
-        const company = (t !== 'branch') ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
-        const record = findRecord(year, station, t, company || undefined);
-        viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null });
+  // 지점 데이터 추가
+  if (catFilter === 'all' || catFilter === 'branch') {
+    const regionsToShow = region === '전체' ? Object.keys(REGIONS) : (REGIONS[region] ? [region] : []);
+    for (const reg of regionsToShow) {
+      for (const station of REGIONS[reg].stations) {
+        if (selectedStationFilter && station !== selectedStationFilter) continue;
+        if (searchText && !station.includes(searchText)) continue;
+        const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp'] : [type];
+        for (const t of typesToShow) {
+          const company = (t !== 'branch') ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
+          const record = findRecord(year, station, t, company || undefined);
+          viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
+        }
       }
     }
   }
@@ -4055,27 +4114,6 @@ function navigateToInput(year, station, type) {
 // TAB 3: STATISTICS DASHBOARD
 // ============================================================================
 function renderStatsDashboard() {
-
-  // Sub-tab rendering
-  const statsArea = document.getElementById('tab-content-3') || document.querySelector('[data-tab="3"]');
-  if (!statsArea) return;
-
-  // Check if sub-tabs exist, if not create them
-  let subTabBar = document.getElementById('statsSubTabBar');
-  if (!subTabBar) {
-    const bar = document.createElement('div');
-    bar.id = 'statsSubTabBar';
-    bar.className = 'flex gap-2 mb-4 px-1';
-    bar.innerHTML = `
-      <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
-      <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
-    `;
-    // Insert at the beginning of the stats tab
-    const firstChild = statsArea.querySelector('.apple-card, div');
-    if (firstChild) statsArea.insertBefore(bar, firstChild);
-    else statsArea.prepend(bar);
-  }
-
   if (typeof statsSubTab === 'undefined') window.statsSubTab = 'branch';
   if (statsSubTab === 'division') { renderDivisionStats(); return; }
   // Continue with existing branch stats below...
@@ -4477,17 +4515,21 @@ function switchStatsSubTab(tab) {
   window.statsSubTab = tab;
   document.getElementById('statsSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
   document.getElementById('statsSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  const branchContent = document.getElementById('branchStatsContent');
+  const divContent = document.getElementById('divisionStatsContent');
+  if (tab === 'branch') {
+    if (branchContent) branchContent.classList.remove('hidden');
+    if (divContent) divContent.classList.add('hidden');
+  } else {
+    if (branchContent) branchContent.classList.add('hidden');
+    if (divContent) divContent.classList.remove('hidden');
+  }
   renderStatsDashboard();
 }
 
 function renderDivisionStats() {
   const year = parseInt(document.getElementById('statsYear')?.value || new Date().getFullYear());
   const divData = allData.filter(d => d.auditCategory === 'division' && d.year == year);
-
-  // Build stats container
-  const container = document.getElementById('tab-content-3') || document.querySelector('[data-tab="3"]');
-  // Keep sub-tab bar, replace rest
-  const subBar = document.getElementById('statsSubTabBar');
 
   let html = '';
 
@@ -4572,14 +4614,7 @@ function renderDivisionStats() {
     html += `</div>`;
   }
 
-  // Remove existing content except sub-tab bar
-  const children = Array.from(container.children);
-  children.forEach(c => { if (c.id !== 'statsSubTabBar') c.remove(); });
-
-  const contentDiv = document.createElement('div');
-  contentDiv.id = 'divisionStatsContent';
-  contentDiv.innerHTML = html;
-  container.appendChild(contentDiv);
+  document.getElementById('divisionStatsContent').innerHTML = html;
 }
 
 
@@ -4607,25 +4642,6 @@ function destroyChart(id) {
 }
 
 function renderAnalysis() {
-
-  // Sub-tab rendering for analysis
-  const analysisArea = document.getElementById('tab-content-4') || document.querySelector('[data-tab="4"]');
-  if (!analysisArea) return;
-
-  let analysisSubBar = document.getElementById('analysisSubTabBar');
-  if (!analysisSubBar) {
-    const bar = document.createElement('div');
-    bar.id = 'analysisSubTabBar';
-    bar.className = 'flex gap-2 mb-4 px-1';
-    bar.innerHTML = `
-      <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
-      <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
-    `;
-    const firstChild = analysisArea.querySelector('.apple-card, div');
-    if (firstChild) analysisArea.insertBefore(bar, firstChild);
-    else analysisArea.prepend(bar);
-  }
-
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
@@ -5228,16 +5244,21 @@ function switchAnalysisSubTab(tab) {
   window.analysisSubTab = tab;
   document.getElementById('analysisSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
   document.getElementById('analysisSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+  const branchContent = document.getElementById('branchAnalysisContent');
+  const divContent = document.getElementById('divisionAnalysisContent');
+  if (tab === 'branch') {
+    if (branchContent) branchContent.classList.remove('hidden');
+    if (divContent) divContent.classList.add('hidden');
+  } else {
+    if (branchContent) branchContent.classList.add('hidden');
+    if (divContent) divContent.classList.remove('hidden');
+  }
   renderAnalysis();
 }
 
 function renderDivisionAnalysis() {
   const year = parseInt(document.getElementById('analysisYear')?.value || new Date().getFullYear());
   const divData = allData.filter(d => d.auditCategory === 'division');
-
-  const container = document.getElementById('tab-content-4') || document.querySelector('[data-tab="4"]');
-  const children = Array.from(container.children);
-  children.forEach(c => { if (c.id !== 'analysisSubTabBar') c.remove(); });
 
   let html = '';
 
@@ -5305,10 +5326,7 @@ function renderDivisionAnalysis() {
     html += `</tbody></table></div></div>`;
   }
 
-  const contentDiv = document.createElement('div');
-  contentDiv.id = 'divisionAnalysisContent';
-  contentDiv.innerHTML = html;
-  container.appendChild(contentDiv);
+  document.getElementById('divisionAnalysisContent').innerHTML = html;
 
   // Render charts if data exists
   if (yearData.length > 0) {
