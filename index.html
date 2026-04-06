@@ -770,8 +770,8 @@ select.apple-input {
           <div id="viewStationSearchArea">
             <label class="apple-label">지점 검색</label>
             <div class="flex gap-2">
-              <input id="viewStationSearch" type="text" placeholder="지점명 입력 (예: 도쿄)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()">
-              <select id="viewStationSelect" class="apple-input" style="flex:1;">
+              <input id="viewStationSearch" type="text" placeholder="지점명 입력 (예: 도쿄)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="handleSearchInput('viewStationSearch','viewStationSelect')">
+              <select id="viewStationSelect" class="apple-input" style="flex:1;" onchange="handleSearchSelect('viewStationSelect','viewStationSearch')">
                 <option value="">전체 지점</option>
               </select>
             </div>
@@ -779,8 +779,8 @@ select.apple-input {
           <div id="viewDivisionSearchArea">
             <label class="apple-label">실/본부 검색</label>
             <div class="flex gap-2">
-              <input id="viewDivisionSearch" type="text" placeholder="실/본부명 입력 (예: 운항)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()">
-              <select id="viewDivisionSelect" class="apple-input" style="flex:1;">
+              <input id="viewDivisionSearch" type="text" placeholder="실/본부명 입력 (예: 운항)" class="apple-input" style="flex:1;" onkeydown="if(event.key==='Enter')viewSearch()" oninput="handleSearchInput('viewDivisionSearch','viewDivisionSelect')">
+              <select id="viewDivisionSelect" class="apple-input" style="flex:1;" onchange="handleSearchSelect('viewDivisionSelect','viewDivisionSearch')">
                 <option value="">전체 실/본부</option>
                 <option value="운항본부">운항본부</option>
                 <option value="정비본부">정비본부</option>
@@ -2798,6 +2798,28 @@ function switchTab(idx) {
   });
   // Bottom bar visibility
   document.getElementById('inputBottomBar').classList.toggle('hidden', idx !== 1 || !currentChecklist);
+  // Reset tab state before rendering
+  if (idx === 1) {
+    selectedAuditCategory = 'all';
+    switchAuditCategory('all');
+    setInputPhase(1);
+  }
+  if (idx === 2) {
+    selectedViewCategory = 'all';
+    switchViewCategory('all');
+    document.getElementById('viewStationSearch').value = '';
+    document.getElementById('viewDivisionSearch').value = '';
+    document.getElementById('viewStationSelect').value = '';
+    document.getElementById('viewDivisionSelect').value = '';
+    document.getElementById('viewRegion').value = '전체';
+    document.getElementById('viewType').value = '전체';
+    document.getElementById('viewStatus').value = '전체';
+    // Reset mutual exclusion disabled states
+    ['viewStationSearch','viewStationSelect','viewDivisionSearch','viewDivisionSelect'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.disabled = false; el.style.opacity = '1'; }
+    });
+  }
   // Render tab-specific content
   if (idx === 0) renderHome();
   if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
@@ -3485,6 +3507,12 @@ function switchViewCategory(cat) {
   const stationSearchArea = document.getElementById('viewStationSearchArea');
   const divisionSearchArea = document.getElementById('viewDivisionSearchArea');
 
+  // Reset mutual exclusion disabled states
+  ['viewStationSearch','viewStationSelect','viewDivisionSearch','viewDivisionSelect'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = false; el.style.opacity = '1'; }
+  });
+
   // 모든 버튼 비활성 스타일로 초기화
   [allBtn, branchBtn, divBtn].forEach(btn => {
     if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
@@ -3511,6 +3539,32 @@ function switchViewCategory(cat) {
     if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
   }
   renderViewRecentStations();
+}
+
+function handleSearchInput(textId, selectId) {
+  const text = document.getElementById(textId);
+  const select = document.getElementById(selectId);
+  if (text.value.trim()) {
+    select.value = '';
+    select.disabled = true;
+    select.style.opacity = '0.5';
+  } else {
+    select.disabled = false;
+    select.style.opacity = '1';
+  }
+}
+
+function handleSearchSelect(selectId, textId) {
+  const select = document.getElementById(selectId);
+  const text = document.getElementById(textId);
+  if (select.value) {
+    text.value = '';
+    text.disabled = true;
+    text.style.opacity = '0.5';
+  } else {
+    text.disabled = false;
+    text.style.opacity = '1';
+  }
 }
 
 function viewSearch() {
@@ -4073,6 +4127,9 @@ function showTypeDetail(gIdx, type) {
       html += `<span style="color:#565A5B;flex:1;"><span style="font-weight:600;color:#303A3C;margin-right:6px;">${item.id}</span>${item.text}</span>`;
       html += `<span style="font-weight:600;color:${scoreColor};margin-left:12px;flex-shrink:0;min-width:32px;text-align:center;">${scoreText}</span>`;
       html += `</div>`;
+      if (entry.record.remarks && entry.record.remarks[item.id]) {
+        html += `<div style="margin-left:44px;font-size:12px;color:#6366F1;margin-top:2px;">▶ 비고: ${entry.record.remarks[item.id]}</div>`;
+      }
     }
     html += `</div>`;
   }
@@ -4258,17 +4315,27 @@ function getViewGroups() {
   const groupMap = {};
   viewEntries.forEach(entry => {
     if (!groupMap[entry.station]) {
-      groupMap[entry.station] = { station: entry.station, region: entry.region, year: entry.year, types: {} };
+      groupMap[entry.station] = { station: entry.station, region: entry.region, year: entry.year, types: {}, auditCategory: entry.auditCategory || 'branch' };
     }
     groupMap[entry.station].types[entry.type] = entry;
+    if (entry.auditCategory === 'division') groupMap[entry.station].auditCategory = 'division';
   });
-  return Object.values(groupMap).sort((a, b) => {
-    const aHas = Object.values(a.types).some(e => e.record);
-    const bHas = Object.values(b.types).some(e => e.record);
-    if (aHas && !bHas) return -1;
-    if (!aHas && bHas) return 1;
-    return a.station.localeCompare(b.station, 'ko');
-  });
+  const allGroups = Object.values(groupMap);
+  const branchGroups = allGroups.filter(g => g.auditCategory !== 'division');
+  const divisionGroups = allGroups.filter(g => g.auditCategory === 'division');
+  function sortGroups(groups) {
+    groups.sort((a, b) => {
+      const aHas = Object.values(a.types).some(e => e.record);
+      const bHas = Object.values(b.types).some(e => e.record);
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      return a.station.localeCompare(b.station, 'ko');
+    });
+    return groups;
+  }
+  sortGroups(branchGroups);
+  sortGroups(divisionGroups);
+  return [...branchGroups, ...divisionGroups];
 }
 
 // Legacy wrapper for tab switching
@@ -7766,7 +7833,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     branchStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="switchViewCategory('branch');document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
       html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
       html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
