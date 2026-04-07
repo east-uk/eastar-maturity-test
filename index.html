@@ -3691,7 +3691,7 @@ function renderChecklist() {
     html += `<span style="font-size:12px;color:#9EA2A1;font-weight:400;">${catData.maxPoints ? "최대 " + catData.maxPoints + "점" : catData.items.length + "항목"}</span>`;
     html += `</div>`;
     html += `<div class="flex items-center gap-3">`;
-    if (scoring === 'binary') {
+    if (scoring === 'binary' && /^[6-9]\./.test(catName)) {
       html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
       html += `<input type="checkbox" id="catNaAll_${catIdx}" onchange="toggleCategoryNA(${catIdx}, this.checked, 'input')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
       html += `N/A 전체</label>`;
@@ -4808,9 +4808,11 @@ function startGroupTypeEdit(gIdx, type) {
     if (isBinaryEdit) {
       html += `<div class="px-5 py-3 flex items-center justify-between" style="background:#ffffff;">`;
       html += `<div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span></div>`;
-      html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
-      html += `<input type="checkbox" onchange="toggleCategoryNA(${editCatIdx}, this.checked, 'edit')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
-      html += `N/A 전체</label>`;
+      if (/^[6-9]\./.test(catName)) {
+        html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
+        html += `<input type="checkbox" onchange="toggleCategoryNA(${editCatIdx}, this.checked, 'edit')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
+        html += `N/A 전체</label>`;
+      }
       html += `</div>`;
     } else {
       html += `<div class="px-5 py-3" style="background:#ffffff;"><div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span><span style="font-size:12px;color:#9EA2A1;margin-left:8px;">최대 ${catData.maxPoints}점</span></div></div>`;
