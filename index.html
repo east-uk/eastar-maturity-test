@@ -5085,11 +5085,11 @@ function renderStatsDashboard() {
   // 연도별 전체 평균 비교 카드
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division');
+    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
     let avg = 0, count = 0;
     yData.forEach(d => {
-      avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-      count++;
+      const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+      if (!isNaN(a)) { avg += a; count++; }
     });
     const yearAvg = count > 0 ? (avg / count).toFixed(2) : '-';
     const stations = new Set(yData.map(d => d.station)).size;
@@ -5104,7 +5104,7 @@ function renderStatsDashboard() {
 
   // 연도별 지점 비교 테이블
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division').forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0).forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -5117,9 +5117,11 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
       if (stData.length === 0) return null;
-      return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
+      const sum = stData.reduce((s, d) => { const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage; return s + (isNaN(a) ? 0 : a); }, 0);
+      const avg = sum / stData.length;
+      return isNaN(avg) ? null : avg;
     });
 
     threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
