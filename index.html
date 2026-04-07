@@ -7961,6 +7961,18 @@ function renderInputPendingStations() {
   const doneMap = { all: '모든 점검표가 입력 완료되었습니다.', branch: '모든 지점의 점검표가 입력 완료되었습니다.', division: '모든 실/본부의 점검표가 입력 완료되었습니다.' };
   const colLabel = cat === 'division' ? '실/본부' : '지점';
 
+  // 해당 연도+카테고리에 일정 자체가 없는 경우와 모두 완료된 경우 구분
+  const yearSchedules = scheduleData.filter(s => s.year === year).filter(s => {
+    const isDiv = !!DIVISIONS[s.station];
+    if (cat === 'branch') return !isDiv;
+    if (cat === 'division') return isDiv;
+    return true;
+  });
+
+  if (pendingStations.length === 0 && yearSchedules.length === 0) {
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">해당 연도의 심사 일정이 등록되지 않았습니다.</div></div>';
+    return;
+  }
   if (pendingStations.length === 0) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">' + doneMap[cat] + '</div></div>';
     return;
