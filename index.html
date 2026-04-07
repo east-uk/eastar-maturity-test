@@ -2850,14 +2850,14 @@ function loadAllData() {
     const stored = SafeStorage.get(STORAGE_KEY, null);
     if (stored) {
       allData = stored;
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
       // v13.1.0: 안전감사 ID 마이그레이션
       let migrated = false;
       allData = allData.map(d => { const before = d._safetyIdMigrated; d = migrateSafetyScoreIds(d); if (!before && d._safetyIdMigrated) migrated = true; return d; });
       if (migrated) saveAllData();
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
+      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
       saveAllData();
     }
   } catch (e) {
@@ -3796,7 +3796,7 @@ function viewSearch() {
       for (const station of REGIONS[reg].stations) {
         if (selectedStationFilter && station !== selectedStationFilter) continue;
         if (searchText && !station.includes(searchText)) continue;
-        const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp'] : [type];
+        const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp', 'safety_branch'] : [type];
         for (const t of typesToShow) {
           const company = (t !== 'branch') ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
@@ -3984,11 +3984,11 @@ function renderScoreViewTable() {
       mhtml += `</div>`;
       // 점수 미니 바
       mhtml += `<div class="flex justify-between" style="gap:8px;">`;
-      const typeKeys = isDivision ? Object.keys(group.types) : ['branch', 'pax', 'ramp'];
+      const typeKeys = isDivision ? Object.keys(group.types) : ['branch', 'pax', 'ramp', 'safety_branch'];
       typeKeys.forEach(type => {
         const entry = group.types[type];
         const reg = CHECKLIST_REGISTRY[type];
-        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프');
+        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (type === 'branch' ? '지점' : type === 'pax' ? '여객' : type === 'ramp' ? '램프' : '안전감사');
         if (entry && entry.record) {
           const method = getScoringMethod(type);
           if (method === 'binary') {
@@ -4039,6 +4039,7 @@ function renderScoreViewTable() {
     html += '<th style="text-align:center;">지점</th>';
     html += '<th style="text-align:center;">여객</th>';
     html += '<th style="text-align:center;">램프</th>';
+    html += '<th style="text-align:center;">안전감사</th>';
     html += '<th style="text-align:center;">상태</th>';
     html += '</tr></thead><tbody>';
     branchGroups.forEach((group, i) => {
@@ -4065,9 +4066,10 @@ function renderScoreViewTable() {
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
+      html += `<td style="text-align:center;">${makeTypeBadge(group.types['safety_branch'], 'safety_branch')}</td>`;
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="8" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -6370,8 +6372,8 @@ function getScheduleStatusBadgeStyle(status) {
 function getExpectedTypesForStation(station) {
   // 본부/실인 경우 해당 점검표 유형 반환
   if (DIVISIONS[station]) return DIVISIONS[station].checklists;
-  // 지점인 경우 기본 3종
-  return ['branch', 'pax', 'ramp'];
+  // 지점인 경우 기본 4종 (품질심사 3종 + 안전감사)
+  return ['branch', 'pax', 'ramp', 'safety_branch'];
 }
 
 function calcScheduleStatus(item) {
