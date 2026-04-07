@@ -4794,8 +4794,8 @@ function renderStatsDashboard() {
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
   const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
-  // scores가 유효한 데이터만 통계 계산에 사용
-  const yearDataValid = yearData.filter(d => d.scores && Object.keys(d.scores).length > 0);
+  // scores가 유효하고 체크리스트와 매치되는 데이터만 통계 계산에 사용
+  const yearDataValid = yearData.filter(d => d.scores && Object.keys(d.scores).length > 0 && calculateScores(d.scores, getChecklist(d.type)).totalItems > 0);
 
   // Calculate averages
   let totalAvg = 0, totalCount = 0;
@@ -5088,8 +5088,8 @@ function renderStatsDashboard() {
     const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
     let avg = 0, count = 0;
     yData.forEach(d => {
-      const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-      if (!isNaN(a)) { avg += a; count++; }
+      const result = calculateScores(d.scores, getChecklist(d.type));
+      if (result.totalItems > 0 && !isNaN(result.overallAverage)) { avg += result.overallAverage; count++; }
     });
     const yearAvg = count > 0 ? (avg / count).toFixed(2) : '-';
     const stations = new Set(yData.map(d => d.station)).size;
@@ -5119,9 +5119,9 @@ function renderStatsDashboard() {
     const yearAvgs = years.map(y => {
       const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
       if (stData.length === 0) return null;
-      const sum = stData.reduce((s, d) => { const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage; return s + (isNaN(a) ? 0 : a); }, 0);
-      const avg = sum / stData.length;
-      return isNaN(avg) ? null : avg;
+      let sum = 0, validCount = 0;
+      stData.forEach(d => { const r = calculateScores(d.scores, getChecklist(d.type)); if (r.totalItems > 0 && !isNaN(r.overallAverage)) { sum += r.overallAverage; validCount++; } });
+      return validCount > 0 ? sum / validCount : null;
     });
 
     threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
@@ -5358,8 +5358,9 @@ function toggleWeakDetail(id, header) {
 function calcAvgForTypeRegion(data, type) {
   const filtered = data.filter(d => d.type === type && d.scores && Object.keys(d.scores).length > 0);
   if (filtered.length === 0) return 0;
-  const avg = filtered.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / filtered.length;
-  return isNaN(avg) ? 0 : avg;
+  let sum = 0, cnt = 0;
+  filtered.forEach(d => { const r = calculateScores(d.scores, getChecklist(d.type)); if (r.totalItems > 0 && !isNaN(r.overallAverage)) { sum += r.overallAverage; cnt++; } });
+  return cnt > 0 ? sum / cnt : 0;
 }
 
 // ============================================================================
@@ -5414,7 +5415,7 @@ function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const hasValidScores = d => d.scores && typeof d.scores === 'object' && Object.keys(d.scores).length > 0;
+  const hasValidScores = d => d.scores && typeof d.scores === 'object' && Object.keys(d.scores).length > 0 && calculateScores(d.scores, getChecklist(d.type)).totalItems > 0;
   const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division' && hasValidScores(d));
   const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division' && hasValidScores(d));
   const container = document.getElementById('analysisContainer');
