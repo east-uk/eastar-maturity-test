@@ -2603,6 +2603,43 @@ function saveSchedule() {
   firebaseSaveSchedule();
 }
 
+// allData에 점수가 있지만 scheduleData에 일정이 없는 연도/지점을 자동 생성
+function syncScheduleFromData() {
+  const existingKeys = new Set(scheduleData.map(s => s.year + '_' + s.station));
+  const stationYearMap = {};
+  allData.forEach(d => {
+    if (!d.station || !d.year) return;
+    const isDivType = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds'].includes(d.type);
+    if (isDivType) return; // 실/본부 심사는 별도 관리
+    const key = d.year + '_' + d.station;
+    if (existingKeys.has(key)) return;
+    if (!stationYearMap[key]) stationYearMap[key] = { year: d.year, station: d.station, region: d.region || '', dates: [], auditors: [] };
+    if (d.auditDateStart) stationYearMap[key].dates.push(d.auditDateStart);
+    if (d.auditDate) stationYearMap[key].dates.push(d.auditDate);
+    if (d.auditor) stationYearMap[key].auditors.push(d.auditor);
+  });
+  let added = false;
+  let idCounter = Date.now();
+  Object.values(stationYearMap).forEach(info => {
+    const dateStr = info.dates.find(d => d && d.length >= 7) || '';
+    const month = dateStr ? parseInt(dateStr.substring(5, 7)) || 1 : 1;
+    scheduleData.push({
+      id: 'SA' + String(idCounter++),
+      year: info.year,
+      month: month,
+      station: info.station,
+      displayName: info.station,
+      auditors: [...new Set(info.auditors)].join(', '),
+      dateStart: info.dates.find(d => d && d.length === 10) || '',
+      dateEnd: '',
+      status: 'completed',
+      note: ''
+    });
+    added = true;
+  });
+  if (added) saveSchedule();
+}
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -8138,6 +8175,7 @@ function init() {
   loadAllData();
   loadAuditors();
   loadSchedule();
+  syncScheduleFromData();
   populateStationDropdown();
   populateViewStationDropdown();
   switchTab(0);
