@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 품질관리시스템 포털 v13</title>
+<title>이스타항공 품질관리시스템 포털 v14</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1077,7 +1077,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v13 &middot; 2026
+  안전기획팀 &middot; v14 &middot; 2026
 </footer>
 
 <script>
@@ -2173,6 +2173,19 @@ const CHECKLIST_REGISTRY = {
   fsds: { name:"비행안전문서시스템", checklist: CHECKLIST_FSDS, scoring:"binary", category:"division" }
 };
 
+// ============================================================================
+// 전역 타입 상수 (CHECKLIST_REGISTRY에서 자동 추출 — 하드코딩 방지)
+// ============================================================================
+const GRADE_BRANCH_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'branch' && r.scoring === 'grade').map(([k]) => k);
+const BINARY_BRANCH_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'branch' && r.scoring === 'binary').map(([k]) => k);
+const ALL_BRANCH_TYPES = [...GRADE_BRANCH_TYPES, ...BINARY_BRANCH_TYPES];
+const DIVISION_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'division').map(([k]) => k);
+const TYPES_WITH_COMPANY = ['pax', 'ramp'];
+const TYPE_SHORT_LABELS = { branch:'지점', pax:'여객', ramp:'램프', safety_branch:'안전감사' };
+
 let selectedAuditCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedViewCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedDivision = '';
@@ -2808,14 +2821,14 @@ const SafeStorage = {
     }
   },
   remove(key) {
-    try { localStorage.removeItem(key); } catch(e) {}
+    try { localStorage.removeItem(key); } catch(e) { console.warn('Storage remove failed:', key, e); }
   },
 };
 
 // ============================================================================
 // DATA PERSISTENCE
 // ============================================================================
-// v13.1.0: 안전감사 점검표 ID 마이그레이션 (중복 ID → 유니크 ID)
+// v14.1.0: 안전감사 점검표 ID 마이그레이션 (중복 ID → 유니크 ID)
 function migrateSafetyScoreIds(record) {
   if (!['safety_branch', 'safety_division'].includes(record.type)) return record;
   if (record._safetyIdMigrated) return record;
@@ -2845,23 +2858,37 @@ function migrateSafetyScoreIds(record) {
   return record;
 }
 
+// v14.0.0: 레코드 정규화 — CHECKLIST_REGISTRY 기반으로 auditCategory/scoringMethod 설정
+function normalizeRecord(d) {
+  const reg = CHECKLIST_REGISTRY[d.type];
+  if (reg) {
+    d.auditCategory = reg.category;
+    d.scoringMethod = reg.scoring;
+  } else {
+    if (!d.auditCategory) d.auditCategory = 'branch';
+    if (!d.scoringMethod) d.scoringMethod = 'grade';
+  }
+  if (!d.remarks) d.remarks = {};
+  d = migrateSafetyScoreIds(d);
+  return d;
+}
+
 function loadAllData() {
   try {
     const stored = SafeStorage.get(STORAGE_KEY, null);
     if (stored) {
       allData = stored;
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
-      // v13.1.0: 안전감사 ID 마이그레이션
-      let migrated = false;
-      allData = allData.map(d => { const before = d._safetyIdMigrated; d = migrateSafetyScoreIds(d); if (!before && d._safetyIdMigrated) migrated = true; return d; });
-      if (migrated) saveAllData();
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
-      saveAllData();
     }
+    allData = allData.map(normalizeRecord);
+    if (!stored) saveAllData();
+    // 마이그레이션된 데이터 저장
+    if (allData.some(d => d._safetyIdMigrated && !stored?._migrationSaved)) saveAllData();
   } catch (e) {
+    console.warn('Data load failed, using defaults:', e);
     allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
+    allData = allData.map(normalizeRecord);
     saveAllData();
   }
   // Load GAS URL
@@ -3531,7 +3558,7 @@ function saveAssessment() {
   const auditDateStart = document.getElementById('inputDateStart').value;
   const auditDateEnd = document.getElementById('inputDateEnd').value;
   const auditDate = auditDateStart ? auditDateStart.slice(0, 7) : ''; // 통계용 년-월
-  const company = (type !== 'branch') ? (HANDLING_COMPANIES[type]?.[station] || '') : undefined;
+  const company = TYPES_WITH_COMPANY.includes(type) ? (HANDLING_COMPANIES[type]?.[station] || '') : undefined;
   const region = getRegionForStation(station);
 
   // 전체 항목 입력 여부 검증
@@ -3796,9 +3823,9 @@ function viewSearch() {
       for (const station of REGIONS[reg].stations) {
         if (selectedStationFilter && station !== selectedStationFilter) continue;
         if (searchText && !station.includes(searchText)) continue;
-        const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp', 'safety_branch'] : [type];
+        const typesToShow = type === '전체' ? ALL_BRANCH_TYPES : [type];
         for (const t of typesToShow) {
-          const company = (t !== 'branch') ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
+          const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
           viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
         }
@@ -3984,11 +4011,11 @@ function renderScoreViewTable() {
       mhtml += `</div>`;
       // 점수 미니 바
       mhtml += `<div class="flex justify-between" style="gap:8px;">`;
-      const typeKeys = isDivision ? Object.keys(group.types) : ['branch', 'pax', 'ramp', 'safety_branch'];
+      const typeKeys = isDivision ? Object.keys(group.types) : ALL_BRANCH_TYPES;
       typeKeys.forEach(type => {
         const entry = group.types[type];
         const reg = CHECKLIST_REGISTRY[type];
-        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (type === 'branch' ? '지점' : type === 'pax' ? '여객' : type === 'ramp' ? '램프' : '안전감사');
+        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (TYPE_SHORT_LABELS[type] || type);
         if (entry && entry.record) {
           const method = getScoringMethod(type);
           if (method === 'binary') {
@@ -5448,7 +5475,7 @@ function renderAnalysis() {
 
   // 3. Type comparison
   const typeAvgs = {};
-  ['branch', 'pax', 'ramp'].forEach(type => {
+  GRADE_BRANCH_TYPES.forEach(type => {
     const typeData = yearData.filter(d => d.type === type);
     if (typeData.length > 0) {
       typeAvgs[type] = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
@@ -6373,7 +6400,7 @@ function getExpectedTypesForStation(station) {
   // 본부/실인 경우 해당 점검표 유형 반환
   if (DIVISIONS[station]) return DIVISIONS[station].checklists;
   // 지점인 경우 기본 4종 (품질심사 3종 + 안전감사)
-  return ['branch', 'pax', 'ramp', 'safety_branch'];
+  return ALL_BRANCH_TYPES;
 }
 
 function calcScheduleStatus(item) {
@@ -7162,17 +7189,23 @@ function exportAllExcel() {
     try {
       const wb = XLSX.utils.book_new();
 
-      // Sheet 1: Summary
-      const summaryRows = [['지점', '구분', '협력사', '지역', '연도', '심사일', '심사원', '평균', '달성률(%)']];
+      // Sheet 1: Summary (grade → 평균/달성률, binary → 적합률)
+      const summaryRows = [['지점/부문', '구분', '협력사', '지역', '연도', '심사일', '심사원', '평균/적합률', '달성률(%)']];
       allData.forEach(d => {
-        const result = calculateScores(d.scores, getChecklist(d.type));
-        summaryRows.push([d.station, getTypeLabel(d.type), d.company || '', d.region, d.year, d.auditDate, d.auditor || '', result.overallAverage.toFixed(2), result.achievementRate.toFixed(1)]);
+        const method = getScoringMethod(d.type);
+        if (method === 'binary') {
+          const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+          summaryRows.push([d.station || d.division, getTypeLabel(d.type), d.company || '', d.region || '실/본부', d.year, d.auditDate, d.auditor || '', result.complianceRate.toFixed(1) + '%', '-']);
+        } else {
+          const result = calculateScores(d.scores, getChecklist(d.type));
+          summaryRows.push([d.station, getTypeLabel(d.type), d.company || '', d.region, d.year, d.auditDate, d.auditor || '', result.overallAverage.toFixed(2), result.achievementRate.toFixed(1)]);
+        }
       });
       const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
       XLSX.utils.book_append_sheet(wb, ws1, '종합현황');
 
-      // Sheet per type
-      ['branch', 'pax', 'ramp'].forEach(type => {
+      // Sheet per type (grade 방식)
+      GRADE_BRANCH_TYPES.forEach(type => {
         const checklist = getChecklist(type);
         const items = [];
         for (const [, catData] of Object.entries(checklist)) {
@@ -7192,7 +7225,31 @@ function exportAllExcel() {
         XLSX.utils.book_append_sheet(wb, ws, getTypeLabel(type));
       });
 
-      XLSX.writeFile(wb, `이스타항공_성숙도점검_전체_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
+      // Sheet per type (binary 방식 — 안전감사)
+      BINARY_BRANCH_TYPES.concat(DIVISION_TYPES).forEach(type => {
+        const typeData = allData.filter(d => d.type === type);
+        if (typeData.length === 0) return;
+        const checklist = getChecklist(type);
+        const items = [];
+        for (const [, catData] of Object.entries(checklist)) {
+          for (const item of catData.items) items.push(item);
+        }
+        const header = ['지점/부문', '연도', '심사일', ...items.map(it => it.id), '적합률(%)'];
+        const rows = [header];
+        typeData.forEach(d => {
+          const result = calculateBinaryScores(d.scores, checklist);
+          const row = [d.station || d.division, d.year, d.auditDate, ...items.map(it => {
+            const s = d.scores[it.id];
+            return s !== undefined ? s : '';
+          }), result.complianceRate.toFixed(1)];
+          rows.push(row);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const label = getTypeLabel(type);
+        XLSX.utils.book_append_sheet(wb, ws, label.substring(0, 31));
+      });
+
+      XLSX.writeFile(wb, `이스타항공_품질심사_전체_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
       showToast('엑셀 파일이 다운로드되었습니다.', 'success');
     } catch (e) {
       showToast('엑셀 생성 중 오류가 발생했습니다.', 'error');
@@ -7268,7 +7325,7 @@ function importJSON(event) {
         return;
       }
       if (!confirm(`${imported.length}건의 데이터를 가져옵니다. 기존 데이터가 교체됩니다. 계속하시겠습니까?`)) return;
-      allData = imported;
+      allData = imported.map(normalizeRecord);
       saveAllData();
       showToast(`${imported.length}건의 데이터를 가져왔습니다.`, 'success');
     } catch (err) {
@@ -7563,15 +7620,14 @@ function firebaseSaveAllData() {
   if (!firebaseDb) return Promise.resolve();
   try {
     const assessmentObj = {};
-    allData.forEach((d, i) => {
-      let key = `${d.year}_${d.station}_${d.type}`;
-      if (d.company) key += `_${d.company}`;
-      key = key.replace(/[.#$/\[\]]/g, '_');
+    allData.forEach(d => {
+      const key = makeKey(d.year, d.station, d.type, d.company).replace(/[.#$/\[\]]/g, '_');
       const copy = { ...d, scores: encodeScoresForFirebase(d.scores || {}) };
+      if (d.remarks) copy.remarks = encodeScoresForFirebase(d.remarks);
       assessmentObj[key] = copy;
     });
     return firebaseDb.ref('assessments').set(assessmentObj);
-  } catch(e) { console.warn('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
+  } catch(e) { console.error('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
 function firebaseSaveAuditors() {
