@@ -1057,7 +1057,13 @@ select.apple-input {
     <div class="apple-card p-6 mb-5">
       <div class="flex items-center justify-between mb-4">
         <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;">심사원 관리</h3>
-        <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
+        <div class="flex gap-2">
+          <label class="pill-btn pill-btn-outline cursor-pointer" style="font-size:13px;padding:6px 16px;border-color:#303A3C;color:#303A3C;">
+            엑셀 업로드
+            <input type="file" accept=".xls,.xlsx" onchange="importAuditorExcel(event)" class="hidden">
+          </label>
+          <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
+        </div>
       </div>
       <!-- Add/Edit form (hidden) -->
       <div id="auditorFormArea" class="hidden apple-card-elevated p-5 mb-4">
@@ -7708,6 +7714,89 @@ function deleteAuditor(idx) {
   showToast('심사원이 삭제되었습니다.', 'info');
 }
 
+// 엑셀 심사원 데이터 업로드 (ESMS Auditor 관리 양식)
+function importAuditorExcel(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      // Excel serial number → YYYY-MM-DD 변환
+      function excelDate(v) {
+        if (!v || v === '') return '';
+        const n = parseFloat(v);
+        if (isNaN(n) || n < 1) return String(v);
+        const d = new Date((n - 25569) * 86400000);
+        return d.toISOString().slice(0, 10);
+      }
+
+      // 헤더 행 건너뛰기 (1행: 컬럼명, 2행: 하위 헤더)
+      let startRow = 2;
+      // 자동 감지: 첫 번째 데이터 행이 사번(숫자) 컬럼을 가진 행
+      for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        if (rows[i] && rows[i][3] && /^\d{5,}$/.test(String(rows[i][3]).trim())) {
+          startRow = i;
+          break;
+        }
+      }
+
+      const imported = [];
+      let updated = 0, added = 0;
+      for (let i = startRow; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[2] || !r[3]) continue; // 이름, 사번 필수
+        const empNo = String(r[3]).trim();
+        const name = String(r[2]).trim();
+        if (!empNo || !name) continue;
+
+        const record = {
+          team: String(r[0] || '').trim(),
+          division: String(r[1] || '').trim(),
+          name,
+          empNo,
+          role: String(r[4] || '').trim(),
+          appointDate: excelDate(r[5]),
+          initialTraining: excelDate(r[6]),
+          refreshTraining: excelDate(r[7]),
+          trainingExpiry: excelDate(r[8])
+        };
+
+        // 기존 사번과 중복 확인 → 업데이트
+        const existIdx = auditorList.findIndex(a => a.empNo === empNo);
+        if (existIdx >= 0) {
+          record.id = auditorList[existIdx].id;
+          auditorList[existIdx] = record;
+          updated++;
+        } else {
+          record.id = 'A' + String(Date.now()).slice(-6) + String(i);
+          auditorList.push(record);
+          added++;
+        }
+        imported.push(record);
+      }
+
+      if (imported.length === 0) {
+        showToast('유효한 심사원 데이터가 없습니다. 엑셀 양식을 확인해주세요.', 'warning');
+        return;
+      }
+
+      saveAuditors();
+      renderAuditorList();
+      showToast(`심사원 ${imported.length}명 처리 완료 (신규 ${added}명, 업데이트 ${updated}명)`, 'success');
+    } catch(e) {
+      console.error('Auditor import error:', e);
+      showToast('엑셀 파일 읽기 실패. 양식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
 // ============================================================================
 // AUDITOR PICKER (for input/edit forms)
 // ============================================================================
@@ -8540,7 +8629,7 @@ Object.assign(window, {
   exportJSON, importJSON, resetAllData,
   showAddAuditorForm, hideAuditorForm, editAuditor,
   saveAuditorForm, deleteAuditor,
-  renderAuditorPicker, addAuditorTag, removeAuditorTag,
+  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel,
   // Firebase
   uploadAllToFirebase, downloadFromFirebase,
   // Auth
