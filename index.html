@@ -829,7 +829,7 @@ select.apple-input {
         const y = new Date().getFullYear();
         const container = document.getElementById('statsYearSegment');
         const sel = document.getElementById('statsYear');
-        for (let i = y - 2; i <= y; i++) {
+        for (let i = y - 2; i <= y + 1; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
@@ -897,7 +897,7 @@ select.apple-input {
         const y = new Date().getFullYear();
         const container = document.getElementById('analysisYearSegment');
         const sel = document.getElementById('analysisYear');
-        for (let i = y - 2; i <= y; i++) {
+        for (let i = y - 2; i <= y + 1; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
@@ -6415,7 +6415,7 @@ function renderSchedule() {
   html += `<h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p>';
   html += '<div class="flex gap-1 mt-3" style="background:#f5f5f7;border-radius:980px;padding:3px;display:inline-flex;">';
-  [currentYear - 1, currentYear, currentYear + 1].forEach(y => {
+  [currentYear - 2, currentYear - 1, currentYear, currentYear + 1].forEach(y => {
     const isActive = y === scheduleYear;
     html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;background:${isActive?'#D20015':'transparent'};color:${isActive?'#fff':'#565A5B'};">${y}년</button>`;
   });
@@ -6982,8 +6982,9 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">연도</label>';
   html += '<select id="newScheduleYear" class="apple-input">';
-  [2025, 2026, 2027].forEach(y => {
-    html += '<option value="' + y + '"' + (y === 2026 ? ' selected' : '') + '>' + y + '년</option>';
+  const formYear = new Date().getFullYear();
+  [formYear - 2, formYear - 1, formYear, formYear + 1].forEach(y => {
+    html += '<option value="' + y + '"' + (y === formYear ? ' selected' : '') + '>' + y + '년</option>';
   });
   html += '</select>';
   html += '</div>';
