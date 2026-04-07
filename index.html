@@ -6484,10 +6484,10 @@ function renderSchedule() {
   html += '<div>';
   html += `<h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p>';
-  html += '<div class="flex gap-1 mt-3" style="background:#f0f0f0;border-radius:10px;padding:3px;display:inline-flex;">';
+  html += '<div class="flex gap-1 mt-3" style="background:#f5f5f7;border-radius:980px;padding:3px;display:inline-flex;">';
   [currentYear - 1, currentYear, currentYear + 1].forEach(y => {
     const isActive = y === scheduleYear;
-    html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="padding:6px 16px;border-radius:8px;font-size:13px;font-weight:${isActive?'600':'400'};border:none;cursor:pointer;background:${isActive?'#fff':'transparent'};color:${isActive?'#303A3C':'#9EA2A1'};box-shadow:${isActive?'0 1px 3px rgba(0,0,0,0.1)':'none'};transition:all 0.15s;">${y}년</button>`;
+    html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;background:${isActive?'#D20015':'transparent'};color:${isActive?'#fff':'#565A5B'};">${y}년</button>`;
   });
   html += '</div></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
@@ -6931,6 +6931,15 @@ function saveNewSchedule() {
   const auditCycle = cycleSel ? cycleSel.value : 'yearly';
   const exceptionReason = document.getElementById('newScheduleExceptionReason')?.value || '';
 
+  // 같은 연도 같은 지점 중복 등록 방지
+  const duplicate = scheduleData.find(s => s.year === year && s.station === station);
+  if (duplicate) {
+    if (!confirm(`${station}은(는) ${year}년 ${duplicate.month}월에 이미 일정이 등록되어 있습니다.\n기존 일정을 덮어쓰시겠습니까?`)) return;
+    // 기존 일정 삭제 후 새로 등록
+    const dupIdx = scheduleData.findIndex(s => s.id === duplicate.id);
+    if (dupIdx >= 0) scheduleData.splice(dupIdx, 1);
+  }
+
   const newId = 'S' + String(Date.now()).slice(-8);
 
   scheduleData.push({
@@ -6941,7 +6950,7 @@ function saveNewSchedule() {
   });
 
   saveSchedule();
-  showToast(`${station} 심사 일정이 등록되었습니다.`, 'success');
+  showToast(`${station} ${year}년 심사 일정이 등록되었습니다.`, 'success');
   setSchedulePhase(1);
 }
 
