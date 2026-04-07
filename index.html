@@ -3691,6 +3691,11 @@ function renderChecklist() {
     html += `<span style="font-size:12px;color:#9EA2A1;font-weight:400;">${catData.maxPoints ? "최대 " + catData.maxPoints + "점" : catData.items.length + "항목"}</span>`;
     html += `</div>`;
     html += `<div class="flex items-center gap-3">`;
+    if (scoring === 'binary') {
+      html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
+      html += `<input type="checkbox" id="catNaAll_${catIdx}" onchange="toggleCategoryNA(${catIdx}, this.checked, 'input')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
+      html += `N/A 전체</label>`;
+    }
     html += `<span style="font-size:13px;font-weight:600;color:#D20015;" id="catScore_${catIdx}">${catData.maxPoints ? "0 / " + catData.maxPoints : "0 / " + catData.items.length}</span>`;
     html += `<svg class="arrow w-4 h-4 transform rotate-180" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
     html += `</div></div>`;
@@ -3727,6 +3732,48 @@ function toggleAccordion(id, header) {
   header.classList.toggle('open');
 }
 
+
+// 카테고리 내 모든 항목을 N/A로 전체 체크/해제
+function toggleCategoryNA(catIdx, checked, mode) {
+  const scores = mode === 'input' ? currentScores : editingScores;
+  const checklist = mode === 'input' ? currentChecklist : getChecklist(editingType || selectedType);
+  if (!checklist) return;
+  const catEntries = Object.entries(checklist);
+  if (catIdx >= catEntries.length) return;
+  const [catName, catData] = catEntries[catIdx];
+
+  if (checked) {
+    // 전체 N/A
+    catData.items.forEach(item => { scores[item.id] = 'NA'; });
+  } else {
+    // N/A 해제 (값 삭제)
+    catData.items.forEach(item => { if (scores[item.id] === 'NA' || scores[item.id] === 'N/A') delete scores[item.id]; });
+  }
+  unsavedChanges = true;
+
+  // UI 업데이트: 해당 카테고리의 모든 버튼 스타일 갱신
+  const catEl = document.getElementById(`cat_${catIdx}`) || document.querySelector(`[data-edit-cat="${catIdx}"]`);
+  if (catEl) {
+    catEl.querySelectorAll('.checklist-item-row').forEach(row => {
+      row.querySelectorAll('.score-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.style.background = '';
+        b.style.color = '';
+        b.style.borderColor = '';
+      });
+      if (checked) {
+        // N/A 버튼 활성화
+        const naBtn = row.querySelector('.na-btn');
+        if (naBtn) { naBtn.classList.add('selected'); naBtn.style.background = '#565A5B'; naBtn.style.color = '#fff'; naBtn.style.borderColor = '#565A5B'; }
+      }
+    });
+  }
+
+  if (mode === 'input') {
+    updateCategoryScore(catIdx);
+    updateTotalDisplay();
+  }
+}
 
 function setBinaryScore(itemId, value, btn, catIdx) {
   currentScores[itemId] = value;
@@ -4754,26 +4801,34 @@ function startGroupTypeEdit(gIdx, type) {
 
   const checklist = getChecklist(type);
   const isBinaryEdit = getScoringMethod(type) === 'binary';
+  window.editingType = type; // toggleCategoryNA에서 참조
+  let editCatIdx = 0;
   for (const [catName, catData] of Object.entries(checklist)) {
     html += `<div class="apple-card mb-3 overflow-hidden">`;
     if (isBinaryEdit) {
-      html += `<div class="px-5 py-3" style="background:#ffffff;"><div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span></div></div>`;
+      html += `<div class="px-5 py-3 flex items-center justify-between" style="background:#ffffff;">`;
+      html += `<div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span></div>`;
+      html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
+      html += `<input type="checkbox" onchange="toggleCategoryNA(${editCatIdx}, this.checked, 'edit')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
+      html += `N/A 전체</label>`;
+      html += `</div>`;
     } else {
       html += `<div class="px-5 py-3" style="background:#ffffff;"><div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span><span style="font-size:12px;color:#9EA2A1;margin-left:8px;">최대 ${catData.maxPoints}점</span></div></div>`;
     }
-    html += `<div style="background:#ffffff;">`;
+    html += `<div style="background:#ffffff;" data-edit-cat="${editCatIdx}">`;
 
-    // Delegate item rendering to shared function
     html += renderChecklistItems(catData.items, editingScores, editingRemarks, type, {
       mode: 'edit',
       scoreHandler: 'setEditScore',
       remarkHandler: 'setEditRemark',
       naHandler: 'setEditScoreNA',
       binaryScoreHandler: 'setEditScore',
-      stopPropagation: true
+      stopPropagation: true,
+      catIdx: editCatIdx
     });
 
     html += `</div></div>`;
+    editCatIdx++;
   }
 
   html += `<div class="flex gap-3 mt-4 justify-end">`;
@@ -8732,7 +8787,7 @@ Object.assign(window, {
   exportJSON, importJSON, resetAllData,
   showAddAuditorForm, hideAuditorForm, editAuditor,
   saveAuditorForm, deleteAuditor,
-  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel,
+  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel, toggleCategoryNA,
   // Firebase
   uploadAllToFirebase, downloadFromFirebase,
   // Auth
