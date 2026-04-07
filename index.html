@@ -6706,14 +6706,14 @@ function showScheduleStation(scheduleId) {
 
     html += `<div class="grid gap-4 mb-5" style="grid-template-columns:repeat(${totalGridCols},1fr);">`;
     // 전체 평균 카드
-    html += `<div style="background:#303A3C;border-radius:12px;padding:16px;text-align:center;">`;
-    html += `<div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:4px;word-break:keep-all;">전체 평균</div>`;
+    html += `<div style="background:rgba(210,0,21,0.06);border:1px solid rgba(210,0,21,0.15);border-radius:12px;padding:16px;text-align:center;">`;
+    html += `<div style="font-size:11px;color:#D20015;margin-bottom:4px;word-break:keep-all;font-weight:500;">전체 평균</div>`;
     if (totalAvg != null) {
-      html += `<div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-0.28px;">${totalAvg.toFixed(2)}</div>`;
-      html += `<div style="font-size:11px;color:rgba(255,255,255,0.5);">달성률 ${(totalAvg / 4 * 100).toFixed(1)}%</div>`;
+      html += `<div style="font-size:24px;font-weight:700;color:#303A3C;letter-spacing:-0.28px;">${totalAvg.toFixed(2)}</div>`;
+      html += `<div style="font-size:11px;color:#9EA2A1;">달성률 ${(totalAvg / 4 * 100).toFixed(1)}%</div>`;
     } else {
-      html += `<div style="font-size:24px;font-weight:600;color:rgba(255,255,255,0.3);">-</div>`;
-      html += `<div style="font-size:11px;color:rgba(255,255,255,0.3);">미실시</div>`;
+      html += `<div style="font-size:24px;font-weight:600;color:#C0CED1;">-</div>`;
+      html += `<div style="font-size:11px;color:#C0CED1;">미실시</div>`;
     }
     html += `</div>`;
 
