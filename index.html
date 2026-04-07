@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 tailwind.config = {
@@ -504,6 +505,79 @@ select.apple-input {
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN -->
+<!-- ============================================================ -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f5f5f7;display:flex;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:380px;padding:24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <svg style="width:48px;height:48px;margin:0 auto 16px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
+      <h1 style="font-size:22px;font-weight:700;color:#303A3C;letter-spacing:-0.4px;">품질관리시스템 포털</h1>
+      <p style="font-size:13px;color:#9EA2A1;margin-top:4px;">이스타항공 안전보안실</p>
+    </div>
+    <!-- 로그인 폼 -->
+    <div id="loginForm" class="apple-card" style="padding:24px;">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="loginEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
+        <input id="loginPassword" type="password" placeholder="비밀번호 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button onclick="doLogin()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">로그인</button>
+      <div id="loginError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+      <div style="text-align:center;margin-top:16px;">
+        <button onclick="showPasswordChange()" style="background:none;border:none;color:#9EA2A1;font-size:12px;cursor:pointer;text-decoration:underline;">비밀번호 변경</button>
+      </div>
+    </div>
+    <!-- 최초 관리자 등록 폼 (users 비어있을 때) -->
+    <div id="adminSetupForm" class="apple-card" style="padding:24px;display:none;">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">초기 관리자 등록</h3>
+      <p style="font-size:12px;color:#9EA2A1;margin-bottom:16px;">첫 번째 사용자가 관리자로 등록됩니다.</p>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="setupEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">이름</label>
+        <input id="setupName" type="text" placeholder="이름 입력" class="apple-input">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
+        <input id="setupPassword" type="password" placeholder="비밀번호 6자리 이상" class="apple-input">
+      </div>
+      <button onclick="doAdminSetup()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">관리자 등록</button>
+      <div id="setupError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+    </div>
+    <!-- 비밀번호 변경 폼 -->
+    <div id="pwChangeForm" class="apple-card" style="padding:24px;display:none;">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">비밀번호 변경</h3>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="pwChangeEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">현재 비밀번호</label>
+        <input id="pwChangeOld" type="password" placeholder="현재 비밀번호" class="apple-input">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">새 비밀번호</label>
+        <input id="pwChangeNew" type="password" placeholder="새 비밀번호 6자리 이상" class="apple-input">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="showLoginForm()" class="pill-btn pill-btn-outline" style="flex:1;padding:12px;">취소</button>
+        <button onclick="doPasswordChange()" class="pill-btn pill-btn-primary" style="flex:1;padding:12px;">변경</button>
+      </div>
+      <div id="pwChangeError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+      <div id="pwChangeSuccess" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(34,197,94,0.1);color:#22C55E;font-size:13px;text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP WRAPPER (hidden until login) -->
+<div id="appWrapper" style="display:none;">
+
 <!-- Header - Glass Navigation -->
 <header class="glass-nav text-white sticky top-0 z-50" style="height:52px;display:flex;flex-direction:column;justify-content:center;">
   <div class="max-w-7xl mx-auto px-4 w-full flex items-center justify-between" style="height:52px;">
@@ -511,10 +585,12 @@ select.apple-input {
       <svg class="w-6 h-6" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
       <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질관리시스템 포털</h1>
     </div>
-    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
+    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;display:flex;align-items:center;gap:8px;">
+      <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v14</span>
-      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
+      <span>v14</span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태 확인 중"></span>
+      <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
   </div>
 </header>
@@ -528,7 +604,7 @@ select.apple-input {
     <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">통계</button>
     <button onclick="switchTab(4)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="4" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">분석</button>
     <button onclick="switchTab(5)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="5" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">심사 일정</button>
-    <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">데이터 관리</button>
+    <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">관리</button>
   </div>
 </nav>
 
@@ -923,8 +999,14 @@ select.apple-input {
   <!-- Tab 6: Data Management -->
   <div id="tab6" class="tab-content hidden fade-in">
     <div class="mb-6">
-      <h2 class="section-title">데이터 관리</h2>
-      <p class="section-subtitle mt-1">내보내기, 동기화, 백업 관리</p>
+      <h2 class="section-title">관리</h2>
+      <p class="section-subtitle mt-1">사용자, 내보내기, 동기화, 백업 관리</p>
+    </div>
+
+    <!-- 사용자 관리 (admin만 표시) -->
+    <div class="apple-card p-6 mb-5">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">사용자 관리</h3>
+      <div id="userManagementArea"></div>
     </div>
 
     <div class="apple-card p-6 mb-5">
@@ -2318,7 +2400,13 @@ let customStations = [];
 // Firebase
 let firebaseApp = null;
 let firebaseDb = null;
+let firebaseAuth = null;
 let firebaseConnected = false;
+let currentUser = null;  // { uid, empNo, name, role }
+const AUTH_DOMAIN = '@eastar.local';
+
+function empNoToEmail(empNo) { return empNo + AUTH_DOMAIN; }
+function emailToEmpNo(email) { return email ? email.replace(AUTH_DOMAIN, '') : ''; }
 
 function initFirebase() {
   try {
@@ -2334,22 +2422,285 @@ function initFirebase() {
     };
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDb = firebase.database();
-    // firebaseConnected는 실제 연결 확인 후 true로 설정
+    firebaseAuth = firebase.auth();
 
-    // Listen for connection state
+    // 연결 상태 모니터링
     firebase.database().ref('.info/connected').on('value', (snap) => {
       firebaseConnected = snap.val() === true;
       updateSyncStatus();
     });
 
-    // Set up real-time listeners
-    setupFirebaseListeners();
+    // Auth 상태 변경 리스너
+    firebaseAuth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // 로그인 상태 — 사용자 역할 가져오기
+        const snap = await firebaseDb.ref('users/' + user.uid).once('value');
+        const userData = snap.val();
+        if (userData) {
+          currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
+          onLoginSuccess();
+        } else {
+          // DB에 사용자 정보 없음 (비정상) → 로그아웃
+          await firebaseAuth.signOut();
+          showLoginScreen();
+        }
+      } else {
+        // 비로그인 → 로그인 화면
+        currentUser = null;
+        showLoginScreen();
+      }
+    });
 
+    setupFirebaseListeners();
     console.log('Firebase connected');
   } catch(e) {
     console.warn('Firebase init failed:', e);
     firebaseConnected = false;
+    showLoginScreen();
   }
+}
+
+// ============================================================================
+// AUTH: 로그인/로그아웃/역할 관리
+// ============================================================================
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appWrapper').style.display = 'none';
+  // users 노드 확인 → 비어있으면 관리자 등록 폼 표시
+  if (firebaseDb) {
+    firebaseDb.ref('users').once('value').then(snap => {
+      if (!snap.exists() || !snap.val()) {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('adminSetupForm').style.display = 'block';
+        document.getElementById('pwChangeForm').style.display = 'none';
+      } else {
+        showLoginForm();
+      }
+    }).catch(() => showLoginForm());
+  }
+}
+
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('adminSetupForm').style.display = 'none';
+  document.getElementById('pwChangeForm').style.display = 'none';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function showPasswordChange() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('adminSetupForm').style.display = 'none';
+  document.getElementById('pwChangeForm').style.display = 'block';
+  document.getElementById('pwChangeError').style.display = 'none';
+  document.getElementById('pwChangeSuccess').style.display = 'none';
+}
+
+async function doLogin() {
+  const empNo = document.getElementById('loginEmpNo').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  try {
+    errEl.style.display = 'none';
+    await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), pw);
+    // onAuthStateChanged가 처리
+  } catch(e) {
+    console.warn('Login failed:', e.code);
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') errEl.textContent = '사번 또는 비밀번호가 올바르지 않습니다.';
+    else if (e.code === 'auth/wrong-password') errEl.textContent = '비밀번호가 올바르지 않습니다.';
+    else if (e.code === 'auth/too-many-requests') errEl.textContent = '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.';
+    else errEl.textContent = '로그인 실패: ' + (e.message || '알 수 없는 오류');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doAdminSetup() {
+  const empNo = document.getElementById('setupEmpNo').value.trim();
+  const name = document.getElementById('setupName').value.trim();
+  const pw = document.getElementById('setupPassword').value;
+  const errEl = document.getElementById('setupError');
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!name) { errEl.textContent = '이름을 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!pw || pw.length < 6) { errEl.textContent = '비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
+  try {
+    errEl.style.display = 'none';
+    const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), pw);
+    await firebaseDb.ref('users/' + cred.user.uid).set({
+      empNo, name, role: 'admin', createdAt: new Date().toISOString().slice(0,10)
+    });
+    // onAuthStateChanged가 처리
+  } catch(e) {
+    errEl.textContent = '등록 실패: ' + (e.message || '알 수 없는 오류');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doPasswordChange() {
+  const empNo = document.getElementById('pwChangeEmpNo').value.trim();
+  const oldPw = document.getElementById('pwChangeOld').value;
+  const newPw = document.getElementById('pwChangeNew').value;
+  const errEl = document.getElementById('pwChangeError');
+  const okEl = document.getElementById('pwChangeSuccess');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!oldPw) { errEl.textContent = '현재 비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!newPw || newPw.length < 6) { errEl.textContent = '새 비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
+  try {
+    const cred = await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), oldPw);
+    await cred.user.updatePassword(newPw);
+    await firebaseAuth.signOut();
+    okEl.textContent = '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.';
+    okEl.style.display = 'block';
+    setTimeout(() => showLoginForm(), 2000);
+  } catch(e) {
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') errEl.textContent = '현재 비밀번호가 올바르지 않습니다.';
+    else errEl.textContent = '변경 실패: ' + (e.message || '');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doLogout() {
+  if (!confirm('로그아웃하시겠습니까?')) return;
+  try { await firebaseAuth.signOut(); } catch(e) { console.warn(e); }
+  currentUser = null;
+  showLoginScreen();
+}
+
+function onLoginSuccess() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appWrapper').style.display = '';
+  // 헤더에 사용자 이름 표시
+  const nameEl = document.getElementById('headerUserName');
+  if (nameEl) nameEl.textContent = currentUser.name || currentUser.empNo;
+  // 역할별 UI 적용
+  applyRolePermissions(currentUser.role);
+  // 앱 데이터 로드 (최초 1회)
+  if (allData.length === 0) {
+    loadCustomStations();
+    loadAllData();
+    loadAuditors();
+    loadSchedule();
+    populateStationDropdown();
+    populateViewStationDropdown();
+    renderInputPendingStations();
+  }
+  switchTab(0);
+}
+
+function hasRole(minRole) {
+  if (!currentUser) return false;
+  const hierarchy = { viewer: 0, auditor: 1, admin: 2 };
+  return (hierarchy[currentUser.role] || 0) >= (hierarchy[minRole] || 0);
+}
+
+function requireRole(minRole) {
+  if (!hasRole(minRole)) {
+    showToast('권한이 없습니다. (' + minRole + ' 이상 필요)', 'error');
+    return false;
+  }
+  return true;
+}
+
+function applyRolePermissions(role) {
+  // 탭 표시/숨김
+  const tabButtons = document.querySelectorAll('.desktop-tab');
+  tabButtons.forEach(btn => {
+    const tabIdx = parseInt(btn.dataset.tab);
+    if (role === 'viewer' && [1, 5, 6].includes(tabIdx)) btn.style.display = 'none';
+    else if (role === 'auditor' && tabIdx === 6) btn.style.display = 'none';
+    else btn.style.display = '';
+  });
+}
+
+// 관리 탭: 사용자 관리 섹션 렌더링
+async function renderUserManagement() {
+  const container = document.getElementById('userManagementArea');
+  if (!container) return;
+  if (!hasRole('admin')) { container.innerHTML = ''; return; }
+  try {
+    const snap = await firebaseDb.ref('users').once('value');
+    const users = snap.val() || {};
+    let html = '<table class="apple-table"><thead><tr><th>사번</th><th>이름</th><th>역할</th><th>등록일</th><th>관리</th></tr></thead><tbody>';
+    for (const [uid, u] of Object.entries(users)) {
+      const isSelf = uid === currentUser.uid;
+      html += `<tr>`;
+      html += `<td>${u.empNo || '-'}</td>`;
+      html += `<td style="font-weight:${isSelf?'600':'400'};">${u.name || '-'}${isSelf?' (나)':''}</td>`;
+      html += `<td><select onchange="changeUserRole('${uid}',this.value)" class="apple-input" style="padding:4px 8px;font-size:12px;" ${isSelf?'disabled':''}>`;
+      ['admin','auditor','viewer'].forEach(r => {
+        html += `<option value="${r}" ${u.role===r?'selected':''}>${r==='admin'?'관리자':r==='auditor'?'심사원':'뷰어'}</option>`;
+      });
+      html += `</select></td>`;
+      html += `<td style="font-size:12px;">${u.createdAt || '-'}</td>`;
+      html += `<td>${isSelf?'-':`<button onclick="deleteUser('${uid}','${u.empNo}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">삭제</button>`}</td>`;
+      html += `</tr>`;
+    }
+    html += '</tbody></table>';
+    // 사용자 추가 폼
+    html += `<div class="apple-card" style="padding:16px;margin-top:16px;">`;
+    html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">새 사용자 추가</h4>`;
+    html += `<div class="grid grid-cols-1 md:grid-cols-4 gap-3">`;
+    html += `<div><label class="apple-label">사번</label><input id="newUserEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="7자리" class="apple-input"></div>`;
+    html += `<div><label class="apple-label">이름</label><input id="newUserName" type="text" placeholder="이름" class="apple-input"></div>`;
+    html += `<div><label class="apple-label">역할</label><select id="newUserRole" class="apple-input"><option value="auditor">심사원</option><option value="viewer">뷰어</option><option value="admin">관리자</option></select></div>`;
+    html += `<div style="display:flex;align-items:flex-end;"><button onclick="createNewUser()" class="pill-btn pill-btn-primary" style="width:100%;">추가</button></div>`;
+    html += `</div>`;
+    html += `<div id="newUserResult" style="margin-top:8px;font-size:13px;"></div>`;
+    html += `</div>`;
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<p style="color:#D20015;">사용자 목록 로드 실패</p>'; }
+}
+
+async function createNewUser() {
+  if (!requireRole('admin')) return;
+  const empNo = document.getElementById('newUserEmpNo').value.trim();
+  const name = document.getElementById('newUserName').value.trim();
+  const role = document.getElementById('newUserRole').value;
+  const resultEl = document.getElementById('newUserResult');
+  if (!empNo || empNo.length !== 7) { resultEl.innerHTML = '<span style="color:#D20015;">사번 7자리를 입력해주세요.</span>'; return; }
+  if (!name) { resultEl.innerHTML = '<span style="color:#D20015;">이름을 입력해주세요.</span>'; return; }
+  // 임시 비밀번호 생성
+  const tempPw = empNo.slice(-4) + '00';
+  const adminEmail = currentUser.empNo + AUTH_DOMAIN;
+  try {
+    resultEl.innerHTML = '<span style="color:#9EA2A1;">생성 중...</span>';
+    // 현재 admin 비밀번호를 재인증에 사용하기 어려우므로 다른 방법 사용
+    // createUser 후 자동 로그인되므로, 바로 admin으로 재로그인
+    const adminPwPrompt = prompt('계정 생성을 위해 관리자 비밀번호를 입력해주세요:');
+    if (!adminPwPrompt) { resultEl.innerHTML = ''; return; }
+    const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
+    await firebaseDb.ref('users/' + cred.user.uid).set({
+      empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
+    });
+    // admin으로 재로그인
+    await firebaseAuth.signInWithEmailAndPassword(adminEmail, adminPwPrompt);
+    resultEl.innerHTML = `<span style="color:#22C55E;">✓ ${name}(${empNo}) 계정이 생성되었습니다.</span><br><span style="font-weight:600;">임시 비밀번호: ${tempPw}</span><br><span style="color:#9EA2A1;">사용자에게 전달 후 비밀번호 변경을 안내해주세요.</span>`;
+    document.getElementById('newUserEmpNo').value = '';
+    document.getElementById('newUserName').value = '';
+    renderUserManagement();
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') resultEl.innerHTML = '<span style="color:#D20015;">이미 등록된 사번입니다.</span>';
+    else resultEl.innerHTML = `<span style="color:#D20015;">생성 실패: ${e.message || ''}</span>`;
+  }
+}
+
+async function changeUserRole(uid, newRole) {
+  if (!requireRole('admin')) return;
+  try {
+    await firebaseDb.ref('users/' + uid + '/role').set(newRole);
+    showToast('역할이 변경되었습니다.', 'success');
+  } catch(e) { showToast('역할 변경 실패', 'error'); }
+}
+
+async function deleteUser(uid, empNo) {
+  if (!requireRole('admin')) return;
+  if (!confirm(`${empNo} 사용자를 삭제하시겠습니까?\n(Firebase Auth 계정은 Console에서 별도 삭제 필요)`)) return;
+  try {
+    await firebaseDb.ref('users/' + uid).remove();
+    showToast('사용자가 삭제되었습니다.', 'success');
+    renderUserManagement();
+  } catch(e) { showToast('삭제 실패', 'error'); }
 }
 
 function updateSyncStatus() {
@@ -3400,6 +3751,7 @@ function updateTotalDisplay() {
 }
 
 function saveAssessment() {
+  if (!requireRole('auditor')) return;
   const year = selectedYear;
   const station = selectedStation;
   const type = selectedType;
@@ -4351,6 +4703,7 @@ function saveGroupTypeEdit(gIdx, type) {
 }
 
 function deleteGroupType(gIdx, type) {
+  if (!requireRole('admin')) return;
   const groups = getViewGroups();
   const group = groups[gIdx];
   if (!group) return;
@@ -4539,6 +4892,7 @@ function saveEdit(idx) {
 }
 
 function deleteRecord(idx) {
+  if (!requireRole('admin')) return;
   const entry = viewEntries[idx];
   if (!entry || !entry.record) return;
 
@@ -7030,6 +7384,8 @@ function renderAddScheduleForm() {
 // TAB 6: DATA MANAGEMENT
 // ============================================================================
 function renderDataManagement() {
+  // 사용자 관리 렌더링 (admin만)
+  renderUserManagement();
   // Populate export station dropdown
   const sel = document.getElementById('exportStation');
   const currentVal = sel.value;
@@ -7194,6 +7550,7 @@ function exportJSON() {
 }
 
 function importJSON(event) {
+  if (!requireRole('admin')) return;
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -7219,6 +7576,7 @@ function importJSON(event) {
 }
 
 function resetAllData() {
+  if (!requireRole('admin')) return;
   if (!confirm('정말로 모든 데이터를 초기화하시겠습니까?\n(심사 데이터, 일정, 심사원 정보가 모두 삭제됩니다)')) return;
   if (!confirm('이 작업은 되돌릴 수 없습니다. 최종 확인합니다. 초기화하시겠습니까?')) return;
   // 심사 데이터 초기화
@@ -8013,15 +8371,8 @@ function renderViewRecentStations() {
 }
 
 function init() {
-  loadCustomStations();
-  loadAllData();
-  loadAuditors();
-  loadSchedule();
-  populateStationDropdown();
-  populateViewStationDropdown();
-  switchTab(0);
+  // Firebase 먼저 초기화 → Auth 상태에 따라 앱 로드 (onLoginSuccess에서 처리)
   initFirebase();
-  renderInputPendingStations();
 
   // FAB scroll to top
   window.addEventListener('scroll', () => {
@@ -8192,6 +8543,9 @@ Object.assign(window, {
   renderAuditorPicker, addAuditorTag, removeAuditorTag,
   // Firebase
   uploadAllToFirebase, downloadFromFirebase,
+  // Auth
+  doLogin, doLogout, doAdminSetup, doPasswordChange, showPasswordChange, showLoginForm,
+  createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
   // Home
   renderHome, renderInputPendingStations, renderViewRecentStations,
   // UI
@@ -8223,6 +8577,8 @@ Object.assign(window, {
     <div class="analysis-modal-body" id="analysisModalBody"></div>
   </div>
 </div>
+
+</div><!-- /appWrapper -->
 
 </body>
 </html>
