@@ -6466,7 +6466,9 @@ function renderSchedule() {
   currentScheduleId = null;
 
   const currentMonth = new Date().getMonth() + 1;
-  const scheduleYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  if (typeof window._scheduleViewYear === 'undefined') window._scheduleViewYear = currentYear;
+  const scheduleYear = window._scheduleViewYear;
 
   // Group by month
   const monthMap = {};
@@ -6477,9 +6479,17 @@ function renderSchedule() {
   });
 
   let html = '';
-  html += '<div class="flex items-end justify-between mb-6">';
-  html += `<div><h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
-  html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p></div>';
+  // 연도 선택 세그먼트 컨트롤
+  html += '<div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-6 gap-3">';
+  html += '<div>';
+  html += `<h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
+  html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p>';
+  html += '<div class="flex gap-1 mt-3" style="background:#f0f0f0;border-radius:10px;padding:3px;display:inline-flex;">';
+  [currentYear - 1, currentYear, currentYear + 1].forEach(y => {
+    const isActive = y === scheduleYear;
+    html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="padding:6px 16px;border-radius:8px;font-size:13px;font-weight:${isActive?'600':'400'};border:none;cursor:pointer;background:${isActive?'#fff':'transparent'};color:${isActive?'#303A3C':'#9EA2A1'};box-shadow:${isActive?'0 1px 3px rgba(0,0,0,0.1)':'none'};transition:all 0.15s;">${y}년</button>`;
+  });
+  html += '</div></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
   html += '</div>';
 
@@ -7036,6 +7046,11 @@ function renderAddScheduleForm() {
     });
     html += '</optgroup>';
   }
+  html += '<optgroup label="실/본부">';
+  DIVISION_NAMES.forEach(div => {
+    html += '<option value="' + div + '">' + div + '</option>';
+  });
+  html += '</optgroup>';
   html += '<optgroup label="기타">';
   html += '<option value="__new__">+ 신규 지점 직접 입력</option>';
   html += '</optgroup>';
