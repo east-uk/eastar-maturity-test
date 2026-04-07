@@ -513,7 +513,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v13</span>
+      <span style="margin-left:8px;">v14</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -3994,14 +3994,14 @@ function renderScoreViewTable() {
       const completedTypes = Object.values(group.types).filter(e => e.record);
       const status = makeStatusBadge(completedTypes, Object.values(group.types).length);
 
-      let dateDisplay = '-';
-      if (anyRecord) {
-        dateDisplay = anyRecord.auditDateStart
-          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-            ? anyRecord.auditDateStart.substring(5) + '~' + anyRecord.auditDateEnd.substring(5)
-            : anyRecord.auditDateStart.substring(5))
-          : (anyRecord.auditDate || '-');
-      }
+      // allData 우선, 없으면 scheduleData 보완
+      const mSchItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+      const mDs = (anyRecord?.auditDateStart) || (mSchItem?.dateStart) || '';
+      const mDe = (anyRecord?.auditDateEnd) || (mSchItem?.dateEnd) || '';
+      const dateDisplay = mDs
+        ? (mDe && mDe !== mDs ? mDs.substring(5) + '~' + mDe.substring(5) : mDs.substring(5))
+        : (anyRecord?.auditDate || '-');
+      const mAuditor = (anyRecord?.auditor) || (mSchItem?.auditors) || '-';
 
       const borderColor = completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1';
       mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${isDivision ? '#6366F1' : borderColor};" onclick="toggleViewDetail('${rowId}')">`;
@@ -4041,8 +4041,8 @@ function renderScoreViewTable() {
         }
       });
       mhtml += `</div>`;
-      if (anyRecord) {
-        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${(anyRecord.auditor || '-')}</div>`;
+      if (anyRecord || mSchItem) {
+        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${mAuditor}</div>`;
       }
       mhtml += `</div>`;
       mhtml += `<div id="${rowId}" class="hidden" style="margin-bottom:8px;"><div id="viewGroupDetail_${gIdx}" style="padding:4px;">`;
@@ -4077,19 +4077,19 @@ function renderScoreViewTable() {
       const totalTypes = Object.values(group.types).length;
       const status = makeStatusBadge(completedTypes, totalTypes);
 
-      let dateDisplay = '-', auditorDisplay = '-';
-      if (anyRecord) {
-        dateDisplay = anyRecord.auditDateStart
-          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-            ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd : anyRecord.auditDateStart)
-          : (anyRecord.auditDate || '-');
-        auditorDisplay = anyRecord.auditor || '-';
-      }
+      // allData 우선, 없으면 scheduleData에서 보완
+      const schItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+      const auditorVal = (anyRecord?.auditor) || (schItem?.auditors) || '-';
+      const dsVal = (anyRecord?.auditDateStart) || (schItem?.dateStart) || '';
+      const deVal = (anyRecord?.auditDateEnd) || (schItem?.dateEnd) || '';
+      const dateDisplay = dsVal
+        ? (deVal && deVal !== dsVal ? dsVal + ' ~ ' + deVal : dsVal)
+        : (anyRecord?.auditDate || '-');
 
       html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
       html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
       html += `<td style="font-size:13px;">${dateDisplay}</td>`;
-      html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
+      html += `<td style="font-size:13px;">${auditorVal}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
@@ -4163,16 +4163,19 @@ function renderGroupReadOnlyDetail(gIdx, group) {
   const anyRecord = Object.values(group.types).find(e => e.record)?.record;
   let html = '';
 
-  // 공통 심사 정보
-  if (anyRecord) {
-    const dateDisplay = anyRecord.auditDateStart
-      ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-        ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd
-        : anyRecord.auditDateStart)
-      : (anyRecord.auditDate || '-');
+  // 공통 심사 정보 (allData 우선, 없으면 scheduleData에서 보완)
+  const schedItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+  const auditorDisplay = (anyRecord?.auditor) || (schedItem?.auditors) || '-';
+  const dateStartVal = (anyRecord?.auditDateStart) || (schedItem?.dateStart) || '';
+  const dateEndVal = (anyRecord?.auditDateEnd) || (schedItem?.dateEnd) || '';
+  const dateDisplay = dateStartVal
+    ? (dateEndVal && dateEndVal !== dateStartVal ? dateStartVal + ' ~ ' + dateEndVal : dateStartVal)
+    : (anyRecord?.auditDate || '-');
+
+  if (anyRecord || schedItem) {
     html += `<div class="apple-card" style="padding:14px;margin-bottom:8px;">`;
     html += `<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">`;
-    html += `<div class="flex gap-4"><div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${anyRecord.auditor || '-'}</div></div>`;
+    html += `<div class="flex gap-4"><div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${auditorDisplay}</div></div>`;
     html += `<div><span style="font-size:12px;color:#9EA2A1;">심사일</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${dateDisplay}</div></div></div>`;
     html += `<button onclick="event.stopPropagation();startGroupEditCommon(${gIdx})" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;font-size:13px;flex-shrink:0;">공통 정보 수정</button>`;
     html += `</div></div>`;
@@ -6884,6 +6887,21 @@ function saveScheduleItem(scheduleId) {
   }
 
   saveSchedule();
+
+  // allData에도 역동기화 (심사원, 심사일)
+  const matched = allData.filter(d => d.year == item.year && d.station === item.station);
+  if (matched.length > 0) {
+    matched.forEach(record => {
+      if (item.auditors) record.auditor = item.auditors;
+      if (item.dateStart) {
+        record.auditDateStart = item.dateStart;
+        record.auditDate = item.dateStart.slice(0, 7);
+      }
+      if (item.dateEnd) record.auditDateEnd = item.dateEnd;
+    });
+    saveAllData();
+  }
+
   showToast('일정이 저장되었습니다.', 'success');
 
   // Stay on Phase 2, re-render
