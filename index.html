@@ -643,7 +643,7 @@ select.apple-input {
           <div id="auditorPickerArea"></div>
           <div>
             <label class="apple-label">심사 시작일</label>
-            <input id="inputDateStart" type="date" class="apple-input" onchange="if(this.value){const e=document.getElementById('inputDateEnd');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">
+            <input id="inputDateStart" type="date" class="apple-input" onchange="if(this.value){const e=document.getElementById('inputDateEnd');e.value=this.value;e.min=this.value;}">
           </div>
           <div>
             <label class="apple-label">심사 종료일</label>
@@ -2936,12 +2936,29 @@ function switchTab(idx) {
     document.getElementById('viewType').value = '전체';
     document.getElementById('viewStatus').value = '전체';
   }
+  // 연도 선택을 현재 연도로 리셋
+  const thisY = new Date().getFullYear();
+  function resetYearSelector(selId, segmentId) {
+    const sel = document.getElementById(selId);
+    if (sel) sel.value = thisY;
+    const seg = document.getElementById(segmentId);
+    if (seg) seg.querySelectorAll('button').forEach(b => {
+      b.style.background = b.dataset?.year == thisY || b.textContent === thisY + '년' ? '#D20015' : 'transparent';
+      b.style.color = b.dataset?.year == thisY || b.textContent === thisY + '년' ? '#fff' : '#565A5B';
+    });
+  }
+  if (idx === 1) { const iy = document.getElementById('inputYear'); if (iy) iy.value = thisY; }
+  if (idx === 2) { const vy = document.getElementById('viewYear'); if (vy) vy.value = thisY; }
+  if (idx === 3) resetYearSelector('statsYear', 'statsYearSegment');
+  if (idx === 4) resetYearSelector('analysisYear', 'analysisYearSegment');
+  if (idx === 5) { const sy = document.getElementById('scheduleYear'); if (sy) sy.value = thisY; }
+
   // Render tab-specific content
   if (idx === 0) renderHome();
   if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
   if (idx === 3) renderStatsDashboard();
   if (idx === 4) renderAnalysis();
-  if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); } // reset without history push (switchTab already records)
+  if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); }
   if (idx === 6) renderDataManagement();
 }
 
@@ -6691,7 +6708,7 @@ function showScheduleStation(scheduleId) {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}" onchange="if(this.value){var e=document.getElementById('scheduleDateEnd');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">`;
+  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}" onchange="if(this.value){var e=document.getElementById('scheduleDateEnd');e.value=this.value;e.min=this.value;}">`;
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
@@ -7098,7 +7115,7 @@ function renderAddScheduleForm() {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += '<input type="date" id="newScheduleDateStart" class="apple-input" onchange="if(this.value){var e=document.getElementById(\'newScheduleDateEnd\');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">';
+  html += '<input type="date" id="newScheduleDateStart" class="apple-input" onchange="if(this.value){var e=document.getElementById(\'newScheduleDateEnd\');e.value=this.value;e.min=this.value;}">';
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
