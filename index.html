@@ -923,6 +923,7 @@ select.apple-input {
 
   <!-- Tab 5: Audit Schedule -->
   <div id="tab5" class="tab-content hidden fade-in">
+    <select id="scheduleYear" class="hidden"><option></option></select>
     <div id="scheduleContainer"></div>
   </div>
 
@@ -6402,7 +6403,20 @@ function renderSchedule() {
   currentScheduleId = null;
 
   const currentMonth = new Date().getMonth() + 1;
-  const scheduleYear = new Date().getFullYear();
+  const thisYear = new Date().getFullYear();
+
+  // 연도 select 초기화 (최초 1회)
+  const scheduleYearSel = document.getElementById('scheduleYear');
+  if (scheduleYearSel && scheduleYearSel.options.length <= 1) {
+    scheduleYearSel.innerHTML = '';
+    for (let i = thisYear - 2; i <= thisYear; i++) {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = i;
+      if (i === thisYear) opt.selected = true;
+      scheduleYearSel.appendChild(opt);
+    }
+  }
+  const scheduleYear = parseInt(scheduleYearSel?.value || thisYear);
 
   // Group by month
   const monthMap = {};
@@ -6413,10 +6427,17 @@ function renderSchedule() {
   });
 
   let html = '';
-  html += '<div class="flex items-end justify-between mb-6">';
-  html += `<div><h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
+  // 연도 세그먼트 버튼
+  html += '<div class="flex items-end justify-between mb-4">';
+  html += `<div><h2 class="section-title">품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
+  html += '</div>';
+  html += '<div style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-bottom:20px;">';
+  for (let i = thisYear - 2; i <= thisYear; i++) {
+    const isActive = i === scheduleYear;
+    html += `<button onclick="document.getElementById('scheduleYear').value=${i};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;${isActive ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;'}">${i}년</button>`;
+  }
   html += '</div>';
 
   // Summary stats
@@ -6954,8 +6975,9 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">연도</label>';
   html += '<select id="newScheduleYear" class="apple-input">';
-  [2025, 2026, 2027].forEach(y => {
-    html += '<option value="' + y + '"' + (y === 2026 ? ' selected' : '') + '>' + y + '년</option>';
+  const selYear = parseInt(document.getElementById('scheduleYear')?.value || new Date().getFullYear());
+  [selYear - 1, selYear, selYear + 1].forEach(y => {
+    html += '<option value="' + y + '"' + (y === selYear ? ' selected' : '') + '>' + y + '년</option>';
   });
   html += '</select>';
   html += '</div>';
