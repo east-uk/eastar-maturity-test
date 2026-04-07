@@ -2741,6 +2741,9 @@ function calculateScores(scores, checklist) {
   let totalItems = 0;
   let maxScore = 0;
   let maxPointsPerItem = 4; // 기본 배점 (1~4점 척도)
+  if (!scores || typeof scores !== 'object') {
+    return { categoryAverages: {}, totalScore: 0, maxScore: 0, overallAverage: 0, achievementRate: 0, totalItems: 0 };
+  }
   for (const [catName, catData] of Object.entries(checklist)) {
     let catSum = 0;
     let catCount = 0;
@@ -4791,16 +4794,19 @@ function renderStatsDashboard() {
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
   const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
+  // scores가 유효한 데이터만 통계 계산에 사용
+  const yearDataValid = yearData.filter(d => d.scores && Object.keys(d.scores).length > 0);
 
   // Calculate averages
   let totalAvg = 0, totalCount = 0;
   let domesticAvg = 0, domesticCount = 0;
   let intlAvg = 0, intlCount = 0;
 
-  yearData.forEach(d => {
+  yearDataValid.forEach(d => {
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     const avg = result.overallAverage;
+    if (isNaN(avg)) return;
     totalAvg += avg; totalCount++;
     if (d.region === '국내') { domesticAvg += avg; domesticCount++; }
     else { intlAvg += avg; intlCount++; }
@@ -4843,11 +4849,11 @@ function renderStatsDashboard() {
   let regHtml = '<table class="apple-table compact-mobile">';
   regHtml += '<thead><tr><th style="text-align:left;">지역</th><th style="text-align:center;">지점 평균</th><th style="text-align:center;">여객 평균</th><th style="text-align:center;">램프 평균</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   for (const [region] of Object.entries(REGIONS)) {
-    const regionData = yearData.filter(d => d.region === region);
+    const regionData = yearDataValid.filter(d => d.region === region);
     const branchAvg = calcAvgForTypeRegion(regionData, 'branch');
     const paxAvg = calcAvgForTypeRegion(regionData, 'pax');
     const rampAvg = calcAvgForTypeRegion(regionData, 'ramp');
-    const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / regionData.length : 0;
+    const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => { const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage; return s + (isNaN(a) ? 0 : a); }, 0) / regionData.length : 0;
     regHtml += `<tr><td style="font-weight:600;">${region}</td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(branchAvg)}">${branchAvg ? branchAvg.toFixed(2) : '-'}</span></td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(paxAvg)}">${paxAvg ? paxAvg.toFixed(2) : '-'}</span></td>`;
@@ -4860,15 +4866,14 @@ function renderStatsDashboard() {
 
   // Station ranking
   const stationMap = {};
-  yearData.forEach(d => {
+  yearDataValid.forEach(d => {
     if (!stationMap[d.station]) stationMap[d.station] = { sum: 0, count: 0, region: d.region };
     const avg = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-    stationMap[d.station].sum += avg;
-    stationMap[d.station].count++;
+    if (!isNaN(avg)) { stationMap[d.station].sum += avg; stationMap[d.station].count++; }
   });
   const ranked = Object.entries(stationMap).map(([station, v]) => ({
-    station, avg: v.sum / v.count, count: v.count, region: v.region
-  })).sort((a, b) => b.avg - a.avg);
+    station, avg: v.count > 0 ? v.sum / v.count : 0, count: v.count, region: v.region
+  })).filter(r => r.count > 0).sort((a, b) => b.avg - a.avg);
 
   let rankHtml = '<table class="apple-table compact-mobile"><thead><tr><th style="text-align:center;width:48px;">순위</th><th style="text-align:left;">지점</th><th style="text-align:left;">지역</th><th style="text-align:center;">심사 건수</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   ranked.forEach((r, i) => {
@@ -4884,7 +4889,7 @@ function renderStatsDashboard() {
   // 1. 대분류별 데이터 수집 + 구분별(지점/여객/램프) 비교
   const catData = {};
   const itemData = {}; // 소분류
-  yearData.forEach(d => {
+  yearDataValid.forEach(d => {
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     for (const [cat, catAvg] of Object.entries(result.categoryAverages)) {
@@ -5407,25 +5412,29 @@ function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
-  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division');
+  const hasValidScores = d => d.scores && typeof d.scores === 'object' && Object.keys(d.scores).length > 0;
+  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division' && hasValidScores(d));
+  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division' && hasValidScores(d));
   const container = document.getElementById('analysisContainer');
 
   // ===== Pre-calculate all analysis data =====
 
   // 1. Trend: 3-year comparison
-  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division');
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division' && hasValidScores(d));
   const stationsTwoYearsAgo = {};
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
-    stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    if (!isNaN(avg) && avg > 0) stationsTwoYearsAgo[d.station] = avg;
   });
   const prevYearStations = {};
   prevYearData.filter(d => d.type === 'branch').forEach(d => {
-    prevYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    if (!isNaN(avg) && avg > 0) prevYearStations[d.station] = avg;
   });
   const currYearStations = {};
   yearData.filter(d => d.type === 'branch').forEach(d => {
-    currYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+    if (!isNaN(avg) && avg > 0) currYearStations[d.station] = avg;
   });
   const comparisons = [...new Set([...Object.keys(stationsTwoYearsAgo), ...Object.keys(prevYearStations), ...Object.keys(currYearStations)])].map(s => ({
     station: s,
@@ -5552,7 +5561,8 @@ function renderAnalysis() {
     if (!stationScoreArrays[d.station]) stationScoreArrays[d.station] = { scores: [], region: d.region };
     for (const [, val] of Object.entries(d.scores)) {
       if (val !== 'N/A' && val !== undefined && val !== null) {
-        stationScoreArrays[d.station].scores.push(Number(val));
+        const num = Number(val);
+        if (!isNaN(num)) stationScoreArrays[d.station].scores.push(num);
       }
     }
   });
