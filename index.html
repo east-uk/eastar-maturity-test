@@ -2856,64 +2856,75 @@ function saveSchedule() {
 // ============================================================================
 const _fpInstances = new Map();
 
-// 시작일/종료일 연동: 시작일 변경 시 → 종료일 자동 설정 + minDate 제한
-function linkDatePair(startId, endId) {
-  // flatpickr 인스턴스가 있으면 사용, 없으면 일반 input 처리
-  setTimeout(() => {
-    const endFp = _fpInstances.get(endId);
-    const startEl = document.getElementById(startId);
-    if (startEl && startEl.value) {
-      if (endFp) {
-        endFp.set('minDate', startEl.value);
-        if (!endFp.input.value || endFp.input.value < startEl.value) {
-          endFp.setDate(startEl.value);
-        }
-      } else {
-        const endEl = document.getElementById(endId);
-        if (endEl) {
-          endEl.min = startEl.value;
-          if (!endEl.value || endEl.value < startEl.value) endEl.value = startEl.value;
-        }
-      }
-    }
-  }, 50);
+// 시작일/종료일 쌍 매핑 (id 패턴으로 자동 감지)
+const DATE_PAIR_PATTERNS = [
+  ['inputDateStart', 'inputDateEnd'],
+  ['newScheduleDateStart', 'newScheduleDateEnd'],
+  ['scheduleDateStart', 'scheduleDateEnd'],
+];
+
+function getEndIdForStart(startId) {
+  // 정적 쌍
+  for (const [s, e] of DATE_PAIR_PATTERNS) {
+    if (startId === s) return e;
+  }
+  // 동적 쌍: groupDateStart_0 → groupDateEnd_0, editDateStart_3 → editDateEnd_3
+  if (startId.startsWith('groupDateStart_')) return startId.replace('groupDateStart_', 'groupDateEnd_');
+  if (startId.startsWith('editDateStart_')) return startId.replace('editDateStart_', 'editDateEnd_');
+  return null;
 }
 
-// 모든 data-fp input에 flatpickr 자동 적용
+function linkDatePair(startId, endId) {
+  const startVal = document.getElementById(startId)?.value;
+  if (!startVal) return;
+  const endFp = _fpInstances.get(endId);
+  if (endFp) {
+    endFp.set('minDate', startVal);
+    if (!endFp.input.value || endFp.input.value < startVal) endFp.setDate(startVal, true);
+  } else {
+    const endEl = document.getElementById(endId);
+    if (endEl) { endEl.min = startVal; if (!endEl.value || endEl.value < startVal) endEl.value = startVal; }
+  }
+}
+
 function initFlatpickr() {
   document.querySelectorAll('input[data-fp]').forEach(el => {
-    if (el._flatpickr) return; // 이미 초기화됨
+    if (el._flatpickr) return;
+    const endId = getEndIdForStart(el.id);
+    const isStart = !!endId;
+
     const fp = flatpickr(el, {
       locale: 'ko',
       dateFormat: 'Y-m-d',
       allowInput: true,
       clickOpens: true,
       disableMobile: true,
-      monthSelectorType: 'static',
       prevArrow: '‹',
       nextArrow: '›',
-      onChange: function(selectedDates, dateStr) {
-        // onchange 이벤트 트리거 (기존 onchange 핸들러 호출)
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+      onChange(selectedDates, dateStr) {
+        if (isStart && dateStr) {
+          linkDatePair(el.id, endId);
+        }
       }
     });
     if (el.id) _fpInstances.set(el.id, fp);
+
+    // 종료일이면 시작일 값으로 minDate 초기 설정
+    if (!isStart && el.id) {
+      const startId = el.id.replace('End', 'Start');
+      const startEl = document.getElementById(startId);
+      if (startEl && startEl.value) fp.set('minDate', startEl.value);
+    }
   });
 }
 
-// 동적으로 생성된 폼에서 flatpickr 재초기화
 function refreshFlatpickr() {
-  // 기존 인스턴스 중 DOM에서 제거된 것 정리
   for (const [id, fp] of _fpInstances) {
-    if (!document.getElementById(id)) {
-      fp.destroy();
-      _fpInstances.delete(id);
-    }
+    if (!document.getElementById(id)) { fp.destroy(); _fpInstances.delete(id); }
   }
   initFlatpickr();
 }
 
-// MutationObserver로 동적 DOM 변경 감지 → 자동 초기화
 const _fpObserver = new MutationObserver(() => {
   const uninitialized = document.querySelectorAll('input[data-fp]:not(.flatpickr-input)');
   if (uninitialized.length > 0) refreshFlatpickr();
