@@ -643,7 +643,7 @@ select.apple-input {
           <div id="auditorPickerArea"></div>
           <div>
             <label class="apple-label">심사 시작일</label>
-            <input id="inputDateStart" type="date" class="apple-input">
+            <input id="inputDateStart" type="date" class="apple-input" onchange="if(this.value){const e=document.getElementById('inputDateEnd');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">
           </div>
           <div>
             <label class="apple-label">심사 종료일</label>
@@ -4895,10 +4895,10 @@ function renderStatsDashboard() {
 
   const weakCats = Object.entries(catData).map(([cat, v]) => ({
     cat,
-    avg: v.total.count > 0 ? v.total.sum / v.total.count : 0,
-    branchAvg: v.byType.branch ? v.byType.branch.sum / v.byType.branch.count : null,
-    paxAvg: v.byType.pax ? v.byType.pax.sum / v.byType.pax.count : null,
-    rampAvg: v.byType.ramp ? v.byType.ramp.sum / v.byType.ramp.count : null
+    avg: v.total.count > 0 ? (isNaN(v.total.sum / v.total.count) ? 0 : v.total.sum / v.total.count) : 0,
+    branchAvg: v.byType.branch && v.byType.branch.count > 0 ? v.byType.branch.sum / v.byType.branch.count : null,
+    paxAvg: v.byType.pax && v.byType.pax.count > 0 ? v.byType.pax.sum / v.byType.pax.count : null,
+    rampAvg: v.byType.ramp && v.byType.ramp.count > 0 ? v.byType.ramp.sum / v.byType.ramp.count : null
   })).sort((a, b) => a.avg - b.avg);
 
   // 소분류 데이터를 대분류별로 그룹화
@@ -4906,8 +4906,9 @@ function renderStatsDashboard() {
   Object.entries(itemData).forEach(([key, v]) => {
     const [catName, itemId, itemText] = key.split('|||');
     if (!itemsByCategory[catName]) itemsByCategory[catName] = [];
+    const itemAvg = v.count > 0 ? v.sum / v.count : 0;
     itemsByCategory[catName].push({
-      id: itemId, text: itemText, avg: v.sum / v.count, count: v.count,
+      id: itemId, text: itemText, avg: isNaN(itemAvg) ? 0 : itemAvg, count: v.count,
       lowStations: v.stations
     });
   });
@@ -5331,9 +5332,10 @@ function toggleWeakDetail(id, header) {
 }
 
 function calcAvgForTypeRegion(data, type) {
-  const filtered = data.filter(d => d.type === type);
+  const filtered = data.filter(d => d.type === type && d.scores && Object.keys(d.scores).length > 0);
   if (filtered.length === 0) return 0;
-  return filtered.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / filtered.length;
+  const avg = filtered.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / filtered.length;
+  return isNaN(avg) ? 0 : avg;
 }
 
 // ============================================================================
@@ -5443,16 +5445,19 @@ function renderAnalysis() {
   });
   const riskItems = Object.entries(itemRisks).map(([key, v]) => {
     const [id, text] = key.split('|||');
-    return { id, text, avg: v.sum / v.count, lowCount: v.lowCount, count: v.count, freq: v.lowCount / v.count };
+    const rAvg = v.count > 0 ? v.sum / v.count : 0;
+    const rFreq = v.count > 0 ? v.lowCount / v.count : 0;
+    return { id, text, avg: isNaN(rAvg) ? 0 : rAvg, lowCount: v.lowCount, count: v.count, freq: isNaN(rFreq) ? 0 : rFreq };
   });
   const highRiskItems = riskItems.filter(r => r.avg < 2.5 && r.lowCount >= 2).sort((a, b) => a.avg - b.avg);
 
   // 3. Type comparison
   const typeAvgs = {};
   ['branch', 'pax', 'ramp'].forEach(type => {
-    const typeData = yearData.filter(d => d.type === type);
+    const typeData = yearData.filter(d => d.type === type && d.scores && Object.keys(d.scores).length > 0);
     if (typeData.length > 0) {
-      typeAvgs[type] = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
+      const avg = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
+      typeAvgs[type] = isNaN(avg) ? 0 : avg;
     }
   });
 
@@ -6686,11 +6691,11 @@ function showScheduleStation(scheduleId) {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}">`;
+  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}" onchange="if(this.value){var e=document.getElementById('scheduleDateEnd');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">`;
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
-  html += `<input type="date" id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}">`;
+  html += `<input type="date" id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}" ${item.dateStart ? 'min="'+item.dateStart+'"' : ''}>`;
   html += '</div>';
   html += '</div>';
 
@@ -7023,7 +7028,7 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">지점</label>';
   html += '<select id="newScheduleStation" class="apple-input" onchange="toggleNewStationForm();autoDetectCycle()">';
-  html += '<option value="">지점을 선택하세요</option>';
+  html += '<option value="">지점/실본부를 선택하세요</option>';
   for (const [region, data] of Object.entries(REGIONS)) {
     html += '<optgroup label="' + region + '">';
     data.stations.forEach(st => {
@@ -7031,6 +7036,11 @@ function renderAddScheduleForm() {
     });
     html += '</optgroup>';
   }
+  html += '<optgroup label="실/본부">';
+  Object.keys(DIVISIONS).forEach(div => {
+    html += '<option value="' + div + '">' + div + '</option>';
+  });
+  html += '</optgroup>';
   html += '<optgroup label="기타">';
   html += '<option value="__new__">+ 신규 지점 직접 입력</option>';
   html += '</optgroup>';
@@ -7088,7 +7098,7 @@ function renderAddScheduleForm() {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += '<input type="date" id="newScheduleDateStart" class="apple-input">';
+  html += '<input type="date" id="newScheduleDateStart" class="apple-input" onchange="if(this.value){var e=document.getElementById(\'newScheduleDateEnd\');if(!e.value)e.value=this.value;if(e.value<this.value)e.value=this.value;e.min=this.value;}">';
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
