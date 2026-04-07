@@ -4057,12 +4057,23 @@ function renderScoreViewTable() {
   if (branchGroups.length > 0) {
     html += '<div class="overflow-x-auto" style="margin-bottom:24px;">';
     html += '<table class="apple-table"><thead><tr>';
+    // 지점 그룹의 추가 type(safety_branch 등) 합집합
+    const branchExtraTypes = new Set();
+    branchGroups.forEach(g => Object.keys(g.types).forEach(t => { if (!['branch','pax','ramp'].includes(t)) branchExtraTypes.add(t); }));
+    const branchExtraArr = [...branchExtraTypes];
+    const branchColCount = 4 + branchExtraArr.length + 3; // 지점/심사일/심사원 + branch/pax/ramp + extras + 상태
+
     html += '<th style="text-align:left;">지점</th>';
     html += '<th style="text-align:left;">심사일</th>';
     html += '<th style="text-align:left;">심사원</th>';
     html += '<th style="text-align:center;">지점</th>';
     html += '<th style="text-align:center;">여객</th>';
     html += '<th style="text-align:center;">램프</th>';
+    branchExtraArr.forEach(type => {
+      const reg = CHECKLIST_REGISTRY[type];
+      const shortName = reg ? reg.name.replace('품질심사', '품질').replace('안전감사', '안전') : type;
+      html += `<th style="text-align:center;font-size:11px;">${shortName}</th>`;
+    });
     html += '<th style="text-align:center;">상태</th>';
     html += '</tr></thead><tbody>';
     branchGroups.forEach((group, i) => {
@@ -4089,9 +4100,12 @@ function renderScoreViewTable() {
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
+      branchExtraArr.forEach(type => {
+        html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
+      });
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="${branchColCount}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -4175,7 +4189,10 @@ function renderGroupReadOnlyDetail(gIdx, group) {
 
   // 구분별 점수 카드 (높이 정렬 + 클릭 시 상세보기)
   const isDivGroup = group.auditCategory === 'division' || !!DIVISIONS[group.station];
-  const typeKeys = isDivGroup ? Object.keys(group.types) : ['branch', 'pax', 'ramp'].filter(t => group.types[t]);
+  // 지점: branch/pax/ramp 우선 + 추가 type(safety_branch 등) 포함
+  const baseKeys = ['branch', 'pax', 'ramp'];
+  const extraKeys = Object.keys(group.types).filter(t => !baseKeys.includes(t));
+  const typeKeys = isDivGroup ? Object.keys(group.types) : [...baseKeys.filter(t => group.types[t]), ...extraKeys];
   const gridCols = Math.min(typeKeys.length, 4);
   html += `<div class="grid grid-cols-1 md:grid-cols-${gridCols} gap-3" style="align-items:stretch;">`;
   typeKeys.forEach(type => {
