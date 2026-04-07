@@ -643,7 +643,7 @@ select.apple-input {
           <div id="auditorPickerArea"></div>
           <div>
             <label class="apple-label">심사 시작일</label>
-            <input id="inputDateStart" type="date" class="apple-input" onchange="if(this.value){const e=document.getElementById('inputDateEnd');e.value=this.value;e.min=this.value;}">
+            <input id="inputDateStart" type="date" class="apple-input">
           </div>
           <div>
             <label class="apple-label">심사 종료일</label>
@@ -923,7 +923,6 @@ select.apple-input {
 
   <!-- Tab 5: Audit Schedule -->
   <div id="tab5" class="tab-content hidden fade-in">
-    <select id="scheduleYear" class="hidden"><option></option></select>
     <div id="scheduleContainer"></div>
   </div>
 
@@ -2603,43 +2602,6 @@ function saveSchedule() {
   firebaseSaveSchedule();
 }
 
-// allData에 점수가 있지만 scheduleData에 일정이 없는 연도/지점을 자동 생성
-function syncScheduleFromData() {
-  const existingKeys = new Set(scheduleData.map(s => s.year + '_' + s.station));
-  const stationYearMap = {};
-  allData.forEach(d => {
-    if (!d.station || !d.year) return;
-    const isDivType = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds'].includes(d.type);
-    if (isDivType) return; // 실/본부 심사는 별도 관리
-    const key = d.year + '_' + d.station;
-    if (existingKeys.has(key)) return;
-    if (!stationYearMap[key]) stationYearMap[key] = { year: d.year, station: d.station, region: d.region || '', dates: [], auditors: [] };
-    if (d.auditDateStart) stationYearMap[key].dates.push(d.auditDateStart);
-    if (d.auditDate) stationYearMap[key].dates.push(d.auditDate);
-    if (d.auditor) stationYearMap[key].auditors.push(d.auditor);
-  });
-  let added = false;
-  let idCounter = Date.now();
-  Object.values(stationYearMap).forEach(info => {
-    const dateStr = info.dates.find(d => d && d.length >= 7) || '';
-    const month = dateStr ? parseInt(dateStr.substring(5, 7)) || 1 : 1;
-    scheduleData.push({
-      id: 'SA' + String(idCounter++),
-      year: info.year,
-      month: month,
-      station: info.station,
-      displayName: info.station,
-      auditors: [...new Set(info.auditors)].join(', '),
-      dateStart: info.dates.find(d => d && d.length === 10) || '',
-      dateEnd: '',
-      status: 'completed',
-      note: ''
-    });
-    added = true;
-  });
-  if (added) saveSchedule();
-}
-
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -2741,9 +2703,6 @@ function calculateScores(scores, checklist) {
   let totalItems = 0;
   let maxScore = 0;
   let maxPointsPerItem = 4; // 기본 배점 (1~4점 척도)
-  if (!scores || typeof scores !== 'object') {
-    return { categoryAverages: {}, totalScore: 0, maxScore: 0, overallAverage: 0, achievementRate: 0, totalItems: 0 };
-  }
   for (const [catName, catData] of Object.entries(checklist)) {
     let catSum = 0;
     let catCount = 0;
@@ -2973,23 +2932,6 @@ function switchTab(idx) {
     document.getElementById('viewType').value = '전체';
     document.getElementById('viewStatus').value = '전체';
   }
-  // 연도 선택을 현재 연도로 리셋
-  const thisY = new Date().getFullYear();
-  function resetYearSelector(selId, segmentId) {
-    const sel = document.getElementById(selId);
-    if (sel) sel.value = thisY;
-    const seg = document.getElementById(segmentId);
-    if (seg) seg.querySelectorAll('button').forEach(b => {
-      b.style.background = b.dataset?.year == thisY || b.textContent === thisY + '년' ? '#D20015' : 'transparent';
-      b.style.color = b.dataset?.year == thisY || b.textContent === thisY + '년' ? '#fff' : '#565A5B';
-    });
-  }
-  if (idx === 1) { const iy = document.getElementById('inputYear'); if (iy) iy.value = thisY; }
-  if (idx === 2) { const vy = document.getElementById('viewYear'); if (vy) vy.value = thisY; }
-  if (idx === 3) resetYearSelector('statsYear', 'statsYearSegment');
-  if (idx === 4) resetYearSelector('analysisYear', 'analysisYearSegment');
-  if (idx === 5) { const sy = document.getElementById('scheduleYear'); if (sy) sy.value = thisY; }
-
   // Render tab-specific content
   if (idx === 0) renderHome();
   if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
@@ -4091,23 +4033,12 @@ function renderScoreViewTable() {
   if (branchGroups.length > 0) {
     html += '<div class="overflow-x-auto" style="margin-bottom:24px;">';
     html += '<table class="apple-table"><thead><tr>';
-    // 지점 그룹의 추가 type(safety_branch 등) 합집합
-    const branchExtraTypes = new Set();
-    branchGroups.forEach(g => Object.keys(g.types).forEach(t => { if (!['branch','pax','ramp'].includes(t)) branchExtraTypes.add(t); }));
-    const branchExtraArr = [...branchExtraTypes];
-    const branchColCount = 4 + branchExtraArr.length + 3; // 지점/심사일/심사원 + branch/pax/ramp + extras + 상태
-
     html += '<th style="text-align:left;">지점</th>';
     html += '<th style="text-align:left;">심사일</th>';
     html += '<th style="text-align:left;">심사원</th>';
     html += '<th style="text-align:center;">지점</th>';
     html += '<th style="text-align:center;">여객</th>';
     html += '<th style="text-align:center;">램프</th>';
-    branchExtraArr.forEach(type => {
-      const reg = CHECKLIST_REGISTRY[type];
-      const shortName = reg ? reg.name.replace('품질심사', '품질').replace('안전감사', '안전') : type;
-      html += `<th style="text-align:center;font-size:11px;">${shortName}</th>`;
-    });
     html += '<th style="text-align:center;">상태</th>';
     html += '</tr></thead><tbody>';
     branchGroups.forEach((group, i) => {
@@ -4134,12 +4065,9 @@ function renderScoreViewTable() {
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
-      branchExtraArr.forEach(type => {
-        html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
-      });
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="${branchColCount}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -4223,10 +4151,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
 
   // 구분별 점수 카드 (높이 정렬 + 클릭 시 상세보기)
   const isDivGroup = group.auditCategory === 'division' || !!DIVISIONS[group.station];
-  // 지점: branch/pax/ramp 우선 + 추가 type(safety_branch 등) 포함
-  const baseKeys = ['branch', 'pax', 'ramp'];
-  const extraKeys = Object.keys(group.types).filter(t => !baseKeys.includes(t));
-  const typeKeys = isDivGroup ? Object.keys(group.types) : [...baseKeys.filter(t => group.types[t]), ...extraKeys];
+  const typeKeys = Object.keys(group.types).filter(t => group.types[t]);
   const gridCols = Math.min(typeKeys.length, 4);
   html += `<div class="grid grid-cols-1 md:grid-cols-${gridCols} gap-2" style="align-items:stretch;">`;
   typeKeys.forEach(type => {
@@ -4845,19 +4770,17 @@ function renderStatsDashboard() {
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
   const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
-  // scores가 유효하고 체크리스트와 매치되는 데이터만 통계 계산에 사용
-  const yearDataValid = yearData.filter(d => d.scores && Object.keys(d.scores).length > 0 && calculateScores(d.scores, getChecklist(d.type)).totalItems > 0);
 
   // Calculate averages
   let totalAvg = 0, totalCount = 0;
   let domesticAvg = 0, domesticCount = 0;
   let intlAvg = 0, intlCount = 0;
 
-  yearDataValid.forEach(d => {
+  yearData.forEach(d => {
+    if (getScoringMethod(d.type) === 'binary') return; // 안전감사(binary) 제외
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     const avg = result.overallAverage;
-    if (isNaN(avg)) return;
     totalAvg += avg; totalCount++;
     if (d.region === '국내') { domesticAvg += avg; domesticCount++; }
     else { intlAvg += avg; intlCount++; }
@@ -4900,11 +4823,11 @@ function renderStatsDashboard() {
   let regHtml = '<table class="apple-table compact-mobile">';
   regHtml += '<thead><tr><th style="text-align:left;">지역</th><th style="text-align:center;">지점 평균</th><th style="text-align:center;">여객 평균</th><th style="text-align:center;">램프 평균</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   for (const [region] of Object.entries(REGIONS)) {
-    const regionData = yearDataValid.filter(d => d.region === region);
+    const regionData = yearData.filter(d => d.region === region);
     const branchAvg = calcAvgForTypeRegion(regionData, 'branch');
     const paxAvg = calcAvgForTypeRegion(regionData, 'pax');
     const rampAvg = calcAvgForTypeRegion(regionData, 'ramp');
-    const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => { const a = calculateScores(d.scores, getChecklist(d.type)).overallAverage; return s + (isNaN(a) ? 0 : a); }, 0) / regionData.length : 0;
+    const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / regionData.length : 0;
     regHtml += `<tr><td style="font-weight:600;">${region}</td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(branchAvg)}">${branchAvg ? branchAvg.toFixed(2) : '-'}</span></td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(paxAvg)}">${paxAvg ? paxAvg.toFixed(2) : '-'}</span></td>`;
@@ -4917,14 +4840,15 @@ function renderStatsDashboard() {
 
   // Station ranking
   const stationMap = {};
-  yearDataValid.forEach(d => {
+  yearData.forEach(d => {
     if (!stationMap[d.station]) stationMap[d.station] = { sum: 0, count: 0, region: d.region };
     const avg = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-    if (!isNaN(avg)) { stationMap[d.station].sum += avg; stationMap[d.station].count++; }
+    stationMap[d.station].sum += avg;
+    stationMap[d.station].count++;
   });
   const ranked = Object.entries(stationMap).map(([station, v]) => ({
-    station, avg: v.count > 0 ? v.sum / v.count : 0, count: v.count, region: v.region
-  })).filter(r => r.count > 0).sort((a, b) => b.avg - a.avg);
+    station, avg: v.sum / v.count, count: v.count, region: v.region
+  })).sort((a, b) => b.avg - a.avg);
 
   let rankHtml = '<table class="apple-table compact-mobile"><thead><tr><th style="text-align:center;width:48px;">순위</th><th style="text-align:left;">지점</th><th style="text-align:left;">지역</th><th style="text-align:center;">심사 건수</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   ranked.forEach((r, i) => {
@@ -4940,7 +4864,7 @@ function renderStatsDashboard() {
   // 1. 대분류별 데이터 수집 + 구분별(지점/여객/램프) 비교
   const catData = {};
   const itemData = {}; // 소분류
-  yearDataValid.forEach(d => {
+  yearData.forEach(d => {
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     for (const [cat, catAvg] of Object.entries(result.categoryAverages)) {
@@ -4968,10 +4892,10 @@ function renderStatsDashboard() {
 
   const weakCats = Object.entries(catData).map(([cat, v]) => ({
     cat,
-    avg: v.total.count > 0 ? (isNaN(v.total.sum / v.total.count) ? 0 : v.total.sum / v.total.count) : 0,
-    branchAvg: v.byType.branch && v.byType.branch.count > 0 ? v.byType.branch.sum / v.byType.branch.count : null,
-    paxAvg: v.byType.pax && v.byType.pax.count > 0 ? v.byType.pax.sum / v.byType.pax.count : null,
-    rampAvg: v.byType.ramp && v.byType.ramp.count > 0 ? v.byType.ramp.sum / v.byType.ramp.count : null
+    avg: v.total.count > 0 ? v.total.sum / v.total.count : 0,
+    branchAvg: v.byType.branch ? v.byType.branch.sum / v.byType.branch.count : null,
+    paxAvg: v.byType.pax ? v.byType.pax.sum / v.byType.pax.count : null,
+    rampAvg: v.byType.ramp ? v.byType.ramp.sum / v.byType.ramp.count : null
   })).sort((a, b) => a.avg - b.avg);
 
   // 소분류 데이터를 대분류별로 그룹화
@@ -4979,9 +4903,8 @@ function renderStatsDashboard() {
   Object.entries(itemData).forEach(([key, v]) => {
     const [catName, itemId, itemText] = key.split('|||');
     if (!itemsByCategory[catName]) itemsByCategory[catName] = [];
-    const itemAvg = v.count > 0 ? v.sum / v.count : 0;
     itemsByCategory[catName].push({
-      id: itemId, text: itemText, avg: isNaN(itemAvg) ? 0 : itemAvg, count: v.count,
+      id: itemId, text: itemText, avg: v.sum / v.count, count: v.count,
       lowStations: v.stations
     });
   });
@@ -5136,11 +5059,11 @@ function renderStatsDashboard() {
   // 연도별 전체 평균 비교 카드
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
+    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division');
     let avg = 0, count = 0;
     yData.forEach(d => {
-      const result = calculateScores(d.scores, getChecklist(d.type));
-      if (result.totalItems > 0 && !isNaN(result.overallAverage)) { avg += result.overallAverage; count++; }
+      avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+      count++;
     });
     const yearAvg = count > 0 ? (avg / count).toFixed(2) : '-';
     const stations = new Set(yData.map(d => d.station)).size;
@@ -5155,7 +5078,7 @@ function renderStatsDashboard() {
 
   // 연도별 지점 비교 테이블
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0).forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division').forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -5168,11 +5091,9 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division' && d.scores && Object.keys(d.scores).length > 0);
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
       if (stData.length === 0) return null;
-      let sum = 0, validCount = 0;
-      stData.forEach(d => { const r = calculateScores(d.scores, getChecklist(d.type)); if (r.totalItems > 0 && !isNaN(r.overallAverage)) { sum += r.overallAverage; validCount++; } });
-      return validCount > 0 ? sum / validCount : null;
+      return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
     });
 
     threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
@@ -5407,11 +5328,9 @@ function toggleWeakDetail(id, header) {
 }
 
 function calcAvgForTypeRegion(data, type) {
-  const filtered = data.filter(d => d.type === type && d.scores && Object.keys(d.scores).length > 0);
+  const filtered = data.filter(d => d.type === type);
   if (filtered.length === 0) return 0;
-  let sum = 0, cnt = 0;
-  filtered.forEach(d => { const r = calculateScores(d.scores, getChecklist(d.type)); if (r.totalItems > 0 && !isNaN(r.overallAverage)) { sum += r.overallAverage; cnt++; } });
-  return cnt > 0 ? sum / cnt : 0;
+  return filtered.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / filtered.length;
 }
 
 // ============================================================================
@@ -5466,29 +5385,25 @@ function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const hasValidScores = d => d.scores && typeof d.scores === 'object' && Object.keys(d.scores).length > 0 && calculateScores(d.scores, getChecklist(d.type)).totalItems > 0;
-  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division' && hasValidScores(d));
-  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division' && hasValidScores(d));
+  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
+  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division');
   const container = document.getElementById('analysisContainer');
 
   // ===== Pre-calculate all analysis data =====
 
   // 1. Trend: 3-year comparison
-  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division' && hasValidScores(d));
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division');
   const stationsTwoYearsAgo = {};
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
-    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
-    if (!isNaN(avg) && avg > 0) stationsTwoYearsAgo[d.station] = avg;
+    stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
   const prevYearStations = {};
   prevYearData.filter(d => d.type === 'branch').forEach(d => {
-    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
-    if (!isNaN(avg) && avg > 0) prevYearStations[d.station] = avg;
+    prevYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
   const currYearStations = {};
   yearData.filter(d => d.type === 'branch').forEach(d => {
-    const avg = calculateScores(d.scores, getChecklist('branch')).overallAverage;
-    if (!isNaN(avg) && avg > 0) currYearStations[d.station] = avg;
+    currYearStations[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
   const comparisons = [...new Set([...Object.keys(stationsTwoYearsAgo), ...Object.keys(prevYearStations), ...Object.keys(currYearStations)])].map(s => ({
     station: s,
@@ -5525,19 +5440,16 @@ function renderAnalysis() {
   });
   const riskItems = Object.entries(itemRisks).map(([key, v]) => {
     const [id, text] = key.split('|||');
-    const rAvg = v.count > 0 ? v.sum / v.count : 0;
-    const rFreq = v.count > 0 ? v.lowCount / v.count : 0;
-    return { id, text, avg: isNaN(rAvg) ? 0 : rAvg, lowCount: v.lowCount, count: v.count, freq: isNaN(rFreq) ? 0 : rFreq };
+    return { id, text, avg: v.sum / v.count, lowCount: v.lowCount, count: v.count, freq: v.lowCount / v.count };
   });
   const highRiskItems = riskItems.filter(r => r.avg < 2.5 && r.lowCount >= 2).sort((a, b) => a.avg - b.avg);
 
   // 3. Type comparison
   const typeAvgs = {};
   ['branch', 'pax', 'ramp'].forEach(type => {
-    const typeData = yearData.filter(d => d.type === type && d.scores && Object.keys(d.scores).length > 0);
+    const typeData = yearData.filter(d => d.type === type);
     if (typeData.length > 0) {
-      const avg = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
-      typeAvgs[type] = isNaN(avg) ? 0 : avg;
+      typeAvgs[type] = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
     }
   });
 
@@ -5615,8 +5527,7 @@ function renderAnalysis() {
     if (!stationScoreArrays[d.station]) stationScoreArrays[d.station] = { scores: [], region: d.region };
     for (const [, val] of Object.entries(d.scores)) {
       if (val !== 'N/A' && val !== undefined && val !== null) {
-        const num = Number(val);
-        if (!isNaN(num)) stationScoreArrays[d.station].scores.push(num);
+        stationScoreArrays[d.station].scores.push(Number(val));
       }
     }
   });
@@ -6526,20 +6437,7 @@ function renderSchedule() {
   currentScheduleId = null;
 
   const currentMonth = new Date().getMonth() + 1;
-  const thisYear = new Date().getFullYear();
-
-  // 연도 select 초기화 (최초 1회)
-  const scheduleYearSel = document.getElementById('scheduleYear');
-  if (scheduleYearSel && scheduleYearSel.options.length <= 1) {
-    scheduleYearSel.innerHTML = '';
-    for (let i = thisYear - 2; i <= thisYear; i++) {
-      const opt = document.createElement('option');
-      opt.value = i; opt.textContent = i;
-      if (i === thisYear) opt.selected = true;
-      scheduleYearSel.appendChild(opt);
-    }
-  }
-  const scheduleYear = parseInt(scheduleYearSel?.value || thisYear);
+  const scheduleYear = new Date().getFullYear();
 
   // Group by month
   const monthMap = {};
@@ -6550,17 +6448,10 @@ function renderSchedule() {
   });
 
   let html = '';
-  // 연도 세그먼트 버튼
-  html += '<div class="flex items-end justify-between mb-4">';
-  html += `<div><h2 class="section-title">품질심사 일정</h2>`;
+  html += '<div class="flex items-end justify-between mb-6">';
+  html += `<div><h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
-  html += '</div>';
-  html += '<div style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-bottom:20px;">';
-  for (let i = thisYear - 2; i <= thisYear; i++) {
-    const isActive = i === scheduleYear;
-    html += `<button onclick="document.getElementById('scheduleYear').value=${i};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;${isActive ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;'}">${i}년</button>`;
-  }
   html += '</div>';
 
   // Summary stats
@@ -6772,11 +6663,11 @@ function showScheduleStation(scheduleId) {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}" onchange="if(this.value){var e=document.getElementById('scheduleDateEnd');e.value=this.value;e.min=this.value;}">`;
+  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}">`;
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
-  html += `<input type="date" id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}" ${item.dateStart ? 'min="'+item.dateStart+'"' : ''}>`;
+  html += `<input type="date" id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}">`;
   html += '</div>';
   html += '</div>';
 
@@ -7098,9 +6989,8 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">연도</label>';
   html += '<select id="newScheduleYear" class="apple-input">';
-  const selYear = parseInt(document.getElementById('scheduleYear')?.value || new Date().getFullYear());
-  [selYear - 1, selYear, selYear + 1].forEach(y => {
-    html += '<option value="' + y + '"' + (y === selYear ? ' selected' : '') + '>' + y + '년</option>';
+  [2025, 2026, 2027].forEach(y => {
+    html += '<option value="' + y + '"' + (y === 2026 ? ' selected' : '') + '>' + y + '년</option>';
   });
   html += '</select>';
   html += '</div>';
@@ -7109,7 +6999,7 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">지점</label>';
   html += '<select id="newScheduleStation" class="apple-input" onchange="toggleNewStationForm();autoDetectCycle()">';
-  html += '<option value="">지점/실본부를 선택하세요</option>';
+  html += '<option value="">지점을 선택하세요</option>';
   for (const [region, data] of Object.entries(REGIONS)) {
     html += '<optgroup label="' + region + '">';
     data.stations.forEach(st => {
@@ -7117,11 +7007,6 @@ function renderAddScheduleForm() {
     });
     html += '</optgroup>';
   }
-  html += '<optgroup label="실/본부">';
-  Object.keys(DIVISIONS).forEach(div => {
-    html += '<option value="' + div + '">' + div + '</option>';
-  });
-  html += '</optgroup>';
   html += '<optgroup label="기타">';
   html += '<option value="__new__">+ 신규 지점 직접 입력</option>';
   html += '</optgroup>';
@@ -7179,7 +7064,7 @@ function renderAddScheduleForm() {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += '<input type="date" id="newScheduleDateStart" class="apple-input" onchange="if(this.value){var e=document.getElementById(\'newScheduleDateEnd\');e.value=this.value;e.min=this.value;}">';
+  html += '<input type="date" id="newScheduleDateStart" class="apple-input">';
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
@@ -8111,18 +7996,6 @@ function renderInputPendingStations() {
   const doneMap = { all: '모든 점검표가 입력 완료되었습니다.', branch: '모든 지점의 점검표가 입력 완료되었습니다.', division: '모든 실/본부의 점검표가 입력 완료되었습니다.' };
   const colLabel = cat === 'division' ? '실/본부' : '지점';
 
-  // 해당 연도+카테고리에 일정 자체가 없는 경우와 모두 완료된 경우 구분
-  const yearSchedules = scheduleData.filter(s => s.year === year).filter(s => {
-    const isDiv = !!DIVISIONS[s.station];
-    if (cat === 'branch') return !isDiv;
-    if (cat === 'division') return isDiv;
-    return true;
-  });
-
-  if (pendingStations.length === 0 && yearSchedules.length === 0) {
-    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">해당 연도의 심사 일정이 등록되지 않았습니다.</div></div>';
-    return;
-  }
   if (pendingStations.length === 0) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">' + doneMap[cat] + '</div></div>';
     return;
@@ -8266,7 +8139,6 @@ function init() {
   loadAllData();
   loadAuditors();
   loadSchedule();
-  syncScheduleFromData();
   populateStationDropdown();
   populateViewStationDropdown();
   switchTab(0);
