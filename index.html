@@ -601,11 +601,8 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-              <option value="2027">2027</option>
-            </select>
+            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()"></select>
+            <script>(function(){const s=document.getElementById('inputYear'),y=new Date().getFullYear();for(let i=y-2;i<=y+1;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===y)o.selected=true;s.appendChild(o);}})()</script>
           </div>
           <div id="stationSelectArea">
             <label class="apple-label">지점</label>
@@ -732,11 +729,8 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-              <option value="2027">2027</option>
-            </select>
+            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()"></select>
+            <script>(function(){const s=document.getElementById('viewYear'),y=new Date().getFullYear();for(let i=y-2;i<=y+1;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===y)o.selected=true;s.appendChild(o);}})()</script>
           </div>
           <div id="viewRegionArea">
             <label class="apple-label">지역</label>
