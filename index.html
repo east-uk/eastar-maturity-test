@@ -362,11 +362,11 @@ select.apple-input {
   .mobile-tabs { display: flex; }
   .section-title { font-size: 22px !important; }
 
-  /* Mobile table optimization */
-  .apple-table { font-size: 12px; }
-  .apple-table thead th { font-size: 10px; padding: 8px 6px; white-space: nowrap; }
-  .apple-table tbody td { padding: 8px 6px; }
-  .apple-table .badge-pill { font-size: 10px; padding: 1px 6px; }
+  /* Mobile table optimization - 가독성 우선 */
+  .apple-table { font-size: 13px; }
+  .apple-table thead th { font-size: 11px; padding: 10px 8px; white-space: nowrap; }
+  .apple-table tbody td { padding: 10px 8px; }
+  .apple-table .badge-pill { font-size: 11px; padding: 2px 8px; }
 
   /* Prevent text from going vertical */
   .apple-table td, .apple-table th {
@@ -374,11 +374,26 @@ select.apple-input {
     min-width: 0;
   }
 
-  /* Score view group table - make compact */
-  .score-view-table th, .score-view-table td { padding: 6px 4px; }
+  /* 스크롤 가능 힌트 */
+  .overflow-x-auto {
+    position: relative;
+  }
+  .overflow-x-auto::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.9));
+    pointer-events: none;
+    border-radius: 0 12px 12px 0;
+  }
+  .overflow-x-auto.scrolled-end::after { display: none; }
+
+  /* Score view group table */
+  .score-view-table th, .score-view-table td { padding: 8px 6px; }
 
   /* Reduce card padding slightly */
-  main { padding-left: 10px !important; padding-right: 10px !important; }
+  main { padding-left: 12px !important; padding-right: 12px !important; }
 
   /* Fix badge overflow */
   .badge-pill { white-space: nowrap; }
@@ -386,16 +401,16 @@ select.apple-input {
   /* Fix button text wrapping */
   .pill-btn { white-space: nowrap; font-size: 12px !important; }
 
-  /* Compact mobile stats tables */
-  .compact-mobile th { font-size: 10px !important; padding: 6px 4px !important; letter-spacing: 0; }
-  .compact-mobile td { font-size: 11px !important; padding: 6px 4px !important; }
-  .compact-mobile .badge-pill { font-size: 10px !important; padding: 1px 5px !important; }
+  /* Compact mobile stats tables - 가독성 상향 */
+  .compact-mobile th { font-size: 11px !important; padding: 8px 6px !important; letter-spacing: 0; }
+  .compact-mobile td { font-size: 12px !important; padding: 8px 6px !important; }
+  .compact-mobile .badge-pill { font-size: 11px !important; padding: 2px 6px !important; }
 
-  /* Heatmap mobile */
-  .heatmap-grid { gap: 2px; font-size: 11px; }
-  .heatmap-header > div { padding: 8px 4px; font-size: 9px; }
-  .heatmap-cell { padding: 8px 4px; border-radius: 4px; }
-  .heatmap-label { padding: 8px 4px; font-size: 12px; }
+  /* Heatmap mobile - 터치 타겟 확대 */
+  .heatmap-grid { gap: 2px; font-size: 12px; }
+  .heatmap-header > div { padding: 10px 6px; font-size: 10px; }
+  .heatmap-cell { padding: 10px 6px; border-radius: 6px; min-height: 36px; }
+  .heatmap-label { padding: 10px 6px; font-size: 13px; }
 }
 @media (min-width: 769px) {
   .desktop-tabs { display: flex; }
@@ -10016,6 +10031,14 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// 모바일 테이블 스크롤 힌트 — 끝까지 스크롤 시 그라데이션 제거
+document.addEventListener('scroll', function() {
+  document.querySelectorAll('.overflow-x-auto').forEach(el => {
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+    el.classList.toggle('scrolled-end', atEnd);
+  });
+}, true);
 
 // 오프라인/온라인 감지
 window.addEventListener('offline', () => {
