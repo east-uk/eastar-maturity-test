@@ -597,6 +597,12 @@ select.apple-input {
   </div>
 </div>
 
+<!-- 오프라인 상태 배너 -->
+<div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#F59E0B;color:#fff;text-align:center;padding:6px 16px;font-size:13px;font-weight:600;letter-spacing:-0.2px;">
+  <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;display:inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728M5.636 5.636a9 9 0 000 12.728M12 12h.01"/></svg>
+  오프라인 모드 — 저장된 데이터는 연결 복구 시 자동 동기화됩니다
+</div>
+
 <!-- ============================================================ -->
 <!-- LOGIN SCREEN -->
 <!-- ============================================================ -->
@@ -729,22 +735,19 @@ select.apple-input {
 <!-- Main Content -->
 <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 pb-28 md:pb-10">
 
-  <!-- Tab 0: Home -->
+  <!-- Tab 0: Home (대시보드 우선) -->
   <div id="tab0" class="tab-content fade-in">
-    <div class="mb-8" style="text-align:center;padding-top:20px;">
-      <svg style="width:48px;height:48px;margin:0 auto 12px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      <h2 class="section-title">이스타항공 품질관리시스템 포털</h2>
-      <p class="section-subtitle mt-1">Eastar Jet QMS Portal</p>
+    <!-- 교육 만료 알림 (최상단 배치) -->
+    <div id="homeTrainingAlerts" class="mb-4"></div>
+
+    <!-- 빠른 실행 (최상단) -->
+    <div class="mb-6">
+      <h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:12px;">빠른 실행</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quickActions"></div>
     </div>
 
     <!-- 현황 요약 -->
-    <div id="homeSummary" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    </div>
-
-    <!-- 빠른 실행 -->
-    <div class="mb-8">
-      <h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:12px;">빠른 실행</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quickActions"></div>
+    <div id="homeSummary" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     </div>
 
     <!-- 최근 완료 / 예정 심사 -->
@@ -758,9 +761,6 @@ select.apple-input {
         <div id="homeUpcomingAudits"></div>
       </div>
     </div>
-
-    <!-- 교육 만료 알림 -->
-    <div id="homeTrainingAlerts" class="mt-6"></div>
   </div>
 
   <!-- Tab 1: Score Input (4-Phase Workflow) -->
@@ -1118,6 +1118,9 @@ select.apple-input {
       <p class="section-subtitle mt-1">사용자, 내보내기, 동기화, 백업 관리</p>
     </div>
 
+    <!-- 그룹: 인원 관리 -->
+    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6E7273;margin-bottom:8px;padding-left:4px;">인원 관리</div>
+
     <!-- 사용자 관리 (admin만 표시) -->
     <div class="apple-card p-6 mb-5">
       <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_user')">
@@ -1128,6 +1131,9 @@ select.apple-input {
         <div id="userManagementArea"></div>
       </div>
     </div>
+
+    <!-- 그룹: 데이터 관리 -->
+    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6E7273;margin-bottom:8px;margin-top:20px;padding-left:4px;">데이터 관리</div>
 
     <div class="apple-card p-6 mb-5">
       <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_excel')">
@@ -1256,6 +1262,9 @@ select.apple-input {
         <div id="auditorListTable" class="overflow-x-auto"></div>
       </div>
     </div>
+
+    <!-- 그룹: 위험 작업 -->
+    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#D20015;margin-bottom:8px;margin-top:20px;padding-left:4px;">위험 작업</div>
 
     <div class="apple-card p-6">
       <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_reset')">
@@ -4136,7 +4145,7 @@ function selectChecklistType(type) {
 // remarks: object mapping item IDs to remark strings
 // type: checklist type string (e.g., 'branch', 'pax', 'ramp')
 // options: { mode:'input'|'edit', scoreHandler, remarkHandler, naHandler, binaryScoreHandler, stopPropagation, catIdx }
-const SCORE_COLORS = { 1: '#9EA2A1', 2: '#F59E0B', 3: '#22C55E', 4: '#D20015' };
+const SCORE_COLORS = { 1: '#D20015', 2: '#F59E0B', 3: '#22C55E', 4: '#0067C4' };
 
 function renderChecklistItems(items, scores, remarks, type, options) {
   const scoring = getScoringMethod(type);
@@ -10007,6 +10016,19 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// 오프라인/온라인 감지
+window.addEventListener('offline', () => {
+  const banner = document.getElementById('offlineBanner');
+  if (banner) banner.style.display = '';
+  document.body.style.paddingTop = '32px';
+});
+window.addEventListener('online', () => {
+  const banner = document.getElementById('offlineBanner');
+  if (banner) banner.style.display = 'none';
+  document.body.style.paddingTop = '';
+  showToast('네트워크 연결 복구됨', 'success');
+});
 
 // ============================================================================
 // PUBLIC API - onclick 핸들러에서 접근 가능한 함수 노출
