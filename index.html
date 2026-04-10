@@ -984,6 +984,13 @@ select.apple-input {
 
   <!-- Tab 3: Statistics -->
   <div id="tab3" class="tab-content hidden fade-in">
+    <!-- 모바일 인사이트 세그먼트 (통계/분석 전환) -->
+    <div id="insightSegment" class="md:hidden mb-4" style="display:none;">
+      <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
+        <button id="insightSegStats" onclick="switchInsightSegment('stats')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">통계</button>
+        <button id="insightSegAnalysis" onclick="switchInsightSegment('analysis')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">분석</button>
+      </div>
+    </div>
     <div class="mb-6">
       <h2 class="section-title">통계</h2>
       <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
@@ -1052,6 +1059,13 @@ select.apple-input {
 
   <!-- Tab 4: Analysis -->
   <div id="tab4" class="tab-content hidden fade-in">
+    <!-- 모바일 인사이트 세그먼트 (통계/분석 전환) -->
+    <div id="insightSegment2" class="md:hidden mb-4" style="display:none;">
+      <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
+        <button id="insightSegStats2" onclick="switchInsightSegment('stats')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">통계</button>
+        <button id="insightSegAnalysis2" onclick="switchInsightSegment('analysis')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">분석</button>
+      </div>
+    </div>
     <div class="mb-6">
       <h2 class="section-title">분석</h2>
       <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
@@ -3775,6 +3789,8 @@ function switchTab(idx) {
   if (idx === 4) renderAnalysis();
   if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); } // reset without history push (switchTab already records)
   if (idx === 6) renderDataManagement();
+  // 모바일 인사이트 세그먼트 업데이트
+  updateInsightSegment(idx);
 }
 
 // ============================================================================
@@ -9356,6 +9372,41 @@ async function migrateDataToEnvPrefix() {
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
+// 인사이트 세그먼트 전환 (모바일: 통계↔분석)
+function switchInsightSegment(mode) {
+  if (mode === 'stats') {
+    switchTab(3);
+  } else {
+    switchTab(4);
+  }
+}
+
+// 모바일에서 tab3/tab4 진입 시 인사이트 세그먼트 표시
+function updateInsightSegment(idx) {
+  const isMobile = window.innerWidth < 768;
+  const seg1 = document.getElementById('insightSegment');
+  const seg2 = document.getElementById('insightSegment2');
+  if (!seg1 || !seg2) return;
+  if (isMobile && (idx === 3 || idx === 4)) {
+    seg1.style.display = (idx === 3) ? '' : 'none';
+    seg2.style.display = (idx === 4) ? '' : 'none';
+    // 세그먼트 버튼 상태 업데이트
+    const statsBtn1 = document.getElementById('insightSegStats');
+    const analysisBtn1 = document.getElementById('insightSegAnalysis');
+    const statsBtn2 = document.getElementById('insightSegStats2');
+    const analysisBtn2 = document.getElementById('insightSegAnalysis2');
+    const activeStyle = 'background:#D20015;color:#fff;';
+    const inactiveStyle = 'background:transparent;color:#565A5B;';
+    if (statsBtn1) statsBtn1.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 3 ? activeStyle : inactiveStyle);
+    if (analysisBtn1) analysisBtn1.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 4 ? activeStyle : inactiveStyle);
+    if (statsBtn2) statsBtn2.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 3 ? activeStyle : inactiveStyle);
+    if (analysisBtn2) analysisBtn2.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 4 ? activeStyle : inactiveStyle);
+  } else {
+    seg1.style.display = 'none';
+    seg2.style.display = 'none';
+  }
+}
+
 // Mobile user menu toggle
 function toggleMobileUserMenu() {
   const menu = document.getElementById('mobileUserMenu');
@@ -9980,7 +10031,7 @@ Object.assign(window, {
   // Stats tab
   switchStatsSubTab, renderStatsDashboard, toggleWeakDetail,
   // Analysis tab
-  switchAnalysisSubTab, renderAnalysis, toggleAnalysisDetail, closeAnalysisModal,
+  switchAnalysisSubTab, renderAnalysis, toggleAnalysisDetail, closeAnalysisModal, switchInsightSegment, updateInsightSegment,
   // Schedule tab
   renderSchedule, showScheduleStation, saveScheduleItem, setSchedulePhase, scheduleGoBack,
   showAddScheduleForm, saveNewSchedule, deleteScheduleItem,
@@ -9997,7 +10048,7 @@ Object.assign(window, {
   // Environment
   APP_ENV, ENV_PREFIX,
   // Auth
-  doLogin, doLogout, doAdminSetup, doPasswordChange, doForcePasswordChange, showPasswordChange, showLoginForm, showForcePasswordChange,
+  doLogin, doLogout, doAdminSetup, doPasswordChange, doForcePasswordChange, showPasswordChange, showLoginForm, showForcePasswordChange, toggleMobileUserMenu,
   createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
   // Home
   renderHome, renderInputPendingStations, renderViewRecentStations,
