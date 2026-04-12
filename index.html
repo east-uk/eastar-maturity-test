@@ -715,8 +715,7 @@ select.apple-input {
     <div style="font-size:12px;color:#566062;display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;">
       <span id="headerUserName" style="color:#1a1c1d;font-weight:600;font-size:13px;"></span>
       <span style="color:#a4000e;font-weight:600;">안전기획팀</span>
-      <span id="envBadge" style="display:inline-block;border-radius:980px;padding:2px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span style="color:#9EA2A1;">v19.1</span>
+      <span id="envBadge" style="display:none;"></span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(0,0,0,0.12);color:#566062;border-radius:980px;padding:3px 12px;font-size:11px;cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.borderColor='#a4000e';this.style.color='#a4000e'" onmouseout="this.style.borderColor='rgba(0,0,0,0.12)';this.style.color='#566062'">로그아웃</button>
     </div>
@@ -742,7 +741,7 @@ select.apple-input {
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v19.1</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;"></div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -1325,6 +1324,30 @@ select.apple-input {
         <button onclick="resetAllData()" class="pill-btn" style="background:#D20015;color:#fff;">데이터 초기화</button>
       </div>
     </div>
+
+    <!-- 시스템 정보 -->
+    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6E7273;margin-bottom:8px;margin-top:24px;padding-left:4px;">시스템 정보</div>
+    <div class="apple-card p-6 mb-5">
+      <h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">버전 정보</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(192,206,209,0.2);">
+          <span style="color:#566062;">플랫폼 버전</span>
+          <span style="font-weight:700;color:#1a1c1d;" id="sysVersion">v19.1.0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(192,206,209,0.2);">
+          <span style="color:#566062;">환경</span>
+          <span id="sysEnvBadge" style="font-weight:600;"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(192,206,209,0.2);">
+          <span style="color:#566062;">Firebase</span>
+          <span id="sysFirebaseStatus" style="font-weight:600;"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#566062;">빌드 날짜</span>
+          <span style="font-weight:500;color:#9EA2A1;">2026-04-12</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ================================================================== -->
@@ -1427,7 +1450,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v19.1 &middot; 2026
+  안전기획팀 &middot; 2026
 </footer>
 
 <script>
@@ -8940,6 +8963,14 @@ function renderDataManagement() {
 
   // Auditor list
   renderAuditorList();
+
+  // v19.1: 시스템 정보
+  const sysVer = document.getElementById('sysVersion');
+  if (sysVer) sysVer.textContent = 'v' + CONFIG.version;
+  const sysEnv = document.getElementById('sysEnvBadge');
+  if (sysEnv) { sysEnv.textContent = APP_ENV === 'prod' ? '운영' : '테스트'; sysEnv.style.color = APP_ENV === 'prod' ? '#22C55E' : '#F59E0B'; }
+  const sysFb = document.getElementById('sysFirebaseStatus');
+  if (sysFb) { sysFb.textContent = firebaseConnected ? '연결됨' : '연결 안됨'; sysFb.style.color = firebaseConnected ? '#22C55E' : '#D20015'; }
 
   // Firebase status
   const fbBadge = document.getElementById('firebaseStatusBadge');
