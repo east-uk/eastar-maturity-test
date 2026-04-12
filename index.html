@@ -77,25 +77,27 @@ p, span, td, th, label, div {
   line-height: 1.47;
 }
 
-/* Glass Nav */
+/* Glass Nav — Stitch Precision Horizon (v19.1) */
 .glass-nav {
-  background: rgba(17,17,17,0.82);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
-/* Tab Styles */
+/* Tab Styles — Stitch */
 .tab-active {
-  color: #ffffff;
+  color: #a4000e;
   opacity: 1;
-  border-bottom: 2px solid #D20015;
+  font-weight: 600;
+  border-bottom: 2px solid #a4000e;
 }
 .tab-inactive {
-  color: rgba(255,255,255,0.55);
+  color: #566062;
   border-bottom: 2px solid transparent;
 }
 .tab-inactive:hover {
-  color: rgba(255,255,255,0.85);
+  color: #1a1c1d;
 }
 
 /* Score Button */
@@ -416,9 +418,8 @@ select.apple-input {
   .heatmap-label { padding: 10px 6px; font-size: 13px; }
 }
 @media (min-width: 769px) {
-  .desktop-tabs { display: none !important; }
+  .desktop-tabs { display: flex; }
   .mobile-tabs { display: none !important; }
-  #inputBottomBar { left: 256px !important; }
 }
 
 /* Fade transition */
@@ -528,9 +529,10 @@ select.apple-input {
 
 /* Bottom glass bar */
 .glass-bottom {
-  background: rgba(17,17,17,0.82);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid rgba(0,0,0,0.06);
 }
 
 /* Schedule card left border */
@@ -588,10 +590,6 @@ select.apple-input {
 .dday-card { border-radius: 16px; padding: 16px; min-width: 140px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .dday-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important; }
 .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
-.sidebar-menu-item { display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border:none;background:none;width:100%;text-align:left;font-family:"Inter",sans-serif; }
-.sidebar-menu-active { color:#991b1b;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-.sidebar-menu-inactive { color:#566062;background:transparent; }
-.sidebar-menu-inactive:hover { background:rgba(255,255,255,0.5);color:#1a1c1d; }
 
 /* Compliance rate badge */
 .compliance-badge { display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600; }
@@ -704,81 +702,47 @@ select.apple-input {
 <!-- APP WRAPPER (hidden until login) -->
 <div id="appWrapper" style="display:none;">
 
-<!-- v19.0.0: Sidebar Navigation (데스크톱 md 이상) -->
-<aside id="sidebarNav" class="hidden md:flex fixed left-0 top-0 h-full flex-col" style="width:256px;z-index:50;background:rgba(248,250,252,0.6);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);padding:24px 16px;">
-  <!-- 로고 -->
-  <div style="margin-bottom:32px;padding:0 8px;">
-    <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="goToHome()">
-      <div style="width:40px;height:40px;background:linear-gradient(135deg,#a4000e,#d20015);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(164,0,14,0.3);">
-        <span class="material-symbols-outlined" style="color:#fff;font-size:22px;font-variation-settings:'FILL' 1;">flight_takeoff</span>
+<!-- Header - Glass Navigation (모바일 2줄 / 데스크톱 1줄) -->
+<header class="glass-nav sticky top-0 z-50">
+  <!-- 데스크톱 헤더 (md 이상) — Stitch 밝은 톤 -->
+  <div class="hidden md:flex max-w-7xl mx-auto px-6 w-full items-center justify-between" style="height:56px;">
+    <div class="flex items-center gap-3" style="cursor:pointer;" onclick="goToHome()">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#a4000e,#d20015);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <svg class="w-4 h-4" viewBox="0 0 200 200" fill="#fff"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
       </div>
-      <div>
-        <div style="font-size:16px;font-weight:800;color:#1a1c1d;letter-spacing:-0.5px;line-height:1.1;">이스타항공</div>
-        <div style="font-size:10px;font-weight:600;color:#566062;text-transform:uppercase;letter-spacing:1.5px;">품질관리시스템</div>
-      </div>
+      <h1 style="font-size:16px;font-weight:700;letter-spacing:-0.3px;color:#1a1c1d;font-family:'Inter',sans-serif;">이스타항공 품질관리시스템 포털</h1>
     </div>
-  </div>
-  <!-- 메뉴 -->
-  <nav style="flex:1;display:flex;flex-direction:column;gap:4px;">
-    <button class="sidebar-menu-item sidebar-menu-active" data-tab="0" onclick="switchTab(0)">
-      <span class="material-symbols-outlined" style="font-size:20px;">dashboard</span>홈
-    </button>
-    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="1" data-tab-alt="2" onclick="switchTab(1)">
-      <span class="material-symbols-outlined" style="font-size:20px;">fact_check</span>점검
-    </button>
-    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="3" data-tab-alt="4" onclick="switchTab(3)">
-      <span class="material-symbols-outlined" style="font-size:20px;">insights</span>인사이트
-    </button>
-    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="5" onclick="switchTab(5)">
-      <span class="material-symbols-outlined" style="font-size:20px;">calendar_month</span>일정
-    </button>
-    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="6" id="sidebarAdminMenu" onclick="switchTab(6)">
-      <span class="material-symbols-outlined" style="font-size:20px;">settings</span>관리
-    </button>
-  </nav>
-  <!-- 하단: 사용자 + 로그아웃 -->
-  <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
-    <div style="padding:8px;margin-bottom:8px;">
-      <div id="sidebarUserName" style="font-size:14px;font-weight:700;color:#1a1c1d;"></div>
-      <div id="sidebarUserRole" style="font-size:11px;font-weight:600;color:#a4000e;margin-top:2px;"></div>
-      <div style="font-size:10px;color:#566062;margin-top:2px;">v19.0</div>
+    <div style="font-size:12px;color:#566062;display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;">
+      <span id="headerUserName" style="color:#1a1c1d;font-weight:600;font-size:13px;"></span>
+      <span style="color:#a4000e;font-weight:600;">안전기획팀</span>
+      <span id="envBadge" style="display:inline-block;border-radius:980px;padding:2px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
+      <span style="color:#9EA2A1;">v19.1</span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
+      <button onclick="doLogout()" style="background:none;border:1px solid rgba(0,0,0,0.12);color:#566062;border-radius:980px;padding:3px 12px;font-size:11px;cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.borderColor='#a4000e';this.style.color='#a4000e'" onmouseout="this.style.borderColor='rgba(0,0,0,0.12)';this.style.color='#566062'">로그아웃</button>
     </div>
-    <button onclick="doLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;border-radius:8px;color:#566062;font-size:13px;transition:all 0.15s;" onmouseover="this.style.background='rgba(164,0,14,0.06)';this.style.color='#a4000e'" onmouseout="this.style.background='none';this.style.color='#566062'">
-      <span class="material-symbols-outlined" style="font-size:18px;">logout</span>로그아웃
-    </button>
-  </div>
-</aside>
-
-<!-- v19.0.0: Desktop Header (사이드바 오른쪽) -->
-<header class="glass-nav text-white sticky top-0 z-50 md:hidden">
-  <!-- 데스크톱 헤더: 사이드바에 모든 정보 있으므로 숨김 -->
-  <div class="hidden" style="height:0;">
-    <span id="envBadge" style="display:none;"></span>
-    <span id="syncIndicator" style="display:none;"></span>
-    <span id="headerUserName" style="display:none;"></span>
   </div>
   <!-- 모바일 헤더 (md 미만, 1줄 압축) -->
   <div class="md:hidden px-4 flex items-center justify-between" style="height:44px;">
     <div class="flex items-center gap-2" style="cursor:pointer;" onclick="goToHome()">
       <svg class="w-5 h-5" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      <span style="font-size:14px;font-weight:600;color:#fff;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
+      <span style="font-size:14px;font-weight:700;color:#1a1c1d;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <span id="envBadgeMobile" style="display:inline-block;border-radius:980px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;"></span>
       <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
       <!-- 관리 (기어 아이콘) — manager 이상만 표시 -->
       <button id="mobileGearBtn" onclick="switchTab(6)" style="background:none;border:none;cursor:pointer;padding:4px;display:none;">
-        <svg class="w-4 h-4" style="color:rgba(255,255,255,0.6);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <svg class="w-4 h-4" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       </button>
       <!-- 사용자 아바타 (탭→팝업) -->
       <div style="position:relative;">
-        <button id="mobileUserBtn" onclick="toggleMobileUserMenu()" style="background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-          <svg class="w-4 h-4" style="color:rgba(255,255,255,0.85);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <button id="mobileUserBtn" onclick="toggleMobileUserMenu()" style="background:rgba(0,0,0,0.06);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg class="w-4 h-4" style="color:#566062;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </button>
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v19.0</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v19.1</div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -799,7 +763,7 @@ select.apple-input {
 </nav>
 
 <!-- Main Content -->
-<main class="flex-1 max-w-7xl w-full px-4 py-8 pb-28 md:pb-12 md:ml-64 md:px-8 md:pt-6">
+<main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 pb-28 md:pb-10">
 
   <!-- Tab 0: Home (대시보드 우선) -->
   <div id="tab0" class="tab-content fade-in">
@@ -943,7 +907,7 @@ select.apple-input {
     </div>
 
     <!-- Sticky Bottom Bar - Glass -->
-    <div id="inputBottomBar" class="hidden fixed bottom-0 left-0 right-0 glass-bottom z-40" style="transition:left 0.15s;">
+    <div id="inputBottomBar" class="hidden fixed bottom-0 left-0 right-0 glass-bottom z-40">
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-5 text-sm">
           <div>
@@ -1448,22 +1412,22 @@ select.apple-input {
     <span style="font-size:11px;margin-top:2px;color:#D20015;font-weight:600;letter-spacing:-0.224px;">홈</span>
   </button>
   <button onclick="switchTab(1)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="1" data-tab-alt="2" style="background:none;border:none;cursor:pointer;min-height:44px;">
-    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">점검</span>
+    <svg class="w-5 h-5" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+    <span style="font-size:11px;margin-top:2px;color:#9EA2A1;letter-spacing:-0.224px;">점검</span>
   </button>
   <button onclick="switchTab(3)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="3" data-tab-alt="4" style="background:none;border:none;cursor:pointer;min-height:44px;">
-    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">인사이트</span>
+    <svg class="w-5 h-5" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    <span style="font-size:11px;margin-top:2px;color:#9EA2A1;letter-spacing:-0.224px;">인사이트</span>
   </button>
   <button onclick="switchTab(5)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="5" style="background:none;border:none;cursor:pointer;min-height:44px;">
-    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">일정</span>
+    <svg class="w-5 h-5" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+    <span style="font-size:11px;margin-top:2px;color:#9EA2A1;letter-spacing:-0.224px;">일정</span>
   </button>
 </nav>
 
 <!-- Footer (desktop) -->
-<footer class="hidden md:block text-center py-4 md:ml-64" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v19.0 &middot; 2026
+<footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
+  안전기획팀 &middot; v19.1 &middot; 2026
 </footer>
 
 <script>
@@ -1474,7 +1438,7 @@ select.apple-input {
 // CONFIG
 // ============================================================================
 const CONFIG = {
-  version: '19.0.0',
+  version: '19.1.0',
   storage: {
     data: 'eastar_maturity_data',
     auditors: 'eastar_auditors',
@@ -3202,11 +3166,6 @@ function onLoginSuccess() {
   if (nameEl) nameEl.textContent = currentUser.name || currentUser.empNo;
   const nameElM = document.getElementById('headerUserNameMobile');
   if (nameElM) nameElM.textContent = currentUser.name || currentUser.empNo;
-  // v19.0.0: 사이드바 사용자 정보
-  const sidebarName = document.getElementById('sidebarUserName');
-  if (sidebarName) sidebarName.textContent = currentUser.name || currentUser.empNo;
-  const sidebarRole = document.getElementById('sidebarUserRole');
-  if (sidebarRole) sidebarRole.textContent = currentUser.role === 'admin' ? '관리자' : currentUser.role === 'auditor' ? '심사원' : '뷰어';
   // 역할별 UI 적용
   applyRolePermissions(currentUser.role);
   // 앱 데이터 로드 — Firebase 리스너가 먼저 데이터를 로드할 수 있으므로 각각 빈값 체크
@@ -3248,13 +3207,6 @@ function applyRolePermissions(role) {
   // v18.0.0: 모바일 톱니바퀴 — admin만 표시
   const gearBtn = document.getElementById('mobileGearBtn');
   if (gearBtn) gearBtn.style.display = (role === 'admin') ? '' : 'none';
-  // v19.0.0: 사이드바 메뉴 권한 제어
-  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
-    const tabIdx = parseInt(btn.dataset.tab);
-    if (role === 'viewer' && [1, 5, 6].includes(tabIdx)) btn.style.display = 'none';
-    else if (role === 'auditor' && tabIdx === 6) btn.style.display = 'none';
-    else btn.style.display = '';
-  });
 }
 
 // 관리 탭: 사용자 관리 섹션 렌더링
@@ -3934,16 +3886,6 @@ function switchTab(idx) {
     btn.className = btn.className.replace(/tab-(active|inactive)/g, '');
     btn.classList.add(isActive ? 'tab-active' : 'tab-inactive');
   });
-  // v19.0.0: Sidebar menu active state
-  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
-    const tabId = parseInt(btn.dataset.tab);
-    const tabAlt = btn.dataset.tabAlt ? parseInt(btn.dataset.tabAlt) : -1;
-    const isActive = (tabId === idx) || (tabAlt === idx);
-    btn.classList.remove('sidebar-menu-active', 'sidebar-menu-inactive');
-    btn.classList.add(isActive ? 'sidebar-menu-active' : 'sidebar-menu-inactive');
-    const icon = btn.querySelector('.material-symbols-outlined');
-    if (icon) icon.style.fontVariationSettings = isActive ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
-  });
   // Mobile tabs (v18.0.0: 점검+인사이트 data-tab-alt)
   document.querySelectorAll('.mobile-tab').forEach(btn => {
     const tabId = parseInt(btn.dataset.tab);
@@ -3951,9 +3893,9 @@ function switchTab(idx) {
     const isActive = (tabId === idx) || (tabAlt === idx);
     const svg = btn.querySelector('svg');
     const span = btn.querySelector('span');
-    if (svg) svg.style.color = isActive ? '#D20015' : 'rgba(255,255,255,0.45)';
+    if (svg) svg.style.color = isActive ? '#a4000e' : '#9EA2A1';
     if (span) {
-      span.style.color = isActive ? '#D20015' : 'rgba(255,255,255,0.45)';
+      span.style.color = isActive ? '#a4000e' : '#9EA2A1';
       span.style.fontWeight = isActive ? '600' : '400';
     }
   });
@@ -10567,8 +10509,6 @@ function openStationDetail(year, station) {
   // 탭 스타일 비활성화
   document.querySelectorAll('.desktop-tab').forEach(b => { b.classList.remove('tab-active'); b.classList.add('tab-inactive'); });
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('mobile-tab-active'));
-  // v19.0.0: 사이드바 비활성화
-  document.querySelectorAll('.sidebar-menu-item').forEach(b => { b.classList.remove('sidebar-menu-active'); b.classList.add('sidebar-menu-inactive'); });
   // 모바일 탭바 숨김
   const mobileBar = document.getElementById('mobileTabBar');
   if (mobileBar) mobileBar.style.display = 'none';
