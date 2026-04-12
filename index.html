@@ -9,6 +9,8 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -414,8 +416,9 @@ select.apple-input {
   .heatmap-label { padding: 10px 6px; font-size: 13px; }
 }
 @media (min-width: 769px) {
-  .desktop-tabs { display: flex; }
+  .desktop-tabs { display: none !important; }
   .mobile-tabs { display: none !important; }
+  #inputBottomBar { left: 256px !important; }
 }
 
 /* Fade transition */
@@ -584,6 +587,11 @@ select.apple-input {
 .dday-pulse { animation: ddayPulse 1.5s ease-in-out infinite; }
 .dday-card { border-radius: 16px; padding: 16px; min-width: 140px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .dday-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important; }
+.material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+.sidebar-menu-item { display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border:none;background:none;width:100%;text-align:left;font-family:"Inter",sans-serif; }
+.sidebar-menu-active { color:#991b1b;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.sidebar-menu-inactive { color:#566062;background:transparent; }
+.sidebar-menu-inactive:hover { background:rgba(255,255,255,0.5);color:#1a1c1d; }
 
 /* Compliance rate badge */
 .compliance-badge { display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600; }
@@ -608,7 +616,7 @@ select.apple-input {
 .combobox-empty { padding:12px;text-align:center;font-size:13px;color:#6E7273; }
 </style>
 </head>
-<body class="min-h-screen flex flex-col" style="background:#f5f5f7;">
+<body class="min-h-screen flex flex-col" style="background:#f9f9fb;">
 
 <!-- Toast Container -->
 <div id="toastContainer" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2"></div>
@@ -630,7 +638,7 @@ select.apple-input {
 <!-- ============================================================ -->
 <!-- LOGIN SCREEN -->
 <!-- ============================================================ -->
-<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f5f5f7;display:flex;align-items:center;justify-content:center;">
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f9f9fb;display:flex;align-items:center;justify-content:center;">
   <div style="width:100%;max-width:380px;padding:24px;">
     <div style="text-align:center;margin-bottom:32px;">
       <svg style="width:48px;height:48px;margin:0 auto 16px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
@@ -696,19 +704,63 @@ select.apple-input {
 <!-- APP WRAPPER (hidden until login) -->
 <div id="appWrapper" style="display:none;">
 
-<!-- Header - Glass Navigation (모바일 2줄 / 데스크톱 1줄) -->
-<header class="glass-nav text-white sticky top-0 z-50">
-  <!-- 데스크톱 헤더 (md 이상) -->
-  <div class="hidden md:flex max-w-7xl mx-auto px-4 w-full items-center justify-between" style="height:52px;">
-    <div class="flex items-center gap-2.5" style="cursor:pointer;" onclick="goToHome()">
-      <svg class="w-6 h-6" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질관리시스템 포털</h1>
+<!-- v19.0.0: Sidebar Navigation (데스크톱 md 이상) -->
+<aside id="sidebarNav" class="hidden md:flex fixed left-0 top-0 h-full flex-col" style="width:256px;z-index:50;background:rgba(248,250,252,0.6);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);padding:24px 16px;">
+  <!-- 로고 -->
+  <div style="margin-bottom:32px;padding:0 8px;">
+    <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="goToHome()">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#a4000e,#d20015);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(164,0,14,0.3);">
+        <span class="material-symbols-outlined" style="color:#fff;font-size:22px;font-variation-settings:'FILL' 1;">flight_takeoff</span>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#1a1c1d;letter-spacing:-0.5px;line-height:1.1;">이스타항공</div>
+        <div style="font-size:10px;font-weight:600;color:#566062;text-transform:uppercase;letter-spacing:1.5px;">품질관리시스템</div>
+      </div>
     </div>
-    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:8px;">
-      <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
-      <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v18.0</span>
+  </div>
+  <!-- 메뉴 -->
+  <nav style="flex:1;display:flex;flex-direction:column;gap:4px;">
+    <button class="sidebar-menu-item sidebar-menu-active" data-tab="0" onclick="switchTab(0)">
+      <span class="material-symbols-outlined" style="font-size:20px;">dashboard</span>홈
+    </button>
+    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="1" data-tab-alt="2" onclick="switchTab(1)">
+      <span class="material-symbols-outlined" style="font-size:20px;">fact_check</span>점검
+    </button>
+    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="3" data-tab-alt="4" onclick="switchTab(3)">
+      <span class="material-symbols-outlined" style="font-size:20px;">insights</span>인사이트
+    </button>
+    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="5" onclick="switchTab(5)">
+      <span class="material-symbols-outlined" style="font-size:20px;">calendar_month</span>일정
+    </button>
+    <button class="sidebar-menu-item sidebar-menu-inactive" data-tab="6" id="sidebarAdminMenu" onclick="switchTab(6)">
+      <span class="material-symbols-outlined" style="font-size:20px;">settings</span>관리
+    </button>
+  </nav>
+  <!-- 하단: 사용자 + 로그아웃 -->
+  <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
+    <div style="padding:8px;margin-bottom:8px;">
+      <div id="sidebarUserName" style="font-size:14px;font-weight:700;color:#1a1c1d;"></div>
+      <div id="sidebarUserRole" style="font-size:11px;font-weight:600;color:#a4000e;margin-top:2px;"></div>
+      <div style="font-size:10px;color:#566062;margin-top:2px;">v19.0</div>
+    </div>
+    <button onclick="doLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:none;cursor:pointer;border-radius:8px;color:#566062;font-size:13px;transition:all 0.15s;" onmouseover="this.style.background='rgba(164,0,14,0.06)';this.style.color='#a4000e'" onmouseout="this.style.background='none';this.style.color='#566062'">
+      <span class="material-symbols-outlined" style="font-size:18px;">logout</span>로그아웃
+    </button>
+  </div>
+</aside>
+
+<!-- v19.0.0: Desktop Header (사이드바 오른쪽) -->
+<header class="glass-nav text-white sticky top-0 z-50">
+  <!-- 데스크톱 헤더 (md 이상) — Stitch 스타일 -->
+  <div class="hidden md:flex items-center justify-between" style="height:56px;margin-left:256px;padding:0 32px;background:rgba(255,255,255,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,0.04);">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="envBadge" style="display:inline-block;border-radius:980px;padding:2px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="headerUserName" style="font-size:13px;font-weight:600;color:#1a1c1d;"></span>
+      <span style="font-size:12px;font-weight:600;color:#a4000e;">안전기획팀</span>
+      <span style="font-size:11px;color:#566062;">v19.0</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -734,7 +786,7 @@ select.apple-input {
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v18.0</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v19.0</div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -755,7 +807,7 @@ select.apple-input {
 </nav>
 
 <!-- Main Content -->
-<main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 pb-28 md:pb-10">
+<main class="flex-1 max-w-7xl w-full px-4 py-8 pb-28 md:pb-12 md:ml-64 md:px-8 md:pt-6">
 
   <!-- Tab 0: Home (대시보드 우선) -->
   <div id="tab0" class="tab-content fade-in">
@@ -893,13 +945,13 @@ select.apple-input {
           <span id="phase4MaturityToggle" style="font-size:12px;color:#6E7273;cursor:pointer;display:none;" onclick="document.getElementById('maturityHeaderPanel').classList.toggle('hidden')">▶ 성숙도 기준 보기</span>
         </div>
         <div id="phase4CompanyInfo" style="font-size:14px;color:#565A5B;margin-top:4px;"></div>
-        <div id="maturityHeaderPanel" class="hidden" style="margin-top:8px;padding:16px;background:#f5f5f7;border-radius:12px;font-size:13px;color:#565A5B;"></div>
+        <div id="maturityHeaderPanel" class="hidden" style="margin-top:8px;padding:16px;background:#f9f9fb;border-radius:12px;font-size:13px;color:#565A5B;"></div>
       </div>
       <div id="checklistArea"></div>
     </div>
 
     <!-- Sticky Bottom Bar - Glass -->
-    <div id="inputBottomBar" class="hidden fixed bottom-0 left-0 right-0 glass-bottom z-40">
+    <div id="inputBottomBar" class="hidden fixed bottom-0 left-0 right-0 glass-bottom z-40" style="transition:left 0.15s;">
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-5 text-sm">
           <div>
@@ -1033,7 +1085,7 @@ select.apple-input {
     <div class="mb-6">
       <h2 class="section-title">통계</h2>
       <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
-      <div id="statsYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <div id="statsYearSegment" style="display:inline-flex;background:#f9f9fb;border-radius:980px;padding:3px;margin-top:10px;"></div>
       <div id="statsSubTabBar" class="flex gap-2 mt-3">
         <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
@@ -1108,7 +1160,7 @@ select.apple-input {
     <div class="mb-6">
       <h2 class="section-title">분석</h2>
       <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
-      <div id="analysisYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <div id="analysisYearSegment" style="display:inline-flex;background:#f9f9fb;border-radius:980px;padding:3px;margin-top:10px;"></div>
       <div id="analysisSubTabBar" class="flex gap-2 mt-3">
         <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('maturityResult')" id="analysisSubMaturityResult">성숙도 평가 결과</button>
@@ -1418,8 +1470,8 @@ select.apple-input {
 </nav>
 
 <!-- Footer (desktop) -->
-<footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v18.0 &middot; 2026
+<footer class="hidden md:block text-center py-4 md:ml-64" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
+  안전기획팀 &middot; v19.0 &middot; 2026
 </footer>
 
 <script>
@@ -1430,7 +1482,7 @@ select.apple-input {
 // CONFIG
 // ============================================================================
 const CONFIG = {
-  version: '18.0.0',
+  version: '19.0.0',
   storage: {
     data: 'eastar_maturity_data',
     auditors: 'eastar_auditors',
@@ -3158,6 +3210,11 @@ function onLoginSuccess() {
   if (nameEl) nameEl.textContent = currentUser.name || currentUser.empNo;
   const nameElM = document.getElementById('headerUserNameMobile');
   if (nameElM) nameElM.textContent = currentUser.name || currentUser.empNo;
+  // v19.0.0: 사이드바 사용자 정보
+  const sidebarName = document.getElementById('sidebarUserName');
+  if (sidebarName) sidebarName.textContent = currentUser.name || currentUser.empNo;
+  const sidebarRole = document.getElementById('sidebarUserRole');
+  if (sidebarRole) sidebarRole.textContent = currentUser.role === 'admin' ? '관리자' : currentUser.role === 'auditor' ? '심사원' : '뷰어';
   // 역할별 UI 적용
   applyRolePermissions(currentUser.role);
   // 앱 데이터 로드 — Firebase 리스너가 먼저 데이터를 로드할 수 있으므로 각각 빈값 체크
@@ -3199,6 +3256,13 @@ function applyRolePermissions(role) {
   // v18.0.0: 모바일 톱니바퀴 — admin만 표시
   const gearBtn = document.getElementById('mobileGearBtn');
   if (gearBtn) gearBtn.style.display = (role === 'admin') ? '' : 'none';
+  // v19.0.0: 사이드바 메뉴 권한 제어
+  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
+    const tabIdx = parseInt(btn.dataset.tab);
+    if (role === 'viewer' && [1, 5, 6].includes(tabIdx)) btn.style.display = 'none';
+    else if (role === 'auditor' && tabIdx === 6) btn.style.display = 'none';
+    else btn.style.display = '';
+  });
 }
 
 // 관리 탭: 사용자 관리 섹션 렌더링
@@ -3878,6 +3942,16 @@ function switchTab(idx) {
     btn.className = btn.className.replace(/tab-(active|inactive)/g, '');
     btn.classList.add(isActive ? 'tab-active' : 'tab-inactive');
   });
+  // v19.0.0: Sidebar menu active state
+  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
+    const tabId = parseInt(btn.dataset.tab);
+    const tabAlt = btn.dataset.tabAlt ? parseInt(btn.dataset.tabAlt) : -1;
+    const isActive = (tabId === idx) || (tabAlt === idx);
+    btn.classList.remove('sidebar-menu-active', 'sidebar-menu-inactive');
+    btn.classList.add(isActive ? 'sidebar-menu-active' : 'sidebar-menu-inactive');
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon) icon.style.fontVariationSettings = isActive ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+  });
   // Mobile tabs (v18.0.0: 점검+인사이트 data-tab-alt)
   document.querySelectorAll('.mobile-tab').forEach(btn => {
     const tabId = parseInt(btn.dataset.tab);
@@ -4402,7 +4476,7 @@ function renderChecklist() {
     html += `<span style="font-size:13px;font-weight:600;color:#D20015;" id="catScore_${catIdx}">${catData.maxPoints ? "0 / " + catData.maxPoints : "0 / " + catData.items.length}</span>`;
     html += `<svg class="arrow w-4 h-4 transform rotate-180" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
     html += `</div></div>`;
-    html += `<div class="accordion-content open" id="${catId}" style="background:#f5f5f7;">`;
+    html += `<div class="accordion-content open" id="${catId}" style="background:#f9f9fb;">`;
 
     // Delegate item rendering to shared function
     html += renderChecklistItems(catData.items, currentScores, currentRemarks, selectedType, {
@@ -5154,7 +5228,7 @@ function renderScoreViewTable() {
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['safety_branch'], 'safety_branch')}</td>`;
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="8" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px 16px 8px 16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="8" style="padding:0;background:#f9f9fb;"><div id="viewGroupDetail_${gIdx}" style="padding:16px 16px 8px 16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -5208,7 +5282,7 @@ function renderScoreViewTable() {
       });
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f9f9fb;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -6041,7 +6115,7 @@ function renderStatsDashboard() {
     weakHtml += `<div style="flex:1;"><span style="font-size:13px;font-weight:600;color:#303A3C;">${c.cat}</span>${alertBadge}</div>`;
     weakHtml += `<div class="flex items-center gap-3">`;
     weakHtml += `<div style="display:flex;align-items:center;gap:6px;">`;
-    weakHtml += `<div style="width:80px;background:#f5f5f7;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barWidth}%;background:${levelColor};"></div></div>`;
+    weakHtml += `<div style="width:80px;background:#f9f9fb;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barWidth}%;background:${levelColor};"></div></div>`;
     weakHtml += `<span style="font-size:14px;font-weight:600;color:${levelColor};">${c.avg.toFixed(2)}</span>`;
     weakHtml += `</div>`;
     weakHtml += `<svg class="w-4 h-4" style="color:#9EA2A1;transition:transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
@@ -6064,7 +6138,7 @@ function renderStatsDashboard() {
       weakHtml += `<div class="flex justify-between items-center">`;
       weakHtml += `<span style="font-size:12px;color:#303A3C;flex:1;word-break:keep-all;"><strong>${item.id}</strong> ${item.text}</span>`;
       weakHtml += `<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">`;
-      weakHtml += `<div style="width:50px;background:#f5f5f7;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${itemBarW}%;background:${itemColor};"></div></div>`;
+      weakHtml += `<div style="width:50px;background:#f9f9fb;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${itemBarW}%;background:${itemColor};"></div></div>`;
       weakHtml += `<span style="font-size:12px;font-weight:600;color:${itemColor};min-width:32px;text-align:right;">${item.avg.toFixed(2)}</span>`;
       weakHtml += `</div></div>`;
       // 낮은 점수(2점 이하) 지점 표시
@@ -6120,7 +6194,7 @@ function renderStatsDashboard() {
       patternHtml += `<div class="flex justify-between items-center">`;
       patternHtml += `<div><span style="font-weight:600;color:#303A3C;">${p.station}</span><span style="font-size:12px;color:#9EA2A1;margin-left:6px;">${p.region}</span></div>`;
       patternHtml += `<div style="display:flex;align-items:center;gap:8px;">`;
-      patternHtml += `<div style="width:60px;background:#f5f5f7;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barW}%;background:${rateColor};"></div></div>`;
+      patternHtml += `<div style="width:60px;background:#f9f9fb;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barW}%;background:${rateColor};"></div></div>`;
       patternHtml += `<span style="font-size:13px;font-weight:600;color:${rateColor};">${p.weakItems}건 (${p.weakRate.toFixed(1)}%)</span>`;
       patternHtml += `</div></div>`;
       if (p.topWeakCats.length > 0) {
@@ -6532,7 +6606,7 @@ function renderOutsourcingStats() {
     html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${cat}</span>`;
     html += `<span style="font-size:14px;font-weight:600;color:${rateColor};">${rate}%</span>`;
     html += `</div>`;
-    html += `<div style="margin-top:6px;background:#f5f5f7;border-radius:4px;height:8px;"><div style="height:8px;border-radius:4px;width:${barW}%;background:${rateColor};"></div></div>`;
+    html += `<div style="margin-top:6px;background:#f9f9fb;border-radius:4px;height:8px;"><div style="height:8px;border-radius:4px;width:${barW}%;background:${rateColor};"></div></div>`;
     html += `<div style="font-size:11px;color:#9EA2A1;margin-top:4px;">S: ${v.s} / U: ${v.u} / N/A: ${v.na}</div>`;
     html += `</div>`;
   });
@@ -7496,7 +7570,7 @@ function renderDivisionAnalysis() {
           html += `<div style="font-size:10px;color:#9EA2A1;">${label}</div>`;
           html += `</div>`;
         } else {
-          html += `<div style="flex:1;text-align:center;padding:6px;background:#f5f5f7;border-radius:8px;">`;
+          html += `<div style="flex:1;text-align:center;padding:6px;background:#f9f9fb;border-radius:8px;">`;
           html += `<div style="font-size:16px;color:#C0CED1;">-</div>`;
           html += `<div style="font-size:10px;color:#C0CED1;">${label}</div>`;
           html += `</div>`;
@@ -7634,7 +7708,7 @@ function renderOutsourcingAnalysis() {
       html += `<span style="font-size:13px;color:#303A3C;flex:1;">${p.text}</span>`;
       html += `<span style="font-size:13px;font-weight:600;color:#D20015;flex-shrink:0;margin-left:8px;">${p.count}건</span>`;
       html += `</div>`;
-      html += `<div style="margin-top:4px;background:#f5f5f7;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${barW}%;background:#D20015;"></div></div>`;
+      html += `<div style="margin-top:4px;background:#f9f9fb;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${barW}%;background:#D20015;"></div></div>`;
       html += `<div style="font-size:11px;color:#565A5B;margin-top:2px;">발생 업체: ${p.stations.join(', ')}</div>`;
       html += `</div>`;
     });
@@ -8092,7 +8166,7 @@ function renderSchedule() {
   html += '<div>';
   html += `<h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
   html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p>';
-  html += '<div class="flex gap-1 mt-3" style="background:#f5f5f7;border-radius:980px;padding:3px;display:inline-flex;">';
+  html += '<div class="flex gap-1 mt-3" style="background:#f9f9fb;border-radius:980px;padding:3px;display:inline-flex;">';
   [currentYear - 2, currentYear - 1, currentYear, currentYear + 1].forEach(y => {
     const isActive = y === scheduleYear;
     html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;background:${isActive?'#D20015':'transparent'};color:${isActive?'#fff':'#565A5B'};">${y}년</button>`;
@@ -8426,7 +8500,7 @@ function showScheduleStation(scheduleId) {
           // 바이너리 채점 (S/U/NA)
           const result = calculateBinaryScores(record.scores, getChecklist(t.key));
           const rate = result.complianceRate.toFixed(1);
-          html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
+          html += `<div style="background:#f9f9fb;border-radius:12px;padding:16px;text-align:center;">`;
           html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
           html += `<div style="font-size:24px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${rate}%</div>`;
           html += `<div style="font-size:11px;color:#9EA2A1;">적합 ${result.yesCount} / 부적합 ${result.noCount}</div>`;
@@ -8436,14 +8510,14 @@ function showScheduleStation(scheduleId) {
           const result = calculateScores(record.scores, getChecklist(t.key));
           const avg = result.overallAverage.toFixed(2);
           const rate = result.achievementRate.toFixed(1);
-          html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
+          html += `<div style="background:#f9f9fb;border-radius:12px;padding:16px;text-align:center;">`;
           html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
           html += `<div style="font-size:24px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${avg}</div>`;
           html += `<div style="font-size:11px;color:#9EA2A1;">달성률 ${rate}%</div>`;
           html += `</div>`;
         }
       } else {
-        html += `<div style="background:#f5f5f7;border-radius:12px;padding:16px;text-align:center;">`;
+        html += `<div style="background:#f9f9fb;border-radius:12px;padding:16px;text-align:center;">`;
         html += `<div style="font-size:11px;color:#9EA2A1;margin-bottom:4px;word-break:keep-all;">${t.label}</div>`;
         html += `<div style="font-size:24px;font-weight:600;color:#C0CED1;">-</div>`;
         html += `<div style="font-size:11px;color:#C0CED1;">미실시</div>`;
@@ -8747,7 +8821,7 @@ function renderAddScheduleForm() {
   html += '</div>';
 
   // New station fields (hidden by default)
-  html += '<div id="newStationFields" class="hidden" style="background:#f5f5f7;border-radius:12px;padding:16px;margin-bottom:16px;">';
+  html += '<div id="newStationFields" class="hidden" style="background:#f9f9fb;border-radius:12px;padding:16px;margin-bottom:16px;">';
   html += '<p style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:12px;">신규 심사 대상 정보</p>';
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
   html += '<div>';
@@ -9325,7 +9399,7 @@ function renderAuditorPicker(containerId, currentValue) {
   // Selected auditors
   html += '<div id="' + containerId + '_tags" class="flex flex-wrap gap-2 mb-2">';
   selected.forEach(name => {
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#f5f5f7;border-radius:980px;padding:4px 12px;font-size:13px;color:#303A3C;">`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;background:#f9f9fb;border-radius:980px;padding:4px 12px;font-size:13px;color:#303A3C;">`;
     html += `${name}`;
     html += `<button onclick="removeAuditorTag('${containerId}','${name}')" style="background:none;border:none;color:#D20015;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;">×</button>`;
     html += `</span>`;
@@ -10501,6 +10575,8 @@ function openStationDetail(year, station) {
   // 탭 스타일 비활성화
   document.querySelectorAll('.desktop-tab').forEach(b => { b.classList.remove('tab-active'); b.classList.add('tab-inactive'); });
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('mobile-tab-active'));
+  // v19.0.0: 사이드바 비활성화
+  document.querySelectorAll('.sidebar-menu-item').forEach(b => { b.classList.remove('sidebar-menu-active'); b.classList.add('sidebar-menu-inactive'); });
   // 모바일 탭바 숨김
   const mobileBar = document.getElementById('mobileTabBar');
   if (mobileBar) mobileBar.style.display = 'none';
@@ -10903,11 +10979,11 @@ function renderDivisionDetail(year, division) {
     html += '<div class="apple-card" style="padding:20px;">';
     html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">카테고리별 상세 적합률</h3>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<thead><tr style="background:#f5f5f7;border-bottom:2px solid #C0CED1;"><th style="text-align:left;padding:8px;">카테고리</th><th style="text-align:center;padding:8px;">적합률</th><th style="text-align:center;padding:8px;">S</th><th style="text-align:center;padding:8px;">U</th><th style="text-align:center;padding:8px;">NA</th></tr></thead><tbody>';
+    html += '<thead><tr style="background:#f9f9fb;border-bottom:2px solid #C0CED1;"><th style="text-align:left;padding:8px;">카테고리</th><th style="text-align:center;padding:8px;">적합률</th><th style="text-align:center;padding:8px;">S</th><th style="text-align:center;padding:8px;">U</th><th style="text-align:center;padding:8px;">NA</th></tr></thead><tbody>';
 
     const renderCatRows = (groupName, result) => {
       if (!result) return '';
-      let rows = '<tr style="background:#f5f5f7;"><td colspan="5" style="padding:8px;font-weight:700;color:#D20015;font-size:12px;">' + groupName + '</td></tr>';
+      let rows = '<tr style="background:#f9f9fb;"><td colspan="5" style="padding:8px;font-weight:700;color:#D20015;font-size:12px;">' + groupName + '</td></tr>';
       let catIdx = 0;
       for (const [catName, cr] of Object.entries(result.categoryResults)) {
         catIdx++;
@@ -11388,7 +11464,7 @@ function renderSDCategoryTable(d) {
   };
 
   let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead><tr style="background:#f5f5f7;border-bottom:2px solid #C0CED1;">
+    <thead><tr style="background:#f9f9fb;border-bottom:2px solid #C0CED1;">
       <th style="text-align:left;padding:10px 8px;font-weight:600;color:#303A3C;">항목</th>
       <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">항공사</th>
       <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">여객협력사</th>
@@ -11423,7 +11499,7 @@ function renderSDCategoryTable(d) {
     if (avg === null) return '<td style="text-align:center;color:#C0CED1;">-</td>';
     return `<td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:8px;font-weight:700;font-size:13px;${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
   };
-  html += `<tr style="border-top:2px solid #303A3C;background:#f5f5f7;">
+  html += `<tr style="border-top:2px solid #303A3C;background:#f9f9fb;">
     <td style="padding:10px 8px;font-weight:700;color:#D20015;">평균 평점</td>
     ${fmtCatAvg(catAvg(branchCatAvgs))}
     ${fmtCatAvg(catAvg(paxCatAvgs))}
